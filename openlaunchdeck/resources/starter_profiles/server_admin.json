@@ -1,0 +1,110 @@
+{
+  "name": "Server Admin",
+  "id": "server_admin",
+  "default_page": "main",
+  "settings": {},
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {
+        "A1": {
+          "label": "AMP",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "http://server.example.local"
+            }
+          }
+        },
+        "A2": {
+          "label": "Plex",
+          "color": "orange",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "http://plex.example.local:32400/web"
+            }
+          }
+        },
+        "A3": {
+          "label": "Immich",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "http://photos.example.local"
+            }
+          }
+        },
+        "A4": {
+          "label": "NPM",
+          "color": "purple",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "http://proxy.example.local:81"
+            }
+          }
+        },
+        "B1": {
+          "label": "SSH",
+          "color": "cyan",
+          "enabled": false,
+          "dangerous": false,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "server.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        },
+        "B2": {
+          "label": "Backup",
+          "color": "yellow",
+          "enabled": false,
+          "dangerous": false,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "server.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        },
+        "B3": {
+          "label": "Restart",
+          "color": "red",
+          "enabled": false,
+          "dangerous": true,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "server.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+{
+  "name": "Basic PC",
+  "id": "basic_pc",
+  "default_page": "main",
+  "settings": {},
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {
+        "A1": {
+          "label": "Browser",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "https://www.google.com"
+            }
+          }
+        },
+        "A2": {
+          "label": "Files",
+          "color": "cyan",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_path",
+            "config": {
+              "path": "%USERPROFILE%"
+            }
+          }
+        },
+        "A3": {
+          "label": "Copy",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "ctrl+c"
+            }
+          }
+        },
+        "A4": {
+          "label": "Paste",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "ctrl+v"
+            }
+          }
+        },
+        "A5": {
+          "label": "Undo",
+          "color": "purple",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "ctrl+z"
+            }
+          }
+        },
+        "A6": {
+          "label": "Redo",
+          "color": "purple",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "ctrl+y"
+            }
+          }
+        },
+        "A7": {
+          "label": "Screenshot",
+          "color": "orange",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "win+shift+s"
+            }
+          }
+        },
+        "A8": {
+          "label": "Lock PC",
+          "color": "red",
+          "enabled": false,
+          "dangerous": true,
+          "notes": "Enable after confirming this is the behavior you want.",
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "win+l"
+            }
+          }
+        },
+        "B1": {
+          "label": "Play/Pause",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "media_control",
+            "config": {
+              "control": "play_pause"
+            }
+          }
+        },
+        "B2": {
+          "label": "Vol Up",
+          "color": "yellow",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "volume_control",
+            "config": {
+              "mode": "volume_up"
+            }
+          }
+        },
+        "B3": {
+          "label": "Vol Down",
+          "color": "yellow",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "volume_control",
+            "config": {
+              "mode": "volume_down"
+            }
+          }
+        },
+        "B4": {
+          "label": "Mute",
+          "color": "pink",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "volume_control",
+            "config": {
+              "mode": "mute"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

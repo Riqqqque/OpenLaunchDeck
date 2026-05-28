@@ -1,0 +1,87 @@
+{
+  "name": "Discord Audio",
+  "id": "discord_audio",
+  "default_page": "main",
+  "settings": {},
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {
+        "A1": {
+          "label": "Mute",
+          "color": "red",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "ctrl+shift+m"
+            }
+          }
+        },
+        "A2": {
+          "label": "Deafen",
+          "color": "purple",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "ctrl+shift+d"
+            }
+          }
+        },
+        "A3": {
+          "label": "PTT",
+          "color": "yellow",
+          "enabled": false,
+          "dangerous": false,
+          "notes": "Configure this hotkey to match Discord.",
+          "action": {
+            "type": "hotkey",
+            "config": {
+              "hotkey": "ctrl+shift+p"
+            }
+          }
+        },
+        "B1": {
+          "label": "Vol Up",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "volume_control",
+            "config": {
+              "mode": "volume_up"
+            }
+          }
+        },
+        "B2": {
+          "label": "Vol Down",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "volume_control",
+            "config": {
+              "mode": "volume_down"
+            }
+          }
+        },
+        "B3": {
+          "label": "Open Discord",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_path",
+            "config": {
+              "path": "%LOCALAPPDATA%\\Discord\\Update.exe"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

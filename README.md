@@ -1,0 +1,251 @@
+# OpenLaunchDeck
+
+OpenLaunchDeck turns a Novation Launchpad Mini MK3 into a Windows desktop macro deck with profiles, pages, actions, soundboard buttons, MIDI debug tools, update checks, and installer support.
+
+It is a normal desktop app: install it, launch it, assign actions, keep it running in the background, and store user data in AppData so upgrades do not overwrite profiles or settings.
+
+## Supported Hardware
+
+- Novation Launchpad Mini MK3
+- USB MIDI input for pad presses
+- USB MIDI output for pad lighting
+- Simulation mode when no Launchpad is connected
+
+Programmer Mode is recommended for predictable pad messages. Device mode can affect note/control mappings, so OpenLaunchDeck includes MIDI Debug and calibration tools instead of spreading note numbers through the app.
+
+## Screenshots
+
+Real release screenshots should be added before publishing a tagged release.
+
+- Main window with 8x8 grid
+- Button editor with action settings
+- MIDI Debug window
+- Soundboard panel
+- Update dialog
+
+## Features
+
+- Editable 8x8 Launchpad-style grid
+- Multiple profiles and pages
+- Simulation clicks for setup without hardware
+- MIDI input/output structure for Launchpad Mini MK3
+- Isolated A1-H8 MIDI mapping with calibration
+- Page lighting refresh with changed-pad batching
+- Button editor with action-specific settings
+- Dangerous action double-press confirmation
+- Soundboard playback with stop controls
+- Background action execution
+- Manual update checks with SHA256 verification
+- Optional startup update checks
+- Logs, diagnostics, settings, backups, profiles, MIDI mappings, and update downloads in AppData
+- Starter profiles for PC shortcuts, streaming, Discord audio, soundboard, server admin, and Minecraft server workflows
+- Optional native helper for focused mapping/hash/checksum utilities
+
+## Installation
+
+Download the latest installer from the releases page when available and run it.
+
+User data is stored in:
+
+```text
+%APPDATA%\OpenLaunchDeck
+```
+
+Installer upgrades replace program files only. Profiles, settings, logs, backups, MIDI mappings, imported assets, and update downloads stay in AppData.
+
+## Updating
+
+Open `Help > Check for Updates` to check a configured update manifest. Startup checks are optional and run in the background.
+
+The updater can:
+
+- Fetch a remote JSON manifest with a timeout
+- Compare semantic versions
+- Detect required updates and unsupported current versions
+- Download installers to `%APPDATA%\OpenLaunchDeck\updates`
+- Verify SHA256 before allowing installer launch
+- Keep the current app running when download or checksum verification fails
+- Back up profile JSON files before launching a verified installer when automatic backups are enabled
+
+OpenLaunchDeck does not install updates silently. Portable/source runs may need a manual update after the verified installer is downloaded.
+
+See [docs/updating.md](docs/updating.md) for the manifest format and local update testing.
+
+## Running From Source
+
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+python -m openlaunchdeck.main
+```
+
+For hardware MIDI testing from source, Python 3.11-3.13 is currently the safest Windows path because the real-time MIDI backend has prebuilt wheels there. Newer Python versions can still run simulation mode and tests, but MIDI hardware support may need a local C++ toolchain.
+
+## Running Tests
+
+Tests do not require Launchpad hardware.
+
+```powershell
+pytest
+```
+
+## Building The EXE
+
+```powershell
+powershell -ExecutionPolicy Bypass -File build.ps1 -SkipInstaller
+```
+
+The build script creates `.venv` if needed, installs requirements, runs tests, and builds `dist\OpenLaunchDeck\OpenLaunchDeck.exe` with PyInstaller.
+
+## Creating The Installer
+
+Install Inno Setup, then run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File build.ps1
+```
+
+When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSetup-<version>.exe` and writes a `.sha256` file beside it. The version comes from `openlaunchdeck/version.py`.
+
+## First Setup
+
+On first launch, choose a starter profile or start with a blank deck. If no Launchpad is connected, OpenLaunchDeck stays in simulation mode and lets you edit profiles and test actions by clicking grid cells.
+
+When the Launchpad is connected:
+
+1. Put the device in Programmer Mode.
+2. Open `Device > MIDI Debug`.
+3. Confirm input and output ports are detected.
+4. Press pads and watch raw MIDI messages.
+5. Use calibration if parsed button IDs do not match A1-H8.
+6. Save the mapping and reconnect.
+
+## MIDI Troubleshooting
+
+Use `Device > MIDI Debug` when pads do not map or light correctly. The debug window shows available ports, raw incoming messages, outgoing lighting messages, parsed button IDs, and the current mapping table.
+
+If the default mapping is wrong for your device mode, run calibration. Saved mappings live in:
+
+```text
+%APPDATA%\OpenLaunchDeck\midi_mappings
+```
+
+See [docs/hardware_notes.md](docs/hardware_notes.md) and [docs/midi_mapping.md](docs/midi_mapping.md).
+
+## Soundboard Setup
+
+Soundboard buttons can play local `.wav`, `.mp3`, and platform-supported `.ogg` files through QtMultimedia. Each button supports volume, looping, already-playing behavior, active color, and stop behavior.
+
+To make Discord or a game hear the soundboard, route audio through external virtual audio cable software and choose that output device in OpenLaunchDeck. The app does not install or bundle audio drivers.
+
+See [docs/soundboard_setup.md](docs/soundboard_setup.md).
+
+## Performance Notes
+
+OpenLaunchDeck keeps expensive work away from the GUI thread:
+
+- MIDI callbacks parse and emit lightweight events
+- Blocking actions run through a worker pool
+- Update checks and downloads run on Qt worker threads
+- Sound playback uses non-blocking QtMultimedia APIs
+- Lighting refreshes skip unchanged pad colors
+- Grid cells skip redundant text/style updates
+- Performance logging is quiet by default and can be enabled in Settings
+
+See [docs/performance.md](docs/performance.md).
+
+## Optional Native Acceleration
+
+The app runs fully in Python by default. The optional Rust helper uses PyO3/maturin for focused utilities:
+
+- Button ID validation and conversion
+- Profile text hashing
+- SHA256 verification
+
+If the helper is missing, disabled, or cannot be imported, OpenLaunchDeck uses Python fallbacks.
+
+Build without native acceleration:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File build.ps1
+```
+
+Build and install the optional helper into the local virtual environment:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File build.ps1 -BuildNative
+```
+
+## Profile Format
+
+Profiles are human-readable JSON files stored in:
+
+```text
+%APPDATA%\OpenLaunchDeck\profiles
+```
+
+Minimal example:
+
+```json
+{
+  "name": "Basic PC",
+  "id": "basic_pc",
+  "default_page": "main",
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {
+        "A1": {
+          "label": "Browser",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "https://www.google.com"
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
+See [docs/profile_format.md](docs/profile_format.md).
+
+## Adding Custom Actions
+
+Actions live in `openlaunchdeck/actions/`. Add a class derived from `BaseAction`, define `type_name`, `display_name`, `config_fields`, and `execute()`, then register it in `actions/registry.py`.
+
+Return clear `ActionResult` values so the GUI, logs, and Launchpad feedback can show useful status.
+
+## Roadmap
+
+- Hardware-verified Launchpad Mini MK3 mapping and lighting presets
+- Full OBS WebSocket implementation
+- Secure SSH secrets flow
+- More advanced audio output routing
+- Richer first-run wizard and tray polish
+- Signed installer
+- Release automation around manifest publishing
+
+## Known Limitations
+
+- OBS WebSocket support is structured but not implemented yet.
+- SSH command support depends on Paramiko and key-based authentication setup.
+- Endpoint-specific Windows volume control is not implemented; current volume actions use media keys.
+- Launchpad mappings should be verified in MIDI Debug before relying on them live.
+- The default lighting palette is a Programmer Mode preset and needs hardware verification for each target mode.
+- Startup update checks are intentionally quiet; manual checks show full detail.
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+MIT. See [LICENSE](LICENSE).

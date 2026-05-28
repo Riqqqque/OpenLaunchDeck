@@ -1,0 +1,115 @@
+from __future__ import annotations
+
+from PySide6.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QDialogButtonBox,
+    QFormLayout,
+    QLineEdit,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+)
+
+from ..paths import APP_DATA_DIR
+
+
+class SettingsDialog(QDialog):
+    def __init__(self, settings_service, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("Settings")
+        self.settings_service = settings_service
+        settings = settings_service.settings
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+
+        self.theme = QComboBox()
+        for theme in ("dark", "light", "system"):
+            self.theme.addItem(theme, theme)
+        self.theme.setCurrentIndex(max(0, self.theme.findData(settings.theme)))
+
+        self.auto_connect = QCheckBox()
+        self.auto_connect.setChecked(settings.auto_connect)
+        self.start_minimized = QCheckBox()
+        self.start_minimized.setChecked(settings.start_minimized)
+        self.minimize_to_tray = QCheckBox()
+        self.minimize_to_tray.setChecked(settings.minimize_to_tray)
+        self.launch_at_startup = QCheckBox()
+        self.launch_at_startup.setChecked(settings.launch_at_startup)
+        self.midi_input = QLineEdit(settings.midi_input_port)
+        self.midi_output = QLineEdit(settings.midi_output_port)
+        self.midi_debug = QCheckBox()
+        self.midi_debug.setChecked(settings.midi_debug_logging)
+        self.autosave = QCheckBox()
+        self.autosave.setChecked(settings.profile_autosave)
+        self.backups = QCheckBox()
+        self.backups.setChecked(settings.backup_profiles_automatically)
+        self.output_device = QLineEdit(settings.soundboard_default_output_device)
+        self.global_volume = QSpinBox()
+        self.global_volume.setRange(0, 100)
+        self.global_volume.setValue(settings.soundboard_global_volume)
+        self.stop_on_exit = QCheckBox()
+        self.stop_on_exit.setChecked(settings.soundboard_stop_sounds_on_exit)
+        self.check_updates = QCheckBox()
+        self.check_updates.setChecked(settings.check_updates_on_startup)
+        self.update_channel = QComboBox()
+        self.update_channel.addItem("stable", "stable")
+        self.update_channel.addItem("beta", "beta")
+        self.update_channel.setCurrentIndex(max(0, self.update_channel.findData(settings.update_channel)))
+        self.update_url = QLineEdit(settings.update_manifest_url)
+        self.performance_logging = QCheckBox()
+        self.performance_logging.setChecked(settings.enable_performance_logging)
+        self.native_acceleration = QCheckBox()
+        self.native_acceleration.setChecked(settings.use_native_acceleration)
+        config_button = QPushButton(str(APP_DATA_DIR))
+        config_button.clicked.connect(lambda: self.parent().open_folder(APP_DATA_DIR) if self.parent() else None)
+
+        form.addRow("Theme", self.theme)
+        form.addRow("Auto-connect", self.auto_connect)
+        form.addRow("Start minimized", self.start_minimized)
+        form.addRow("Minimize to tray", self.minimize_to_tray)
+        form.addRow("Launch at startup", self.launch_at_startup)
+        form.addRow("MIDI input port", self.midi_input)
+        form.addRow("MIDI output port", self.midi_output)
+        form.addRow("MIDI debug logging", self.midi_debug)
+        form.addRow("Config folder", config_button)
+        form.addRow("Profile autosave", self.autosave)
+        form.addRow("Automatic backups", self.backups)
+        form.addRow("Sound output device", self.output_device)
+        form.addRow("Soundboard volume", self.global_volume)
+        form.addRow("Stop sounds on exit", self.stop_on_exit)
+        form.addRow("Check updates on startup", self.check_updates)
+        form.addRow("Update channel", self.update_channel)
+        form.addRow("Update manifest URL", self.update_url)
+        form.addRow("Performance logging", self.performance_logging)
+        form.addRow("Native acceleration", self.native_acceleration)
+        layout.addLayout(form)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+
+    def accept(self) -> None:
+        self.settings_service.update(
+            theme=self.theme.currentData(),
+            auto_connect=self.auto_connect.isChecked(),
+            start_minimized=self.start_minimized.isChecked(),
+            minimize_to_tray=self.minimize_to_tray.isChecked(),
+            launch_at_startup=self.launch_at_startup.isChecked(),
+            midi_input_port=self.midi_input.text(),
+            midi_output_port=self.midi_output.text(),
+            midi_debug_logging=self.midi_debug.isChecked(),
+            profile_autosave=self.autosave.isChecked(),
+            backup_profiles_automatically=self.backups.isChecked(),
+            soundboard_default_output_device=self.output_device.text(),
+            soundboard_global_volume=self.global_volume.value(),
+            soundboard_stop_sounds_on_exit=self.stop_on_exit.isChecked(),
+            check_updates_on_startup=self.check_updates.isChecked(),
+            update_channel=self.update_channel.currentData(),
+            update_manifest_url=self.update_url.text(),
+            enable_performance_logging=self.performance_logging.isChecked(),
+            use_native_acceleration=self.native_acceleration.isChecked(),
+        )
+        super().accept()

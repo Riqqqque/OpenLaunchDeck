@@ -1,0 +1,88 @@
+from __future__ import annotations
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+from PySide6.QtCore import QTimer
+from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QListWidget, QPushButton, QSpinBox, QVBoxLayout
+
+from ..audio.output_devices import list_output_devices
+
+
+class SoundboardPanel(QDialog):
+    def __init__(self, audio_engine, settings_service=None, parent=None) -> None:
+        super().__init__(parent)
+        self.audio_engine = audio_engine
+        self.settings_service = settings_service
+        self.setWindowTitle("Soundboard")
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+        self.output_combo = QComboBox()
+        self.output_combo.addItem("System default", "")
+        for device in list_output_devices():
+            self.output_combo.addItem(device["description"], device["id"])
+        current_device = audio_engine.default_output_device_id
+        if current_device:
+            index = self.output_combo.findData(current_device)
+            if index >= 0:
+                self.output_combo.setCurrentIndex(index)
+        self.volume_spin = QSpinBox()
+        self.volume_spin.setRange(0, 100)
+        self.volume_spin.setValue(audio_engine.global_volume)
+        form.addRow("Default Output", self.output_combo)
+        form.addRow("Global Volume", self.volume_spin)
+        layout.addLayout(form)
+
+        layout.addWidget(QLabel("Currently Playing"))
+        self.list_widget = QListWidget()
+        layout.addWidget(self.list_widget)
+        self.stop_all_button = QPushButton("Stop All Sounds")
+        self.refresh_button = QPushButton("Refresh")
+        self.docs_button = QPushButton("Open Soundboard Docs")
+        layout.addWidget(self.stop_all_button)
+        layout.addWidget(self.refresh_button)
+        layout.addWidget(self.docs_button)
+        self.stop_all_button.clicked.connect(self._stop_all)
+        self.refresh_button.clicked.connect(self.refresh)
+        self.docs_button.clicked.connect(self.open_docs)
+        self.output_combo.currentIndexChanged.connect(lambda _index: self._set_output_device())
+        self.volume_spin.valueChanged.connect(self._set_global_volume)
+        self.timer = QTimer(self)
+        self.timer.setInterval(1000)
+        self.timer.timeout.connect(self.refresh)
+        self.timer.start()
+        self.refresh()
+
+    def refresh(self) -> None:
+        self.list_widget.clear()
+        for instance in self.audio_engine.currently_playing():
+            name = instance.display_name or Path(instance.file_path).name
+            loop_text = " loop" if instance.loop else ""
+            self.list_widget.addItem(f"{instance.button_id}: {name} ({instance.volume}%{loop_text})")
+
+    def _stop_all(self) -> None:
+        self.audio_engine.stop_all()
+        self.refresh()
+
+    def _set_output_device(self) -> None:
+        device_id = str(self.output_combo.currentData() or "")
+        self.audio_engine.set_default_output_device(device_id)
+        if self.settings_service is not None:
+            self.settings_service.update(soundboard_default_output_device=device_id)
+
+    def _set_global_volume(self, volume: int) -> None:
+        self.audio_engine.set_global_volume(volume)
+        if self.settings_service is not None:
+            self.settings_service.update(soundboard_global_volume=volume)
+
+    def open_docs(self) -> None:
+        docs_path = Path(__file__).resolve().parents[2] / "docs" / "soundboard_setup.md"
+        if not docs_path.exists() and hasattr(sys, "_MEIPASS"):
+            docs_path = Path(sys._MEIPASS) / "docs" / "soundboard_setup.md"  # type: ignore[attr-defined]
+        if docs_path.exists():
+            if sys.platform == "win32":
+                os.startfile(str(docs_path))  # type: ignore[attr-defined]
+            else:
+                subprocess.Popen(["xdg-open", str(docs_path)])

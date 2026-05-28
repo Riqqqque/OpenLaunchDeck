@@ -1,0 +1,88 @@
+{
+  "name": "OBS Streaming",
+  "id": "obs_streaming",
+  "default_page": "main",
+  "settings": {},
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {
+        "A1": {
+          "label": "Start Rec",
+          "color": "red",
+          "enabled": true,
+          "dangerous": false,
+          "notes": "OBS WebSocket transport is not implemented yet.",
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "start_recording"
+            }
+          }
+        },
+        "A2": {
+          "label": "Stop Rec",
+          "color": "orange",
+          "enabled": true,
+          "dangerous": true,
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "stop_recording"
+            }
+          }
+        },
+        "A3": {
+          "label": "Scene",
+          "color": "purple",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "switch_scene",
+              "scene_name": "Scene"
+            }
+          }
+        },
+        "A4": {
+          "label": "Mic",
+          "color": "cyan",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "toggle_mic"
+            }
+          }
+        },
+        "B1": {
+          "label": "Open OBS",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_path",
+            "config": {
+              "path": "C:\\Program Files\\obs-studio\\bin\\64bit\\obs64.exe"
+            }
+          }
+        },
+        "B2": {
+          "label": "Dashboard",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "https://example.com/stream-dashboard"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

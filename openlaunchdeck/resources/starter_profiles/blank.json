@@ -1,0 +1,13 @@
+{
+  "name": "Blank",
+  "id": "blank",
+  "default_page": "main",
+  "settings": {},
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {}
+    }
+  ]
+}

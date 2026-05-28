@@ -1,0 +1,103 @@
+from __future__ import annotations
+
+import sys
+import time
+from dataclasses import dataclass
+
+from PySide6.QtWidgets import QApplication
+
+from . import native_acceleration
+from .actions.registry import create_default_registry
+from .audio.audio_engine import AudioEngine
+from .devices.launchpad_mini_mk3 import LaunchpadMiniMk3
+from .logging_setup import configure_logging
+from .paths import ensure_user_dirs
+from .services.action_runner import ActionRunner
+from .services.dangerous_confirm import DangerousConfirmService
+from .services.lighting_service import LightingService
+from .services.performance_monitor import PerformanceMonitor
+from .services.profile_service import ProfileService
+from .services.settings_service import SettingsService
+from .ui.main_window import MainWindow
+from .version import APP_NAME
+
+
+@dataclass(slots=True)
+class AppServices:
+    settings_service: SettingsService
+    profile_service: ProfileService
+    audio_engine: AudioEngine
+    lighting_service: LightingService
+    device: LaunchpadMiniMk3
+    action_runner: ActionRunner
+    action_registry: object
+    logger: object
+    performance_monitor: PerformanceMonitor
+
+
+def build_services() -> AppServices:
+    start = time.perf_counter()
+    ensure_user_dirs()
+    settings_service = SettingsService()
+    logger = configure_logging(settings_service.settings.midi_debug_logging)
+    logger.info("Starting %s", APP_NAME)
+    native_acceleration.configure(settings_service.settings.use_native_acceleration, logger)
+    performance_monitor = PerformanceMonitor(logger, settings_service.settings.enable_performance_logging)
+    profile_service = ProfileService(logger=logger)
+    audio_engine = AudioEngine(
+        logger=logger,
+        global_volume=settings_service.settings.soundboard_global_volume,
+        default_output_device_id=settings_service.settings.soundboard_default_output_device,
+        performance_logging_enabled=settings_service.settings.enable_performance_logging,
+        performance_monitor=performance_monitor,
+    )
+    device = LaunchpadMiniMk3(logger=logger, performance_monitor=performance_monitor)
+    lighting_service = LightingService(device=device, logger=logger, performance_monitor=performance_monitor)
+    registry = create_default_registry()
+    action_runner = ActionRunner(
+        registry=registry,
+        profile_service=profile_service,
+        dangerous_service=DangerousConfirmService(),
+        audio_engine=audio_engine,
+        lighting_service=lighting_service,
+        device_manager=device,
+        settings_service=settings_service,
+        logger=logger,
+        performance_monitor=performance_monitor,
+    )
+    performance_monitor.record_since("app_startup_build_services", start)
+    return AppServices(
+        settings_service=settings_service,
+        profile_service=profile_service,
+        audio_engine=audio_engine,
+        lighting_service=lighting_service,
+        device=device,
+        action_runner=action_runner,
+        action_registry=registry,
+        logger=logger,
+        performance_monitor=performance_monitor,
+    )
+
+
+def run() -> int:
+    start = time.perf_counter()
+    app = QApplication(sys.argv)
+    app.setApplicationName(APP_NAME)
+    app.setOrganizationName(APP_NAME)
+    services = build_services()
+    try:
+        with services.performance_monitor.measure("app_startup_main_window"):
+            window = MainWindow(services)
+        window.show()
+        services.performance_monitor.record_since("app_startup_to_window_shown", start)
+        if services.settings_service.settings.start_minimized:
+            window.hide()
+        result = app.exec()
+    except Exception:
+        services.logger.exception("Fatal application error.")
+        return 1
+    finally:
+        services.audio_engine.stop_all()
+        services.action_runner.shutdown()
+        services.device.close()
+    return result
