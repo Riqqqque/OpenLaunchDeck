@@ -1,0 +1,50 @@
+name: Bug Report
+description: Report a reproducible problem in OpenLaunchDeck.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What happened?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps To Reproduce
+      description: List the shortest steps that reproduce the issue.
+      placeholder: |
+        1. Open OpenLaunchDeck
+        2. Select ...
+        3. Press ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Behavior
+      description: What should have happened?
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: OpenLaunchDeck Version
+      placeholder: "0.1.0"
+  - type: dropdown
+    id: hardware
+    attributes:
+      label: Hardware Mode
+      options:
+        - Simulation mode
+        - Launchpad Mini MK3 connected
+        - Other MIDI device
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Diagnostics
+      description: Paste relevant logs or Help > Copy Diagnostic Info output. Remove secrets before posting.
+      render: text

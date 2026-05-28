@@ -1,0 +1,134 @@
+{
+  "name": "Minecraft Server",
+  "id": "minecraft_server",
+  "default_page": "main",
+  "settings": {},
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {
+        "A1": {
+          "label": "Panel",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_url",
+            "config": {
+              "url": "http://minecraft.example.local"
+            }
+          }
+        },
+        "A2": {
+          "label": "Start",
+          "color": "green",
+          "enabled": false,
+          "dangerous": false,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "minecraft.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        },
+        "A3": {
+          "label": "Stop",
+          "color": "red",
+          "enabled": false,
+          "dangerous": true,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "minecraft.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        },
+        "A4": {
+          "label": "Restart",
+          "color": "orange",
+          "enabled": false,
+          "dangerous": true,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "minecraft.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        },
+        "B1": {
+          "label": "Backup",
+          "color": "yellow",
+          "enabled": false,
+          "dangerous": false,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "minecraft.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        },
+        "B2": {
+          "label": "Logs",
+          "color": "cyan",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "open_path",
+            "config": {
+              "path": "%USERPROFILE%"
+            }
+          }
+        },
+        "B3": {
+          "label": "Whitelist",
+          "color": "purple",
+          "enabled": false,
+          "dangerous": false,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "minecraft.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        },
+        "B4": {
+          "label": "Save All",
+          "color": "pink",
+          "enabled": false,
+          "dangerous": false,
+          "action": {
+            "type": "ssh_command",
+            "config": {
+              "host": "minecraft.example.local",
+              "port": 22,
+              "username": "replace-this-user",
+              "key_filename": "",
+              "command": "replace-this-command"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

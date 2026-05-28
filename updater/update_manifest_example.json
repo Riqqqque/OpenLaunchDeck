@@ -1,0 +1,9 @@
+{
+  "latest_version": "0.2.0",
+  "minimum_supported_version": "0.1.0",
+  "required": false,
+  "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
+  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "release_notes_url": "https://example.com/releases/tag/v0.2.0",
+  "published_at": "2026-01-01T00:00:00Z"
+}

@@ -1,0 +1,89 @@
+{
+  "name": "Soundboard",
+  "id": "soundboard",
+  "default_page": "main",
+  "settings": {},
+  "pages": [
+    {
+      "name": "Main",
+      "id": "main",
+      "buttons": {
+        "A1": {
+          "label": "Sound 1",
+          "color": "purple",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "play_sound",
+            "config": {
+              "file_path": "",
+              "volume": 80,
+              "loop": false,
+              "behavior_when_already_playing": "restart",
+              "active_color": "cyan",
+              "stop_on_page_change": true
+            }
+          }
+        },
+        "A2": {
+          "label": "Sound 2",
+          "color": "pink",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "play_sound",
+            "config": {
+              "file_path": "",
+              "volume": 80,
+              "loop": false,
+              "behavior_when_already_playing": "overlap",
+              "active_color": "cyan",
+              "stop_on_page_change": true
+            }
+          }
+        },
+        "A3": {
+          "label": "Loop",
+          "color": "orange",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "play_sound",
+            "config": {
+              "file_path": "",
+              "volume": 70,
+              "loop": true,
+              "behavior_when_already_playing": "toggle_stop",
+              "active_color": "yellow",
+              "stop_on_page_change": true
+            }
+          }
+        },
+        "A4": {
+          "label": "Random",
+          "color": "green",
+          "enabled": false,
+          "dangerous": false,
+          "notes": "Random folder playback is planned. Use individual play sound buttons for now.",
+          "action": {
+            "type": "noop",
+            "config": {}
+          }
+        },
+        "B1": {
+          "label": "Stop All",
+          "color": "red",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "stop_sound",
+            "config": {
+              "scope": "all",
+              "fade_out_ms": 0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

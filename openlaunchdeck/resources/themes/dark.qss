@@ -1,0 +1,45 @@
+QMainWindow, QDialog, QWidget {
+  background: #171b22;
+  color: #e5e7eb;
+  font-family: "Segoe UI";
+  font-size: 10pt;
+}
+
+QMenuBar, QMenu {
+  background: #11151b;
+  color: #e5e7eb;
+}
+
+QMenuBar::item:selected, QMenu::item:selected {
+  background: #263141;
+}
+
+QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox, QListWidget {
+  background: #0f1319;
+  color: #f3f4f6;
+  border: 1px solid #303846;
+  border-radius: 6px;
+  padding: 5px;
+}
+
+QPushButton {
+  background: #263141;
+  border: 1px solid #3a4657;
+  border-radius: 6px;
+  color: #f3f4f6;
+  padding: 7px 10px;
+}
+
+QPushButton:hover {
+  background: #334155;
+}
+
+QLabel#PanelTitle {
+  font-size: 16pt;
+  font-weight: 700;
+}
+
+QStatusBar {
+  background: #10141a;
+  color: #d1d5db;
+}
