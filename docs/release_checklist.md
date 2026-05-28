@@ -21,9 +21,26 @@
 
 - Run `powershell -ExecutionPolicy Bypass -File build.ps1 -SkipInstaller`.
 - Confirm `dist\OpenLaunchDeck\OpenLaunchDeck.exe` launches.
+- Confirm `dist\OpenLaunchDeck-<version>-Windows.zip` was created.
+- Confirm `dist\OpenLaunchDeck-<version>-Windows.zip.sha256` was created.
 - Run `powershell -ExecutionPolicy Bypass -File build.ps1` on a machine with Inno Setup.
 - Confirm `dist\installer\OpenLaunchDeckSetup-<version>.exe` was created.
 - Confirm `dist\installer\OpenLaunchDeckSetup-<version>.exe.sha256` was created.
+
+## GitHub Release
+
+- Commit the version bump, changelog, and docs.
+- Push `main`.
+- Tag the version as `v<version>`.
+- Push the tag.
+- Confirm the Release workflow passes.
+- Confirm the GitHub Release contains:
+  - `OpenLaunchDeckSetup-<version>.exe`
+  - `OpenLaunchDeckSetup-<version>.exe.sha256`
+  - `OpenLaunchDeck-<version>-Windows.zip`
+  - `OpenLaunchDeck-<version>-Windows.zip.sha256`
+- Download the installer from the GitHub Release and run a clean install test.
+- Download the ZIP from the GitHub Release and run a portable launch test.
 
 ## Installer
 
@@ -41,8 +58,8 @@
 - Set `latest_version`.
 - Set `minimum_supported_version`.
 - Set `required`.
-- Set installer `download_url`.
-- Set the real SHA256 from the built installer.
+- Set installer `download_url` to the GitHub Release installer asset.
+- Set the real SHA256 from the GitHub Release installer checksum file.
 - Set release notes URL.
 - Set `published_at`.
 - Test "You are up to date."
