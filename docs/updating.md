@@ -16,10 +16,13 @@ When preparing a release:
 1. Update `__version__`.
 2. Update `CHANGELOG.md`.
 3. Run the build script.
-4. Publish the installer and `.sha256` file.
-5. Update the remote manifest.
+4. Commit and push the release changes.
+5. Push a `v<version>` tag.
+6. Confirm the GitHub Release contains the installer, portable ZIP, and checksum files.
+7. Update the remote manifest.
 
 `build.ps1` reads the version from `openlaunchdeck/version.py` and passes it to the Inno Setup script.
+The Release workflow uses the same build script and publishes release assets when a version tag is pushed.
 
 ## User Data
 
@@ -91,12 +94,23 @@ Manual updates are always supported:
 
 Profiles and settings remain in AppData.
 
+## GitHub Release Assets
+
+Each tagged release should include:
+
+- `OpenLaunchDeckSetup-<version>.exe`
+- `OpenLaunchDeckSetup-<version>.exe.sha256`
+- `OpenLaunchDeck-<version>-Windows.zip`
+- `OpenLaunchDeck-<version>-Windows.zip.sha256`
+
+Use the installer for normal updates. Use the ZIP for portable testing or troubleshooting.
+
 ## Local Update Testing
 
 1. Build the installer:
 
    ```powershell
-   powershell -ExecutionPolicy Bypass -File build.ps1
+   powershell -ExecutionPolicy Bypass -File build.ps1 -RequireInstaller
    ```
 
 2. Copy the installer to a local test web server folder.

@@ -1,6 +1,7 @@
 param(
     [switch]$SkipInstaller,
-    [switch]$BuildNative
+    [switch]$BuildNative,
+    [switch]$RequireInstaller
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,6 +17,21 @@ function Invoke-Checked {
     if ($LASTEXITCODE -ne 0) {
         throw "$Name failed with exit code $LASTEXITCODE"
     }
+}
+
+function Write-Checksum {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path
+    )
+    if (!(Test-Path $Path)) {
+        throw "Cannot write checksum because file was not found: $Path"
+    }
+    $Hash = Get-FileHash $Path -Algorithm SHA256
+    $ChecksumPath = "$Path.sha256"
+    "$($Hash.Hash.ToLower())  $(Split-Path $Path -Leaf)" | Set-Content -NoNewline -Encoding ascii $ChecksumPath
+    Write-Host "Checksum:  $ChecksumPath"
+    Write-Host "SHA256:    $($Hash.Hash.ToLower())"
 }
 
 if (!(Test-Path ".venv")) {
@@ -55,21 +71,27 @@ if (Test-Path $ExePath) {
     Write-Host "Executable: $ExePath"
 }
 
+$PortableZip = Join-Path $Root "dist\OpenLaunchDeck-$AppVersion-Windows.zip"
+if (Test-Path $PortableZip) {
+    Remove-Item -LiteralPath $PortableZip -Force
+}
+Compress-Archive -Path (Join-Path $Root "dist\OpenLaunchDeck") -DestinationPath $PortableZip -Force
+Write-Host "Portable ZIP: $PortableZip"
+Write-Checksum -Path $PortableZip
+
 if (!$SkipInstaller) {
     $Iscc = Get-Command ISCC.exe -ErrorAction SilentlyContinue
     if ($Iscc) {
         Invoke-Checked { & $Iscc.Source "/DMyAppName=$AppName" "/DMyAppVersion=$AppVersion" "installer\openlaunchdeck.iss" } "Build installer"
         $Installer = Join-Path $Root "dist\installer\${AppName}Setup-$AppVersion.exe"
         if (Test-Path $Installer) {
-            $Hash = Get-FileHash $Installer -Algorithm SHA256
-            $ChecksumPath = "$Installer.sha256"
-            "$($Hash.Hash.ToLower())  $(Split-Path $Installer -Leaf)" | Set-Content -NoNewline -Encoding ascii $ChecksumPath
             Write-Host "Installer: $Installer"
-            Write-Host "Checksum:  $ChecksumPath"
-            Write-Host "SHA256:    $($Hash.Hash.ToLower())"
+            Write-Checksum -Path $Installer
         } else {
             throw "Installer was not found at $Installer"
         }
+    } elseif ($RequireInstaller) {
+        throw "Inno Setup not found. Install Inno Setup or run without -RequireInstaller."
     } else {
         Write-Host "Inno Setup not found; installer build skipped."
     }
