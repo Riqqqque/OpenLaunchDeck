@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.17
+
+- Installed a standalone icon file beside the EXE so Windows shortcuts do not depend on stale EXE icon cache entries.
+- Updated installer shortcuts and uninstall metadata to use the standalone icon.
+
 ## 0.1.16
 
 - Reduced normal action logging so rapid button presses do not write to disk unless there is a warning or debug logging is enabled.

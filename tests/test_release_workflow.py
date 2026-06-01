@@ -31,3 +31,5 @@ def test_windows_exe_metadata_and_icon_refresh_are_configured():
     assert "StringStruct('ProductVersion', '{__version__}')" in spec
     assert "version=str(version_info_path)" in spec
     assert "ie4uinit.exe" in installer
+    assert 'DestName: "OpenLaunchDeck.ico"' in installer
+    assert 'IconFilename: "{app}\\OpenLaunchDeck.ico"' in installer
