@@ -5,11 +5,38 @@ QMainWindow, QDialog, QWidget {
   font-size: 10pt;
 }
 
-QWidget#MainSurface {
-  background: #0d1117;
+QLabel {
+  background: transparent;
 }
 
-QFrame#AppHeader, QWidget#SidebarPanel, QFrame#DeckPanel, QWidget#InspectorPanel {
+QWidget#MainSurface {
+  background: #090d13;
+}
+
+QFrame#AppHeader {
+  background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #121a25, stop:0.58 #151e2b, stop:1 #101722);
+  border: 1px solid #29384e;
+  border-radius: 10px;
+}
+
+QWidget#HeaderBrand, QWidget#HeaderMeta {
+  background: transparent;
+}
+
+QLabel#HeaderIcon {
+  background: #0b111a;
+  border: 1px solid #31435c;
+  border-radius: 10px;
+  padding: 7px;
+}
+
+QFrame#HeaderActions {
+  background: #0b111a;
+  border: 1px solid #243146;
+  border-radius: 10px;
+}
+
+QWidget#SidebarPanel, QFrame#DeckPanel, QWidget#InspectorPanel {
   background: #151b24;
   border: 1px solid #283244;
   border-radius: 8px;
@@ -25,8 +52,8 @@ QScrollArea#InspectorScroll > QWidget > QWidget {
 }
 
 QLabel#HeaderTitle {
-  color: #f8fafc;
-  font-size: 20pt;
+  color: #f9fbff;
+  font-size: 19pt;
   font-weight: 800;
 }
 
@@ -35,13 +62,32 @@ QLabel#HeaderSubtitle, QLabel#PanelHint {
   font-size: 9pt;
 }
 
-QLabel#HeaderChip {
-  background: #0f1723;
-  border: 1px solid #2f3c51;
+QLabel#HeaderActiveDeck {
+  color: #f8fafc;
+  font-size: 10pt;
+  font-weight: 800;
+}
+
+QLabel#HeaderModeChip {
+  background: #1c2738;
+  border: 1px solid #354864;
   border-radius: 8px;
   color: #d9e7f5;
-  font-weight: 700;
-  padding: 7px 12px;
+  font-size: 8pt;
+  font-weight: 800;
+  padding: 5px 10px;
+}
+
+QLabel#HeaderModeChip[state="simulation"] {
+  background: #251f13;
+  border-color: #6b5524;
+  color: #facc15;
+}
+
+QLabel#HeaderModeChip[state="connected"] {
+  background: #10231b;
+  border-color: #2f7d55;
+  color: #6ee7b7;
 }
 
 QLabel#PanelTitle {
@@ -146,11 +192,29 @@ QPushButton#SecondaryButton, QPushButton#HeaderButton {
 }
 
 QPushButton#HeaderButton {
-  padding: 7px 11px;
+  border-radius: 8px;
+  padding: 7px 10px;
 }
 
 QPushButton#SecondaryButton:hover, QPushButton#HeaderButton:hover {
   background: #24324b;
+}
+
+QPushButton#HeaderPrimaryButton {
+  background: #0f766e;
+  border: 1px solid #2dd4bf;
+  border-radius: 8px;
+  color: #ecfeff;
+  font-weight: 800;
+  padding: 7px 10px;
+}
+
+QPushButton#HeaderPrimaryButton:hover {
+  background: #0d9488;
+}
+
+QPushButton#HeaderPrimaryButton:pressed {
+  background: #115e59;
 }
 
 QCheckBox {

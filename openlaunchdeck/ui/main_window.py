@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         self._startup_update_worker: UpdateCheckWorker | None = None
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
-        self.resize(1440, 900)
+        self.resize(1480, 920)
         self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
 
         self.services.action_runner.completion_callback = lambda button_id, result: self.action_finished.emit(button_id, result)
@@ -123,10 +123,16 @@ class MainWindow(QMainWindow):
         header = QFrame()
         header.setObjectName("AppHeader")
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(18, 12, 18, 12)
-        header_layout.setSpacing(12)
+        header_layout.setContentsMargins(18, 14, 18, 14)
+        header_layout.setSpacing(14)
+
+        icon = QLabel()
+        icon.setObjectName("HeaderIcon")
+        icon.setPixmap(app_icon().pixmap(38, 38))
+        header_layout.addWidget(icon)
 
         brand = QWidget()
+        brand.setObjectName("HeaderBrand")
         brand_layout = QVBoxLayout(brand)
         brand_layout.setContentsMargins(0, 0, 0, 0)
         brand_layout.setSpacing(1)
@@ -138,15 +144,26 @@ class MainWindow(QMainWindow):
         brand_layout.addWidget(subtitle)
         header_layout.addWidget(brand, 1)
 
+        header_meta = QWidget()
+        header_meta.setObjectName("HeaderMeta")
+        header_meta_layout = QVBoxLayout(header_meta)
+        header_meta_layout.setContentsMargins(0, 0, 0, 0)
+        header_meta_layout.setSpacing(6)
         self.header_profile = QLabel("")
-        self.header_profile.setObjectName("HeaderChip")
+        self.header_profile.setObjectName("HeaderActiveDeck")
         self.header_mode = QLabel("Simulation")
-        self.header_mode.setObjectName("HeaderChip")
-        header_layout.addWidget(self.header_profile)
-        header_layout.addWidget(self.header_mode)
+        self.header_mode.setObjectName("HeaderModeChip")
+        header_meta_layout.addWidget(self.header_profile, 0, Qt.AlignmentFlag.AlignRight)
+        header_meta_layout.addWidget(self.header_mode, 0, Qt.AlignmentFlag.AlignRight)
+        header_layout.addWidget(header_meta)
 
+        actions_frame = QFrame()
+        actions_frame.setObjectName("HeaderActions")
+        actions_layout = QHBoxLayout(actions_frame)
+        actions_layout.setContentsMargins(6, 6, 6, 6)
+        actions_layout.setSpacing(6)
         self.header_reconnect_button = QPushButton("Reconnect")
-        self.header_debug_button = QPushButton("MIDI Debug")
+        self.header_debug_button = QPushButton("MIDI")
         self.header_soundboard_button = QPushButton("Soundboard")
         self.header_update_button = QPushButton("Updates")
         for button in (
@@ -156,7 +173,9 @@ class MainWindow(QMainWindow):
             self.header_update_button,
         ):
             button.setObjectName("HeaderButton")
-            header_layout.addWidget(button)
+            actions_layout.addWidget(button)
+        self.header_update_button.setObjectName("HeaderPrimaryButton")
+        header_layout.addWidget(actions_frame)
 
         root.addWidget(header)
 
@@ -183,7 +202,7 @@ class MainWindow(QMainWindow):
         deck_header = QHBoxLayout()
         deck_title = QLabel("Launchpad Grid")
         deck_title.setObjectName("PanelTitle")
-        deck_hint = QLabel("Click pads to test or select them for editing")
+        deck_hint = QLabel("Click pads to edit. Use Test to run the selected action.")
         deck_hint.setObjectName("PanelHint")
         deck_header.addWidget(deck_title)
         deck_header.addStretch(1)
@@ -285,7 +304,7 @@ class MainWindow(QMainWindow):
             self.statusBar().addPermanentWidget(label)
 
     def _connect_signals(self) -> None:
-        self.grid.button_clicked.connect(self.handle_simulation_press)
+        self.grid.button_clicked.connect(self.select_button)
         self.editor.changed.connect(self.save_button_changes)
         self.editor.test_requested.connect(lambda: self.handle_simulation_press(self.grid.selected_button_id))
         self.editor.clear_requested.connect(self.clear_selected_button)
@@ -318,7 +337,13 @@ class MainWindow(QMainWindow):
         self.mode_status.setText("Connected mode" if self.services.device.connected else "Simulation mode")
         self.device_status.setText("Device: Connected" if self.services.device.connected else "Device: Simulation")
         self.header_profile.setText(f"{profile_service.current_profile.name} / {current_page.name}")
-        self.header_mode.setText("Connected" if self.services.device.connected else "Simulation")
+        self._set_header_mode(self.services.device.connected)
+
+    def _set_header_mode(self, connected: bool) -> None:
+        self.header_mode.setText("Connected mode" if connected else "Simulation mode")
+        self.header_mode.setProperty("state", "connected" if connected else "simulation")
+        self.header_mode.style().unpolish(self.header_mode)
+        self.header_mode.style().polish(self.header_mode)
 
     def refresh_lighting(self) -> None:
         self.services.lighting_service.refresh_page(
@@ -328,6 +353,8 @@ class MainWindow(QMainWindow):
         )
 
     def handle_simulation_press(self, button_id: str) -> None:
+        if not button_id:
+            return
         self.select_button(button_id)
         self.last_pressed_status.setText(f"Last: {button_id}")
         self.services.action_runner.handle_button_press(button_id, "simulation")
@@ -550,7 +577,7 @@ class MainWindow(QMainWindow):
         self.refresh_all()
 
     def check_updates(self) -> None:
-        UpdateDialog(self.services.settings_service, self.services.logger, self).exec()
+        UpdateDialog(self.services.settings_service, self.services.logger, self, auto_check=True).exec()
 
     def check_updates_on_startup(self) -> None:
         if self._startup_update_thread is not None:

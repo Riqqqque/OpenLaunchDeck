@@ -3,7 +3,7 @@ from __future__ import annotations
 import webbrowser
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, Signal, Slot
+from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -64,7 +64,7 @@ class UpdateDownloadWorker(QObject):
 
 
 class UpdateDialog(QDialog):
-    def __init__(self, settings_service, logger=None, parent=None) -> None:
+    def __init__(self, settings_service, logger=None, parent=None, auto_check: bool = False) -> None:
         super().__init__(parent)
         self.settings_service = settings_service
         self.logger = logger
@@ -110,6 +110,8 @@ class UpdateDialog(QDialog):
         self.install_button.clicked.connect(self.install_update)
         self.close_button.clicked.connect(self.reject)
         self._update_buttons()
+        if auto_check:
+            QTimer.singleShot(0, self.check)
 
     def check(self) -> None:
         manifest_url = self.settings_service.settings.update_manifest_url.strip()
