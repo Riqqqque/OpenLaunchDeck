@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.15
+
+- Made the desktop icon artwork the source for taskbar-sized icon layers.
+- Updated the runtime window icon to use the same desktop icon artwork.
+- Rebuilt the ICO so pinned shortcuts and the running taskbar icon use the same visual source.
+- Aligned the Windows app identity used by the running app and installer shortcuts.
+
 ## 0.1.14
 
 - Reworked the small Windows icon layers used by the taskbar and pinned shortcuts.
