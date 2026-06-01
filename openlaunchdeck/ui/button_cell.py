@@ -185,22 +185,24 @@ class ButtonCell(QWidget):
         if badge:
             self._draw_badge(painter, rect, badge)
 
-        title_font = QFont("Segoe UI", 9 if self._density == "compact" else 10 if self._density == "comfortable" else 11, QFont.Weight.Bold)
+        title_font = QFont("Segoe UI", 8 if self._density == "compact" else 9 if self._density == "comfortable" else 10, QFont.Weight.Bold)
         title_font.setStretch(94)
         painter.setFont(title_font)
         title_color = QColor("#f8fafc") if button.enabled else QColor("#94a3b8")
         painter.setPen(title_color)
-        title_rect = rect.adjusted(7, 29, -7, -21)
+        title_bottom_padding = {"compact": 25, "comfortable": 31, "large": 35}.get(self._density, 31)
+        title_rect = rect.adjusted(7, 28, -7, -title_bottom_padding)
         self._draw_fitted_center(painter, title_rect, label, minimum_size=7)
 
         action_label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
-        action_font = QFont("Segoe UI", 7 if self._density == "compact" else 8, QFont.Weight.DemiBold)
+        action_font = QFont("Segoe UI", 6 if self._density == "compact" else 7, QFont.Weight.DemiBold)
         painter.setFont(action_font)
-        action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=7)
+        action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=6)
         painter.setFont(action_font)
         action_text = metrics.elidedText(action_label, Qt.TextElideMode.ElideRight, max(18, rect.width() - 20))
-        pill_height = 14 if self._density == "compact" else 15
-        pill = QRect(rect.left() + 8, rect.bottom() - pill_height - 6, rect.width() - 16, pill_height)
+        pill_height = 12 if self._density == "compact" else 13 if self._density == "comfortable" else 14
+        pill_bottom_margin = 4 if self._density == "compact" else 5
+        pill = QRect(rect.left() + 8, rect.bottom() - pill_height - pill_bottom_margin, rect.width() - 16, pill_height)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(7, 12, 20, 190))
         painter.drawRoundedRect(pill, 7, 7)
