@@ -15,7 +15,9 @@ def test_app_icon_assets_exist_and_load():
     assert (ICONS_DIR / "openlaunchdeck.svg").exists()
     assert (ICONS_DIR / "openlaunchdeck.ico").exists()
     assert (ICONS_DIR / "openlaunchdeck_256.png").exists()
-    assert not app_icon().isNull()
+    icon = app_icon()
+    assert not icon.isNull()
+    assert max(size.width() for size in icon.availableSizes()) >= 256
 
 
 def test_app_icon_has_transparent_outer_corners():

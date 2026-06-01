@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.18
+
+- Rebuilt every Windows icon size from the same desktop artwork.
+- Updated the runtime window icon to use the desktop artwork source instead of the old 48px asset.
+
 ## 0.1.17
 
 - Installed a standalone icon file beside the EXE so Windows shortcuts do not depend on stale EXE icon cache entries.
