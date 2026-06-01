@@ -17,8 +17,13 @@ class SoundboardPanel(QDialog):
         self.audio_engine = audio_engine
         self.settings_service = settings_service
         self.setWindowTitle("Soundboard")
+        self.setObjectName("SoundboardPanel")
+        self.resize(560, 520)
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
         form = QFormLayout()
+        form.setSpacing(10)
         self.output_combo = QComboBox()
         self.output_combo.addItem("System default", "")
         for device in list_output_devices():
@@ -35,12 +40,17 @@ class SoundboardPanel(QDialog):
         form.addRow("Global Volume", self.volume_spin)
         layout.addLayout(form)
 
-        layout.addWidget(QLabel("Currently Playing"))
+        title = QLabel("Currently Playing")
+        title.setObjectName("SectionTitle")
+        layout.addWidget(title)
         self.list_widget = QListWidget()
         layout.addWidget(self.list_widget)
         self.stop_all_button = QPushButton("Stop All Sounds")
         self.refresh_button = QPushButton("Refresh")
         self.docs_button = QPushButton("Open Soundboard Docs")
+        self.stop_all_button.setObjectName("PrimaryButton")
+        self.refresh_button.setObjectName("SecondaryButton")
+        self.docs_button.setObjectName("SecondaryButton")
         layout.addWidget(self.stop_all_button)
         layout.addWidget(self.refresh_button)
         layout.addWidget(self.docs_button)

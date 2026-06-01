@@ -7,6 +7,7 @@ from typing import Any
 @dataclass(slots=True)
 class Settings:
     theme: str = "dark"
+    grid_density: str = "comfortable"
     auto_connect: bool = True
     start_minimized: bool = False
     minimize_to_tray: bool = True
@@ -35,6 +36,8 @@ class Settings:
         values = {key: value for key, value in data.items() if key in allowed}
         settings = cls(**values)
         settings.soundboard_global_volume = max(0, min(100, int(settings.soundboard_global_volume)))
+        if settings.grid_density not in {"compact", "comfortable", "large"}:
+            settings.grid_density = "comfortable"
         if settings.update_channel not in {"stable", "beta"}:
             settings.update_channel = "stable"
         return settings

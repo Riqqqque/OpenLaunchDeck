@@ -17,17 +17,16 @@ Programmer Mode is recommended for predictable pad messages. Device mode can aff
 
 ## Screenshots
 
-Real release screenshots should be added before publishing a tagged release.
+![Main window dark theme](docs/screenshots/main-window-dark.png)
 
-- Main window with 8x8 grid
-- Button editor with action settings
-- MIDI Debug window
-- Soundboard panel
-- Update dialog
+![Main window light theme](docs/screenshots/main-window-light.png)
+
+More screenshots are tracked in [docs/screenshots](docs/screenshots).
 
 ## Features
 
 - Editable 8x8 Launchpad-style grid
+- Modern dark/light desktop UI with configurable grid density
 - Multiple profiles and pages
 - Simulation clicks for setup without hardware
 - MIDI input/output structure for Launchpad Mini MK3
@@ -116,8 +115,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.4
-git push origin v0.1.4
+git tag v0.1.5
+git push origin v0.1.5
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases.

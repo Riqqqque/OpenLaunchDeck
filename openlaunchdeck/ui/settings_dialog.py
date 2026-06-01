@@ -19,15 +19,26 @@ class SettingsDialog(QDialog):
     def __init__(self, settings_service, parent=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Settings")
+        self.setObjectName("SettingsDialog")
+        self.resize(620, 680)
         self.settings_service = settings_service
         settings = settings_service.settings
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
         form = QFormLayout()
+        form.setSpacing(10)
 
         self.theme = QComboBox()
         for theme in ("dark", "light", "system"):
             self.theme.addItem(theme, theme)
         self.theme.setCurrentIndex(max(0, self.theme.findData(settings.theme)))
+
+        self.grid_density = QComboBox()
+        self.grid_density.addItem("Compact", "compact")
+        self.grid_density.addItem("Comfortable", "comfortable")
+        self.grid_density.addItem("Large", "large")
+        self.grid_density.setCurrentIndex(max(0, self.grid_density.findData(settings.grid_density)))
 
         self.auto_connect = QCheckBox()
         self.auto_connect.setChecked(settings.auto_connect)
@@ -63,9 +74,11 @@ class SettingsDialog(QDialog):
         self.native_acceleration = QCheckBox()
         self.native_acceleration.setChecked(settings.use_native_acceleration)
         config_button = QPushButton(str(APP_DATA_DIR))
+        config_button.setObjectName("SecondaryButton")
         config_button.clicked.connect(lambda: self.parent().open_folder(APP_DATA_DIR) if self.parent() else None)
 
         form.addRow("Theme", self.theme)
+        form.addRow("Grid density", self.grid_density)
         form.addRow("Auto-connect", self.auto_connect)
         form.addRow("Start minimized", self.start_minimized)
         form.addRow("Minimize to tray", self.minimize_to_tray)
@@ -94,6 +107,7 @@ class SettingsDialog(QDialog):
     def accept(self) -> None:
         self.settings_service.update(
             theme=self.theme.currentData(),
+            grid_density=self.grid_density.currentData(),
             auto_connect=self.auto_connect.isChecked(),
             start_minimized=self.start_minimized.isChecked(),
             minimize_to_tray=self.minimize_to_tray.isChecked(),

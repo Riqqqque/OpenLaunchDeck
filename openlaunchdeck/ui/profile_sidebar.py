@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QLabel,
     QPushButton,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -21,26 +22,51 @@ class ProfileSidebar(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("SidebarPanel")
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(self)
-        layout.addWidget(QLabel("Profile"))
+        layout.setContentsMargins(16, 18, 16, 18)
+        layout.setSpacing(10)
+
+        title = QLabel("Deck Library")
+        title.setObjectName("PanelTitle")
+        layout.addWidget(title)
+
+        profile_label = QLabel("Profile")
+        profile_label.setObjectName("FieldLabel")
+        layout.addWidget(profile_label)
         self.profile_combo = QComboBox()
         layout.addWidget(self.profile_combo)
-        layout.addWidget(QLabel("Page"))
+
+        page_label = QLabel("Page")
+        page_label.setObjectName("FieldLabel")
+        layout.addWidget(page_label)
         self.page_combo = QComboBox()
         layout.addWidget(self.page_combo)
+
+        page_tools = QLabel("Page Tools")
+        page_tools.setObjectName("SectionTitle")
+        layout.addWidget(page_tools)
         self.add_page_button = QPushButton("Add Page")
-        self.duplicate_page_button = QPushButton("Duplicate Page")
-        self.delete_page_button = QPushButton("Delete Page")
-        self.import_button = QPushButton("Import Profile")
-        self.export_button = QPushButton("Export Profile")
+        self.duplicate_page_button = QPushButton("Duplicate")
+        self.delete_page_button = QPushButton("Delete")
         for button in (
             self.add_page_button,
             self.duplicate_page_button,
             self.delete_page_button,
-            self.import_button,
-            self.export_button,
         ):
+            button.setObjectName("SecondaryButton")
             layout.addWidget(button)
+
+        profile_tools = QLabel("Profiles")
+        profile_tools.setObjectName("SectionTitle")
+        layout.addWidget(profile_tools)
+        self.import_button = QPushButton("Import Profile")
+        self.export_button = QPushButton("Export Profile")
+        for button in (self.import_button, self.export_button):
+            button.setObjectName("SecondaryButton")
+            layout.addWidget(button)
+
         layout.addStretch(1)
         self.profile_combo.currentIndexChanged.connect(lambda: self.profile_changed.emit(str(self.profile_combo.currentData() or "")))
         self.page_combo.currentIndexChanged.connect(lambda: self.page_changed.emit(str(self.page_combo.currentData() or "")))

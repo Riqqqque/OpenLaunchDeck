@@ -1,8 +1,12 @@
 # Screenshots
 
-Add release screenshots here before publishing a tagged build:
+Release screenshots live here so the README can show the current desktop UI:
 
-- `main-window.png`
+- `main-window-dark.png`
+- `main-window-light.png`
+
+Additional useful screenshots for future releases:
+
 - `button-editor.png`
 - `midi-debug.png`
 - `soundboard-panel.png`

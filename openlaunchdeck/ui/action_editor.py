@@ -25,11 +25,14 @@ class ActionEditor(QWidget):
 
     def __init__(self, registry) -> None:
         super().__init__()
+        self.setObjectName("ActionEditor")
         self.registry = registry
         self.action_type_combo = QComboBox()
         for action in sorted(registry.all(), key=lambda item: item.display_name):
             self.action_type_combo.addItem(action.display_name, action.type_name)
         self.form = QFormLayout(self)
+        self.form.setContentsMargins(0, 0, 0, 0)
+        self.form.setSpacing(10)
         self.form.addRow("Action", self.action_type_combo)
         self.field_widgets: dict[str, Any] = {}
         self._config: dict[str, Any] = {}
@@ -125,6 +128,7 @@ class ActionEditor(QWidget):
             layout.setContentsMargins(0, 0, 0, 0)
             edit = QLineEdit(str(value or ""))
             browse = QPushButton("Browse")
+            browse.setObjectName("SecondaryButton")
             layout.addWidget(edit)
             layout.addWidget(browse)
             browse.clicked.connect(lambda: self._browse(edit, field_type))

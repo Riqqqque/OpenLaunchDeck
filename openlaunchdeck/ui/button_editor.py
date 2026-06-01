@@ -36,11 +36,21 @@ class ButtonEditor(QWidget):
         self._notes_timer.timeout.connect(self.apply_changes)
 
         layout = QVBoxLayout(self)
+        self.setObjectName("InspectorPanel")
+        layout.setContentsMargins(18, 18, 18, 18)
+        layout.setSpacing(12)
         self.title = QLabel("A1")
         self.title.setObjectName("PanelTitle")
         layout.addWidget(self.title)
+        self.subtitle = QLabel("Selected pad settings")
+        self.subtitle.setObjectName("PanelHint")
+        layout.addWidget(self.subtitle)
 
+        identity_title = QLabel("Identity")
+        identity_title.setObjectName("SectionTitle")
+        layout.addWidget(identity_title)
         form = QFormLayout()
+        form.setSpacing(10)
         self.label_edit = QLineEdit()
         self.color_combo = QComboBox()
         for color in NAMED_COLORS:
@@ -56,6 +66,9 @@ class ButtonEditor(QWidget):
         form.addRow("Notes", self.notes_edit)
         layout.addLayout(form)
 
+        action_title = QLabel("Action")
+        action_title.setObjectName("SectionTitle")
+        layout.addWidget(action_title)
         self.action_editor = ActionEditor(registry)
         layout.addWidget(self.action_editor)
 
@@ -65,7 +78,9 @@ class ButtonEditor(QWidget):
         self.copy_button = QPushButton("Copy")
         self.paste_button = QPushButton("Paste")
         for button in (self.test_button, self.clear_button, self.copy_button, self.paste_button):
+            button.setObjectName("SecondaryButton")
             buttons.addWidget(button)
+        self.test_button.setObjectName("PrimaryButton")
         layout.addLayout(buttons)
         layout.addStretch(1)
 
@@ -84,7 +99,8 @@ class ButtonEditor(QWidget):
     def set_button(self, button: ButtonConfig) -> None:
         self._loading = True
         self.button = button
-        self.title.setText(button.id)
+        self.title.setText(f"Button {button.id}")
+        self.subtitle.setText(button.label or "Empty pad")
         self.label_edit.setText(button.label)
         self.color_combo.setCurrentIndex(max(0, self.color_combo.findData(button.color)))
         self.enabled_check.setChecked(button.enabled)
