@@ -85,6 +85,7 @@ class MainWindow(QMainWindow):
         self._startup_update_thread: QThread | None = None
         self._startup_update_worker: UpdateCheckWorker | None = None
         self._grid_focus_mode = False
+        self._midi_debug_callbacks_active = False
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
         self.resize(1480, 920)
@@ -93,8 +94,8 @@ class MainWindow(QMainWindow):
 
         self.services.action_runner.completion_callback = lambda button_id, result: self.action_finished.emit(button_id, result)
         self.services.device.button_callback = lambda button_id, pressed, raw: self.hardware_button.emit(button_id, pressed, raw)
-        self.services.device.midi_in_callback = lambda message, text: self.midi_in.emit(message, text)
-        self.services.device.midi_out_callback = lambda message, text: self.midi_out.emit(message, text)
+        self.services.device.midi_in_callback = None
+        self.services.device.midi_out_callback = None
         self.services.device.disconnect_callback = lambda reason: self.device_disconnected.emit(reason)
         self.services.audio_engine.state_changed_callback = lambda: self.audio_state_changed.emit()
 
@@ -549,6 +550,7 @@ class MainWindow(QMainWindow):
         self.services.device.close()
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
+        self.services.lighting_service.clear()
         self.refresh_all()
 
     def reconnect_device(self) -> None:
@@ -558,16 +560,30 @@ class MainWindow(QMainWindow):
     def show_midi_debug(self) -> None:
         if self.midi_debug_window is None:
             self.midi_debug_window = MidiDebugWindow(self.services.device)
+            self.midi_debug_window.closed.connect(self.disable_midi_debug_callbacks)
         self.midi_debug_window.refresh_ports()
+        self.enable_midi_debug_callbacks()
         self.midi_debug_window.show()
         self.midi_debug_window.raise_()
 
+    def enable_midi_debug_callbacks(self) -> None:
+        if self._midi_debug_callbacks_active:
+            return
+        self.services.device.midi_in_callback = lambda message, text: self.midi_in.emit(message, text)
+        self.services.device.midi_out_callback = lambda message, text: self.midi_out.emit(message, text)
+        self._midi_debug_callbacks_active = True
+
+    def disable_midi_debug_callbacks(self) -> None:
+        self.services.device.midi_in_callback = None
+        self.services.device.midi_out_callback = None
+        self._midi_debug_callbacks_active = False
+
     def on_midi_in(self, message, text: str) -> None:
-        if self.midi_debug_window:
+        if self.midi_debug_window and self.midi_debug_window.isVisible():
             self.midi_debug_window.append_incoming(message, text)
 
     def on_midi_out(self, message, text: str) -> None:
-        if self.midi_debug_window:
+        if self.midi_debug_window and self.midi_debug_window.isVisible():
             self.midi_debug_window.append_outgoing(message, text)
 
     def on_action_finished(self, button_id: str, result) -> None:
@@ -778,6 +794,7 @@ class MainWindow(QMainWindow):
     def on_device_disconnected(self, reason: str) -> None:
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
+        self.services.lighting_service.clear()
         self.statusBar().showMessage(f"MIDI device disconnected: {reason}", 5000)
         self.refresh_all()
 

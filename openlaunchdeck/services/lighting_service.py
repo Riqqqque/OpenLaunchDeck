@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor
 import threading
 import time
 
@@ -8,7 +9,13 @@ from .performance_monitor import PerformanceMonitor
 
 
 class LightingService:
-    def __init__(self, device=None, logger=None, performance_monitor: PerformanceMonitor | None = None) -> None:
+    def __init__(
+        self,
+        device=None,
+        logger=None,
+        performance_monitor: PerformanceMonitor | None = None,
+        async_output: bool = False,
+    ) -> None:
         self.device = device
         self.logger = logger
         self.performance_monitor = performance_monitor or PerformanceMonitor(logger)
@@ -16,6 +23,11 @@ class LightingService:
         self._blink_timers: dict[str, threading.Timer] = {}
         self._blink_states: dict[str, bool] = {}
         self._lock = threading.RLock()
+        self._executor = (
+            ThreadPoolExecutor(max_workers=1, thread_name_prefix="openlaunchdeck-lighting")
+            if async_output
+            else None
+        )
 
     def set_device(self, device) -> None:
         self.device = device
@@ -31,16 +43,12 @@ class LightingService:
                 if self.logger:
                     self.logger.debug("Lighting refresh skipped; no pad color changes.")
                 return
-            try:
-                self.device.set_many_pad_colors(changed)
-                self._last_colors = dict(colors)
-                elapsed_ms = (time.perf_counter() - start) * 1000
-                self.performance_monitor.record("lighting_refresh", elapsed_ms, pads=len(changed))
-                if self.logger:
-                    self.logger.debug("Lighting refresh pads=%s elapsed=%.3f ms", len(changed), elapsed_ms)
-            except Exception:
-                if self.logger:
-                    self.logger.exception("Could not refresh Launchpad lighting.")
+            self._last_colors = dict(colors)
+            self._send_many(changed)
+            elapsed_ms = (time.perf_counter() - start) * 1000
+            self.performance_monitor.record("lighting_refresh", elapsed_ms, pads=len(changed))
+            if self.logger:
+                self.logger.debug("Lighting refresh pads=%s elapsed=%.3f ms", len(changed), elapsed_ms)
 
     def build_page_colors(self, page, audio_engine=None, dangerous_service=None) -> dict[str, str]:
         colors: dict[str, str] = {}
@@ -61,12 +69,7 @@ class LightingService:
             return
         start = time.perf_counter()
         restore_color = self._last_colors.get(button_id, "off")
-        try:
-            self.device.set_pad_color(button_id, color)
-        except Exception:
-            if self.logger:
-                self.logger.exception("Could not flash Launchpad pad.")
-            return
+        self._send_one(button_id, color)
         elapsed_ms = (time.perf_counter() - start) * 1000
         self.performance_monitor.record("lighting_flash", elapsed_ms, button=button_id, color=color)
         if self.logger:
@@ -82,7 +85,7 @@ class LightingService:
             if button_id in self._blink_timers:
                 return
             self._blink_states[button_id] = False
-            self.device.set_pad_color(button_id, color_a)
+            self._send_one(button_id, color_a)
             self._schedule_blink(button_id, color_a, color_b, period)
 
     def stop_blink(self, button_id: str) -> None:
@@ -93,7 +96,7 @@ class LightingService:
                 timer.cancel()
             restore_color = self._last_colors.get(button_id)
         if restore_color and self.device and getattr(self.device, "connected", False):
-            self.device.set_pad_color(button_id, restore_color)
+            self._send_one(button_id, restore_color)
 
     def stop_all_blinks(self) -> None:
         for button_id in list(self._blink_timers):
@@ -101,16 +104,26 @@ class LightingService:
 
     def clear(self) -> None:
         if self.device and getattr(self.device, "connected", False):
-            self.device.clear_all_pads()
+            self._submit(self.device.clear_all_pads)
         with self._lock:
             self._last_colors.clear()
+
+    def shutdown(self) -> None:
+        with self._lock:
+            timers = list(self._blink_timers.values())
+            self._blink_timers.clear()
+            self._blink_states.clear()
+        for timer in timers:
+            timer.cancel()
+        if self._executor is not None:
+            self._executor.shutdown(wait=False, cancel_futures=True)
 
     def _restore_after_flash(self, button_id: str, restore_color: str) -> None:
         with self._lock:
             if button_id in self._blink_timers:
                 return
         if self.device and getattr(self.device, "connected", False):
-            self.device.set_pad_color(button_id, restore_color)
+            self._send_one(button_id, restore_color)
 
     def _schedule_blink(self, button_id: str, color_a: str, color_b: str, period: float) -> None:
         timer = threading.Timer(period, self._blink_once, args=(button_id, color_a, color_b, period))
@@ -125,7 +138,46 @@ class LightingService:
             state = not self._blink_states.get(button_id, False)
             self._blink_states[button_id] = state
         if self.device and getattr(self.device, "connected", False):
-            self.device.set_pad_color(button_id, color_a if state else color_b)
+            self._send_one(button_id, color_a if state else color_b)
         with self._lock:
             if button_id in self._blink_timers:
                 self._schedule_blink(button_id, color_a, color_b, period)
+
+    def _send_many(self, colors: dict[str, str]) -> None:
+        if not self.device or not getattr(self.device, "connected", False):
+            return
+        self._submit(self._send_many_now, dict(colors))
+
+    def _send_many_now(self, colors: dict[str, str]) -> None:
+        start = time.perf_counter()
+        try:
+            if self.device and getattr(self.device, "connected", False):
+                self.device.set_many_pad_colors(colors)
+        except Exception:
+            if self.logger:
+                self.logger.exception("Could not refresh Launchpad lighting.")
+        finally:
+            self.performance_monitor.record_since("lighting_output", start, pads=len(colors))
+
+    def _send_one(self, button_id: str, color: str) -> None:
+        if not self.device or not getattr(self.device, "connected", False):
+            return
+        self._submit(self._send_one_now, button_id, color)
+
+    def _send_one_now(self, button_id: str, color: str) -> None:
+        try:
+            if self.device and getattr(self.device, "connected", False):
+                self.device.set_pad_color(button_id, color)
+        except Exception:
+            if self.logger:
+                self.logger.exception("Could not update Launchpad pad lighting.")
+
+    def _submit(self, func, *args) -> None:
+        if self._executor is None:
+            func(*args)
+            return
+        try:
+            self._executor.submit(func, *args)
+        except RuntimeError:
+            if self.logger:
+                self.logger.debug("Lighting update skipped because the output worker is shutting down.")

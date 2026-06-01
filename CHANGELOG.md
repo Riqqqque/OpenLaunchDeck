@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.16
+
+- Reduced normal action logging so rapid button presses do not write to disk unless there is a warning or debug logging is enabled.
+- Kept performance timing quiet by default to avoid extra work during normal use.
+- Moved Launchpad lighting output onto a single background worker so MIDI lighting sends do not stall the UI.
+- Disabled live MIDI debug UI callbacks while the MIDI Debug window is closed.
+- Added a small action queue limit to prevent runaway background tasks from piling up.
+- Reset the cached lighting state on disconnect so reconnects refresh pads cleanly.
+
 ## 0.1.15
 
 - Made the desktop icon artwork the source for taskbar-sized icon layers.

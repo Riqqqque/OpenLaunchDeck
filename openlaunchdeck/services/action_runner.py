@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
+import logging
+import threading
+from concurrent.futures import Future, ThreadPoolExecutor
 from collections.abc import Callable
 
 from ..actions.base import ActionResult
@@ -24,6 +26,8 @@ class ActionRunner:
         logger=None,
         performance_monitor: PerformanceMonitor | None = None,
         completion_callback: Callable[[str, ActionResult], None] | None = None,
+        max_workers: int = 4,
+        max_pending: int = 16,
     ) -> None:
         self.registry = registry
         self.profile_service = profile_service
@@ -35,7 +39,10 @@ class ActionRunner:
         self.logger = logger
         self.performance_monitor = performance_monitor or PerformanceMonitor(logger)
         self.completion_callback = completion_callback
-        self.executor = ThreadPoolExecutor(max_workers=8, thread_name_prefix="openlaunchdeck-action")
+        self.executor = ThreadPoolExecutor(max_workers=max(1, max_workers), thread_name_prefix="openlaunchdeck-action")
+        self._pending_limit = max(1, max_pending)
+        self._pending_count = 0
+        self._pending_lock = threading.Lock()
 
     def handle_button_press(self, button_id: str, source: str = "simulation") -> ActionResult:
         start = self.performance_monitor.now()
@@ -87,7 +94,12 @@ class ActionRunner:
             action=action.type_name,
         )
         if action.blocking:
-            self.executor.submit(self._run_action, button_id, action, context, config)
+            if not self._try_reserve_action_slot():
+                result = ActionResult.fail("Action queue is busy. Try again in a moment.")
+                self._complete(button_id, result)
+                return result
+            future = self.executor.submit(self._run_action, button_id, action, context, config)
+            future.add_done_callback(self._release_action_slot)
             result = ActionResult.ok("Action started.")
             self._complete(button_id, result)
             return result
@@ -107,7 +119,21 @@ class ActionRunner:
 
     def _complete(self, button_id: str, result: ActionResult) -> None:
         if self.logger:
-            level = self.logger.info if result.success else self.logger.warning
-            level("Button %s: %s", button_id, result.message)
+            if result.success:
+                if self.logger.isEnabledFor(logging.DEBUG):
+                    self.logger.debug("Button %s: %s", button_id, result.message)
+            else:
+                self.logger.warning("Button %s: %s", button_id, result.message)
         if self.completion_callback:
             self.completion_callback(button_id, result)
+
+    def _try_reserve_action_slot(self) -> bool:
+        with self._pending_lock:
+            if self._pending_count >= self._pending_limit:
+                return False
+            self._pending_count += 1
+            return True
+
+    def _release_action_slot(self, _future: Future) -> None:
+        with self._pending_lock:
+            self._pending_count = max(0, self._pending_count - 1)
