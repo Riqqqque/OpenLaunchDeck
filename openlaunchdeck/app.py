@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import sys
 import time
 from dataclasses import dataclass
@@ -21,6 +22,15 @@ from .services.settings_service import SettingsService
 from .ui.icons import app_icon
 from .ui.main_window import MainWindow
 from .version import APP_NAME
+
+
+def _set_windows_app_user_model_id() -> None:
+    if sys.platform != "win32":
+        return
+    try:
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Rique.OpenLaunchDeck")
+    except Exception:
+        pass
 
 
 @dataclass(slots=True)
@@ -82,6 +92,7 @@ def build_services() -> AppServices:
 
 def run() -> int:
     start = time.perf_counter()
+    _set_windows_app_user_model_id()
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(APP_NAME)
