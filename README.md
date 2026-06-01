@@ -116,8 +116,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.3
-git push origin v0.1.3
+git tag v0.1.4
+git push origin v0.1.4
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases.
@@ -134,6 +134,8 @@ When the Launchpad is connected:
 4. Press pads and watch raw MIDI messages.
 5. Use calibration if parsed button IDs do not match A1-H8.
 6. Save the mapping and reconnect.
+
+The Launchpad Mini MK3 has extra navigation and scene-launch buttons around the 8x8 grid. The current OpenLaunchDeck mapping treats the 8x8 grid as the reliable macro surface. To change OpenLaunchDeck pages today, assign a grid pad to the Switch Page action. Extra hardware buttons can be inspected in MIDI Debug, but they are not bound to previous/next OpenLaunchDeck pages by default until their messages are verified on hardware.
 
 ## MIDI Troubleshooting
 

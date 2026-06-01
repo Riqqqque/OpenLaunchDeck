@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.4
+
+- Refreshed the grid, sidebar, status bar, and lighting after Switch Page actions.
+- Documented that extra Launchpad navigation buttons are not bound to app page navigation until verified on hardware.
+
 ## 0.1.3
 
 - Kept disabled grid buttons selectable so users can edit or re-enable them.

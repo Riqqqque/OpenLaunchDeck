@@ -17,6 +17,8 @@ Mapping code is isolated in `openlaunchdeck/devices/midi_mapping.py`. Device cod
 
 The default preset follows the common Launchpad Mini MK3 Programmer Mode note layout, with A1-A8 on notes 81-88 and H1-H8 on notes 11-18. Verify this with MIDI Debug because device mode and driver naming can affect behavior.
 
+The Launchpad Mini MK3 also has navigation and scene-launch buttons outside the 8x8 grid. In Programmer Mode, those controls can send MIDI messages too, but OpenLaunchDeck does not bind them to previous/next page actions by default yet. Capture their raw messages in MIDI Debug before adding a built-in mapping.
+
 User mappings are saved as JSON in:
 
 `%APPDATA%\OpenLaunchDeck\midi_mappings`

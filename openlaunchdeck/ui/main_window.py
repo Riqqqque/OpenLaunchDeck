@@ -421,6 +421,11 @@ class MainWindow(QMainWindow):
 
     def on_action_finished(self, button_id: str, result) -> None:
         self.last_result_status.setText(f"Result: {result.message[:60]}")
+        if result.details.get("page_changed"):
+            self.services.lighting_service.stop_blink(button_id)
+            self.refresh_all()
+            self.refresh_lighting()
+            return
         if "Press again" in result.message:
             self.services.lighting_service.blink(button_id, "yellow", "red")
             QTimer.singleShot(5200, self.refresh_after_danger_timeout)
