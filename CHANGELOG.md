@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.7
+
+- Made app grid clicks select pads for editing without running their actions.
+- Kept action execution behind the selected button's Test control or real MIDI pad presses.
+- Made the update dialog auto-check when opened from the app.
+- Polished the header bar, mode indicator, update button, and dark theme label styling.
+
 ## 0.1.6
 
 - Shortened the tagged release build path used by GitHub Actions.

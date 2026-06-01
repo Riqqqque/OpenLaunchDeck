@@ -12,7 +12,8 @@
 - Run `pytest`.
 - Launch the app from source with `python -m openlaunchdeck.main`.
 - Verify simulation mode without hardware.
-- Verify simulation button presses reach the action runner.
+- Verify grid clicks select buttons for editing without running actions.
+- Verify the selected button's Test control reaches the action runner.
 - Verify profile save/load.
 - Verify starter profiles load.
 - Verify update manifest parsing and checksum failure handling.

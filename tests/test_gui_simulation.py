@@ -11,7 +11,7 @@ from openlaunchdeck.models.page import Page
 from openlaunchdeck.ui.main_window import MainWindow
 
 
-def test_gui_grid_and_simulation_use_action_runner():
+def test_grid_click_selects_without_running_action():
     app = QApplication.instance() or QApplication([])
     services = build_services()
     services.settings_service.settings.first_run_complete = True
@@ -23,12 +23,18 @@ def test_gui_grid_and_simulation_use_action_runner():
         calls.append((button_id, source))
 
     services.action_runner.handle_button_press = fake_press
-    window.grid.button_clicked.emit("A1")
+    window.grid.button_clicked.emit("B2")
+    app.processEvents()
+
+    assert calls == []
+
     window.hardware_button.emit("B2", True, None)
+    window.editor.test_requested.emit()
     app.processEvents()
 
     assert len(window.grid.cells) == 64
-    assert ("A1", "simulation") in calls
+    assert window.grid.selected_button_id == "B2"
+    assert calls.count(("B2", "simulation")) == 1
     assert ("B2", "midi") in calls
 
     window._force_quit = True
@@ -56,7 +62,7 @@ def test_switch_page_action_refreshes_grid_and_status():
     )
     window.refresh_all()
 
-    window.grid.button_clicked.emit("A1")
+    window.editor.test_requested.emit()
     app.processEvents()
 
     assert services.profile_service.current_page_id == "second"

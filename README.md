@@ -28,7 +28,7 @@ More screenshots are tracked in [docs/screenshots](docs/screenshots).
 - Editable 8x8 Launchpad-style grid
 - Modern dark/light desktop UI with configurable grid density
 - Multiple profiles and pages
-- Simulation clicks for setup without hardware
+- Simulation testing without hardware through the button editor
 - MIDI input/output structure for Launchpad Mini MK3
 - Isolated A1-H8 MIDI mapping with calibration
 - Page lighting refresh with changed-pad batching
@@ -121,15 +121,15 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.6
-git push origin v0.1.6
+git tag v0.1.7
+git push origin v0.1.7
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases. It uses the same build script with CI-specific fast packaging flags so tagged releases spend less time on packaging.
 
 ## First Setup
 
-On first launch, choose a starter profile or start with a blank deck. If no Launchpad is connected, OpenLaunchDeck stays in simulation mode and lets you edit profiles and test actions by clicking grid cells.
+On first launch, choose a starter profile or start with a blank deck. If no Launchpad is connected, OpenLaunchDeck stays in simulation mode. Click grid pads to edit them, then use the selected button's Test control when you want to run an action from the app.
 
 When the Launchpad is connected:
 
