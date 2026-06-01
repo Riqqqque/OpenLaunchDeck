@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Shortened the tagged release build path used by GitHub Actions.
+- Added faster ZIP packaging for release builds.
+- Let the installer script use faster compression settings in automated releases.
+- Added build step timing output so slow release steps are easier to spot.
+
 ## 0.1.5
 
 - Redesigned the main window with a cleaner header, workspace panels, and quick actions.
