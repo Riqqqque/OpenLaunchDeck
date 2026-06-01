@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.10
+
+- Lowered and slightly scaled the grid action chips so `Volume` and `No Action` labels have more breathing room.
+- Tightened the grid button title area so action chips no longer crowd the button name.
+- Refreshed dark and light screenshots.
+
 ## 0.1.9
 
 - Reworked the app icon again with a clearer small-size design for desktop and taskbar use.
