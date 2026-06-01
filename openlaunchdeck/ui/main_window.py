@@ -126,11 +126,6 @@ class MainWindow(QMainWindow):
         header_layout.setContentsMargins(18, 14, 18, 14)
         header_layout.setSpacing(14)
 
-        icon = QLabel()
-        icon.setObjectName("HeaderIcon")
-        icon.setPixmap(app_icon().pixmap(38, 38))
-        header_layout.addWidget(icon)
-
         brand = QWidget()
         brand.setObjectName("HeaderBrand")
         brand_layout = QVBoxLayout(brand)
@@ -183,7 +178,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(14)
         self.sidebar = ProfileSidebar()
-        self.sidebar.setFixedWidth(250)
+        self.sidebar.setFixedWidth(238)
         self.grid = GridWidget()
         self.grid.set_density(self.services.settings_service.settings.grid_density)
         self.editor = ButtonEditor(self.services.action_registry)
@@ -192,7 +187,7 @@ class MainWindow(QMainWindow):
         self.editor_scroll.setWidgetResizable(True)
         self.editor_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.editor_scroll.setWidget(self.editor)
-        self.editor_scroll.setFixedWidth(400)
+        self.editor_scroll.setFixedWidth(382)
 
         deck_panel = QFrame()
         deck_panel.setObjectName("DeckPanel")

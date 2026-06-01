@@ -23,13 +23,6 @@ QWidget#HeaderBrand, QWidget#HeaderMeta {
   background: transparent;
 }
 
-QLabel#HeaderIcon {
-  background: #0b111a;
-  border: 1px solid #31435c;
-  border-radius: 10px;
-  padding: 7px;
-}
-
 QFrame#HeaderActions {
   background: #0b111a;
   border: 1px solid #243146;

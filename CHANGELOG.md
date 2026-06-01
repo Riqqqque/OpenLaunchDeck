@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.8
+
+- Reworked the app icon and regenerated Windows icon assets.
+- Removed the header icon from the main window title area.
+- Improved Launchpad grid pad sizing, shading, and label fitting.
+- Made small action labels on pads easier to read.
+
 ## 0.1.7
 
 - Made app grid clicks select pads for editing without running their actions.

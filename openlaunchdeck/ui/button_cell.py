@@ -9,9 +9,29 @@ from ..models.button import ButtonConfig
 
 
 CELL_SIZES = {
-    "compact": QSize(76, 66),
-    "comfortable": QSize(92, 78),
-    "large": QSize(108, 92),
+    "compact": QSize(80, 70),
+    "comfortable": QSize(96, 84),
+    "large": QSize(112, 98),
+}
+
+ACTION_LABELS = {
+    "noop": "No Action",
+    "open_url": "URL",
+    "open_path": "Path",
+    "run_command": "Command",
+    "powershell": "PS",
+    "hotkey": "Hotkey",
+    "type_text": "Type",
+    "media_control": "Media",
+    "volume_control": "Volume",
+    "http_request": "HTTP",
+    "play_sound": "Sound",
+    "stop_sound": "Stop",
+    "multi_action": "Multi",
+    "delay": "Delay",
+    "switch_page": "Page",
+    "ssh_command": "SSH",
+    "obs_websocket": "OBS",
 }
 
 
@@ -118,7 +138,7 @@ class ButtonCell(QWidget):
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect().adjusted(2, 2, -2, -2)
+        rect = self.rect().adjusted(3, 3, -3, -3)
         button = self._button
         action_type = button.action.type if button.action else "noop"
         label = button.label or "Empty"
@@ -129,60 +149,61 @@ class ButtonCell(QWidget):
             color_name = "off"
 
         accent = QColor(NAMED_COLORS.get(color_name, color_name if color_name.startswith("#") else NAMED_COLORS["dim"]))
-        base = QColor("#171d27")
+        base = QColor("#111a25")
         if button.enabled:
-            base = self._blend(base, accent, 0.18 if not self._hover else 0.26)
+            base = self._blend(base, accent, 0.075 if not self._hover else 0.13)
         else:
-            base = QColor("#111722")
+            base = QColor("#101722")
         if self._pressed:
-            base = self._blend(base, QColor("#ffffff"), 0.08)
+            base = self._blend(base, accent, 0.18)
 
-        border = QColor("#334155")
+        border = QColor("#2f3d52")
         if self._selected:
-            border = QColor("#e5f4ff")
+            border = QColor("#9be7ff")
         elif self._armed:
             border = QColor("#facc15")
         elif self._playing:
             border = QColor("#38bdf8")
         elif self._hover:
-            border = QColor("#64748b")
+            border = self._blend(QColor("#64748b"), accent, 0.35)
 
         painter.setPen(QPen(border, 2 if self._selected else 1.5))
         painter.setBrush(base)
-        painter.drawRoundedRect(rect, 8, 8)
+        painter.drawRoundedRect(rect, 9, 9)
 
-        strip = QRect(rect.left() + 8, rect.top() + 7, max(18, rect.width() - 16), 4)
+        strip = QRect(rect.left() + 9, rect.top() + 8, max(18, rect.width() - 18), 5)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(accent if button.enabled else QColor("#273244"))
-        painter.drawRoundedRect(strip, 2, 2)
+        painter.drawRoundedRect(strip, 3, 3)
 
         painter.setPen(QColor("#dbeafe") if button.enabled else QColor("#64748b"))
-        id_font = QFont("Segoe UI", 8, QFont.Weight.DemiBold)
+        id_font = QFont("Segoe UI", 7 if self._density == "compact" else 8, QFont.Weight.DemiBold)
         painter.setFont(id_font)
-        painter.drawText(rect.adjusted(10, 12, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
+        painter.drawText(rect.adjusted(11, 15, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
 
         badge = self._badge_text(button.enabled)
         if badge:
             self._draw_badge(painter, rect, badge)
 
-        title_font = QFont("Segoe UI", 10 if self._density != "large" else 11, QFont.Weight.Bold)
+        title_font = QFont("Segoe UI", 9 if self._density == "compact" else 10 if self._density == "comfortable" else 11, QFont.Weight.Bold)
+        title_font.setStretch(94)
         painter.setFont(title_font)
         title_color = QColor("#f8fafc") if button.enabled else QColor("#94a3b8")
-        if color_name in {"white", "yellow"} and button.enabled:
-            title_color = QColor("#0f172a")
         painter.setPen(title_color)
-        title_rect = rect.adjusted(9, 27, -9, -22)
-        self._draw_elided_center(painter, title_rect, label)
+        title_rect = rect.adjusted(7, 29, -7, -24)
+        self._draw_fitted_center(painter, title_rect, label, minimum_size=7)
 
-        action_label = action_type.replace("_", " ").title()
-        action_font = QFont("Segoe UI", 7 if self._density == "compact" else 8, QFont.Weight.DemiBold)
+        action_label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
+        action_font = QFont("Segoe UI", 8 if self._density == "compact" else 9, QFont.Weight.DemiBold)
         painter.setFont(action_font)
-        metrics = QFontMetrics(action_font)
+        action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=7)
+        painter.setFont(action_font)
         action_text = metrics.elidedText(action_label, Qt.TextElideMode.ElideRight, max(18, rect.width() - 20))
-        pill = QRect(rect.left() + 8, rect.bottom() - 19, rect.width() - 16, 13)
+        pill_height = 17 if self._density == "compact" else 18
+        pill = QRect(rect.left() + 8, rect.bottom() - pill_height - 6, rect.width() - 16, pill_height)
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(8, 13, 20, 168))
-        painter.drawRoundedRect(pill, 6, 6)
+        painter.setBrush(QColor(7, 12, 20, 190))
+        painter.drawRoundedRect(pill, 7, 7)
         painter.setPen(QColor("#cbd5e1") if button.enabled else QColor("#64748b"))
         painter.drawText(pill, Qt.AlignmentFlag.AlignCenter, action_text)
 
@@ -208,22 +229,40 @@ class ButtonCell(QWidget):
         painter.setPen(QColor("#111827") if text != "OFF" else QColor("#cbd5e1"))
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, text)
 
-    def _draw_elided_center(self, painter: QPainter, rect: QRect, text: str) -> None:
-        metrics = QFontMetrics(painter.font())
+    def _draw_fitted_center(self, painter: QPainter, rect: QRect, text: str, minimum_size: int) -> None:
+        base_font = QFont(painter.font())
+        text = text.strip()
         words = text.split()
         if len(words) > 1:
             midpoint = (len(words) + 1) // 2
             lines = [" ".join(words[:midpoint]), " ".join(words[midpoint:])]
+        elif "/" in text and len(text) > 7:
+            lines = [part for part in text.split("/") if part]
         else:
             lines = [text]
-        line_height = metrics.height()
-        total_height = line_height * len(lines)
-        y = rect.center().y() - total_height // 2
+
+        fitted: list[tuple[str, QFont, QFontMetrics]] = []
         for line in lines:
+            font, metrics = self._fit_font(base_font, line, rect.width(), minimum_size)
+            fitted.append((line, font, metrics))
+
+        total_height = sum(metrics.height() for _, _, metrics in fitted)
+        y = rect.center().y() - total_height // 2
+        for line, font, metrics in fitted:
+            painter.setFont(font)
             elided = metrics.elidedText(line, Qt.TextElideMode.ElideRight, rect.width())
-            line_rect = QRect(rect.left(), y, rect.width(), line_height)
+            line_rect = QRect(rect.left(), y, rect.width(), metrics.height())
             painter.drawText(line_rect, Qt.AlignmentFlag.AlignCenter, elided)
-            y += line_height
+            y += metrics.height()
+
+    @staticmethod
+    def _fit_font(base_font: QFont, text: str, width: int, minimum_size: int) -> tuple[QFont, QFontMetrics]:
+        font = QFont(base_font)
+        metrics = QFontMetrics(font)
+        while metrics.horizontalAdvance(text) > width and font.pointSize() > minimum_size:
+            font.setPointSize(font.pointSize() - 1)
+            metrics = QFontMetrics(font)
+        return font, metrics
 
     @staticmethod
     def _blend(base: QColor, accent: QColor, amount: float) -> QColor:
