@@ -45,8 +45,27 @@ QScrollArea#InspectorScroll {
   border: none;
 }
 
+QScrollArea#SidebarScroll, QScrollArea#GridScroll {
+  background: transparent;
+  border: none;
+}
+
 QScrollArea#InspectorScroll > QWidget > QWidget {
   background: #151b24;
+}
+
+QScrollArea#SidebarScroll > QWidget > QWidget {
+  background: transparent;
+}
+
+QSplitter#WorkspaceSplitter::handle {
+  background: transparent;
+  width: 8px;
+}
+
+QSplitter#WorkspaceSplitter::handle:hover {
+  background: #243146;
+  border-radius: 4px;
 }
 
 QLabel#HeaderTitle {
@@ -242,4 +261,38 @@ QStatusBar QLabel {
   background: transparent;
   color: #b7c7da;
   padding: 0 6px;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+  background: transparent;
+  border: none;
+  margin: 0;
+}
+
+QScrollBar:vertical {
+  width: 10px;
+}
+
+QScrollBar:horizontal {
+  height: 10px;
+}
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+  background: #334155;
+  border-radius: 5px;
+  min-height: 24px;
+  min-width: 24px;
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+  background: #475569;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+  width: 0;
+  height: 0;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+  background: transparent;
 }

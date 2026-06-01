@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.12
+
+- Improved window resizing with a splitter-based workspace layout.
+- Added responsive narrow-window behavior that keeps the full 8-column Launchpad grid visible.
+- Put the Launchpad grid inside a scrollable deck area for shorter windows.
+- Styled workspace scrollbars so compact windows feel cleaner.
+
 ## 0.1.11
 
 - Added Windows EXE version metadata so Explorer shows OpenLaunchDeck product and file version details.
