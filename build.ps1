@@ -1,7 +1,12 @@
 param(
     [switch]$SkipInstaller,
     [switch]$BuildNative,
-    [switch]$RequireInstaller
+    [switch]$RequireInstaller,
+    [switch]$UseCurrentPython,
+    [switch]$SkipPipUpgrade,
+    [switch]$SkipDependencyInstall,
+    [switch]$SkipTests,
+    [switch]$FastPackage
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,9 +18,37 @@ function Invoke-Checked {
         [scriptblock]$Command,
         [string]$Name
     )
+    $Timer = [System.Diagnostics.Stopwatch]::StartNew()
+    Write-Host "==> $Name"
     & $Command
+    $Timer.Stop()
     if ($LASTEXITCODE -ne 0) {
         throw "$Name failed with exit code $LASTEXITCODE"
+    }
+    Write-Host ("{0} completed in {1:n1}s" -f $Name, $Timer.Elapsed.TotalSeconds)
+}
+
+function New-PortableZip {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$SourceDirectory,
+        [Parameter(Mandatory = $true)]
+        [string]$DestinationPath,
+        [switch]$Fast
+    )
+    if (Test-Path $DestinationPath) {
+        Remove-Item -LiteralPath $DestinationPath -Force
+    }
+    if ($Fast) {
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::CreateFromDirectory(
+            $SourceDirectory,
+            $DestinationPath,
+            [System.IO.Compression.CompressionLevel]::Fastest,
+            $true
+        )
+    } else {
+        Compress-Archive -Path $SourceDirectory -DestinationPath $DestinationPath -Force
     }
 }
 
@@ -34,13 +67,22 @@ function Write-Checksum {
     Write-Host "SHA256:    $($Hash.Hash.ToLower())"
 }
 
-if (!(Test-Path ".venv")) {
-    Invoke-Checked { python -m venv .venv } "Create virtual environment"
+if ($UseCurrentPython) {
+    $PythonCommand = Get-Command python -ErrorAction Stop
+    $Python = $PythonCommand.Source
+} else {
+    if (!(Test-Path ".venv")) {
+        Invoke-Checked { python -m venv .venv } "Create virtual environment"
+    }
+    $Python = Join-Path $Root ".venv\Scripts\python.exe"
 }
 
-$Python = Join-Path $Root ".venv\Scripts\python.exe"
-Invoke-Checked { & $Python -m pip install --upgrade pip } "Upgrade pip"
-Invoke-Checked { & $Python -m pip install -r requirements.txt } "Install requirements"
+if (!$SkipPipUpgrade) {
+    Invoke-Checked { & $Python -m pip install --upgrade pip } "Upgrade pip"
+}
+if (!$SkipDependencyInstall) {
+    Invoke-Checked { & $Python -m pip install -r requirements.txt } "Install requirements"
+}
 
 $AppName = (& $Python -c "from openlaunchdeck.version import APP_NAME; print(APP_NAME)").Trim()
 $AppVersion = (& $Python -c "from openlaunchdeck.version import __version__; print(__version__)").Trim()
@@ -63,7 +105,9 @@ if ($BuildNative) {
     }
 }
 
-Invoke-Checked { & $Python -m pytest } "Run tests"
+if (!$SkipTests) {
+    Invoke-Checked { & $Python -m pytest } "Run tests"
+}
 Invoke-Checked { & $Python -m PyInstaller openlaunchdeck.spec --noconfirm } "Build executable"
 
 $ExePath = Join-Path $Root "dist\OpenLaunchDeck\OpenLaunchDeck.exe"
@@ -72,17 +116,23 @@ if (Test-Path $ExePath) {
 }
 
 $PortableZip = Join-Path $Root "dist\OpenLaunchDeck-$AppVersion-Windows.zip"
-if (Test-Path $PortableZip) {
-    Remove-Item -LiteralPath $PortableZip -Force
-}
-Compress-Archive -Path (Join-Path $Root "dist\OpenLaunchDeck") -DestinationPath $PortableZip -Force
+$ZipTimer = [System.Diagnostics.Stopwatch]::StartNew()
+New-PortableZip -SourceDirectory (Join-Path $Root "dist\OpenLaunchDeck") -DestinationPath $PortableZip -Fast:$FastPackage
+$ZipTimer.Stop()
+Write-Host ("Create portable ZIP completed in {0:n1}s" -f $ZipTimer.Elapsed.TotalSeconds)
 Write-Host "Portable ZIP: $PortableZip"
 Write-Checksum -Path $PortableZip
 
 if (!$SkipInstaller) {
     $Iscc = Get-Command ISCC.exe -ErrorAction SilentlyContinue
     if ($Iscc) {
-        Invoke-Checked { & $Iscc.Source "/DMyAppName=$AppName" "/DMyAppVersion=$AppVersion" "installer\openlaunchdeck.iss" } "Build installer"
+        $InstallerArgs = @("/DMyAppName=$AppName", "/DMyAppVersion=$AppVersion")
+        if ($FastPackage) {
+            $InstallerArgs += "/DMyAppCompression=lzma2/fast"
+            $InstallerArgs += "/DMyAppSolidCompression=no"
+        }
+        $InstallerArgs += "installer\openlaunchdeck.iss"
+        Invoke-Checked { & $Iscc.Source @InstallerArgs } "Build installer"
         $Installer = Join-Path $Root "dist\installer\${AppName}Setup-$AppVersion.exe"
         if (Test-Path $Installer) {
             Write-Host "Installer: $Installer"

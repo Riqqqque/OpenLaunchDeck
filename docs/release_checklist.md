@@ -34,6 +34,7 @@
 - Tag the version as `v<version>`.
 - Push the tag.
 - Confirm the Release workflow passes.
+- Compare the Release workflow duration against the previous tag and check slow step timings in the build log.
 - Confirm the GitHub Release contains:
   - `OpenLaunchDeckSetup-<version>.exe`
   - `OpenLaunchDeckSetup-<version>.exe.sha256`

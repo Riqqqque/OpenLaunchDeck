@@ -22,7 +22,7 @@ When preparing a release:
 7. Update the remote manifest.
 
 `build.ps1` reads the version from `openlaunchdeck/version.py` and passes it to the Inno Setup script.
-The Release workflow uses the same build script and publishes release assets when a version tag is pushed.
+The Release workflow uses the same build script and publishes release assets when a version tag is pushed. In GitHub Actions it uses the current runner Python, preinstalled dependencies, faster ZIP packaging, and faster installer compression to reduce tagged-release wait time.
 
 ## User Data
 

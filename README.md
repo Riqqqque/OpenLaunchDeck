@@ -100,6 +100,12 @@ powershell -ExecutionPolicy Bypass -File build.ps1 -SkipInstaller
 The build script creates `.venv` if needed, installs requirements, runs tests, and builds `dist\OpenLaunchDeck\OpenLaunchDeck.exe` with PyInstaller.
 It also writes `dist\OpenLaunchDeck-<version>-Windows.zip` and a `.sha256` checksum file for portable testing.
 
+For repeat local packaging after tests have already passed, use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File build.ps1 -SkipInstaller -SkipTests -FastPackage
+```
+
 ## Creating The Installer
 
 Install Inno Setup, then run:
@@ -115,11 +121,11 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.5
-git push origin v0.1.5
+git tag v0.1.6
+git push origin v0.1.6
 ```
 
-The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases.
+The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases. It uses the same build script with CI-specific fast packaging flags so tagged releases spend less time on packaging.
 
 ## First Setup
 

@@ -38,6 +38,10 @@ jobs:
           choco install innosetup --no-progress -y
           "C:\Program Files (x86)\Inno Setup 6" | Out-File -FilePath $env:GITHUB_PATH -Append
 
+      - name: Install dependencies
+        shell: pwsh
+        run: python -m pip install --prefer-binary -r requirements.txt
+
       - name: Read version and validate tag
         shell: pwsh
         run: |
@@ -57,7 +61,7 @@ jobs:
 
       - name: Build release assets
         shell: pwsh
-        run: powershell -ExecutionPolicy Bypass -File build.ps1 -RequireInstaller
+        run: powershell -ExecutionPolicy Bypass -File build.ps1 -RequireInstaller -UseCurrentPython -SkipPipUpgrade -SkipDependencyInstall -SkipTests -FastPackage
 
       - name: Verify release assets
         shell: pwsh
