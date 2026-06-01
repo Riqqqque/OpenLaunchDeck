@@ -63,7 +63,12 @@ def build_services() -> AppServices:
         performance_monitor=performance_monitor,
     )
     device = LaunchpadMiniMk3(logger=logger, performance_monitor=performance_monitor)
-    lighting_service = LightingService(device=device, logger=logger, performance_monitor=performance_monitor)
+    lighting_service = LightingService(
+        device=device,
+        logger=logger,
+        performance_monitor=performance_monitor,
+        async_output=True,
+    )
     registry = create_default_registry()
     action_runner = ActionRunner(
         registry=registry,
@@ -111,6 +116,7 @@ def run() -> int:
         return 1
     finally:
         services.audio_engine.stop_all()
+        services.lighting_service.shutdown()
         services.action_runner.shutdown()
         services.device.close()
     return result

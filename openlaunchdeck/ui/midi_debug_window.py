@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -22,6 +23,8 @@ from ..devices.midi_mapping import MidiMapping, message_to_raw_data
 
 
 class MidiDebugWindow(QWidget):
+    closed = Signal()
+
     def __init__(self, device, parent=None) -> None:
         super().__init__(parent)
         self.device = device
@@ -152,3 +155,7 @@ class MidiDebugWindow(QWidget):
         path, _ = QFileDialog.getSaveFileName(self, "Save MIDI Log", str(Path.home() / "openlaunchdeck-midi-log.txt"))
         if path:
             Path(path).write_text(self.log.toPlainText(), encoding="utf-8")
+
+    def closeEvent(self, event) -> None:
+        self.closed.emit()
+        super().closeEvent(event)

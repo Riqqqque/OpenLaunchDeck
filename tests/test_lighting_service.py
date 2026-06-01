@@ -1,6 +1,7 @@
 from openlaunchdeck.models.page import Page
 from openlaunchdeck.services.dangerous_confirm import DangerousConfirmService
 from openlaunchdeck.services.lighting_service import LightingService
+import time
 
 
 class FakeDevice:
@@ -64,3 +65,19 @@ def test_lighting_clear_resets_cache():
 
     assert device.cleared is True
     assert service._last_colors == {}
+
+
+def test_async_lighting_output_uses_worker():
+    device = FakeDevice()
+    service = LightingService(device=device, async_output=True)
+
+    try:
+        service.refresh_page(Page.blank())
+        deadline = time.monotonic() + 1
+        while not device.batches and time.monotonic() < deadline:
+            time.sleep(0.01)
+
+        assert len(device.batches) == 1
+        assert len(device.batches[0]) == 64
+    finally:
+        service.shutdown()

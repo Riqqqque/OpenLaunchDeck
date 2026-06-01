@@ -128,3 +128,31 @@ def test_simulation_tooltip_and_grid_focus_mode():
     window.close()
     services.action_runner.shutdown()
     services.device.close()
+
+
+def test_midi_debug_callbacks_only_run_when_debug_window_is_open():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+
+    assert services.device.midi_in_callback is None
+    assert services.device.midi_out_callback is None
+
+    window.show_midi_debug()
+    app.processEvents()
+
+    assert services.device.midi_in_callback is not None
+    assert services.device.midi_out_callback is not None
+
+    window.midi_debug_window.close()
+    app.processEvents()
+
+    assert services.device.midi_in_callback is None
+    assert services.device.midi_out_callback is None
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()

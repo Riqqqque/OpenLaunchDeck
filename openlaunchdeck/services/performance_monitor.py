@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import time
 from collections import deque
 from contextlib import contextmanager
@@ -37,6 +38,8 @@ class PerformanceMonitor:
         return elapsed_ms
 
     def record(self, label: str, elapsed_ms: float, **details: Any) -> None:
+        if not self.enabled and not self._debug_logging_enabled():
+            return
         sample = PerformanceSample(
             label=label,
             elapsed_ms=elapsed_ms,
@@ -61,6 +64,12 @@ class PerformanceMonitor:
     def _log(self, sample: PerformanceSample) -> None:
         if not self.logger:
             return
+        if self.enabled:
+            log_enabled = self.logger.isEnabledFor(logging.INFO)
+        else:
+            log_enabled = self.logger.isEnabledFor(logging.DEBUG)
+        if not log_enabled:
+            return
         details = ""
         if sample.details:
             details = " " + " ".join(f"{key}={value}" for key, value in sample.details.items())
@@ -68,3 +77,6 @@ class PerformanceMonitor:
             self.logger.info("Performance %s: %.3f ms%s", sample.label, sample.elapsed_ms, details)
         else:
             self.logger.debug("Performance %s: %.3f ms%s", sample.label, sample.elapsed_ms, details)
+
+    def _debug_logging_enabled(self) -> bool:
+        return bool(self.logger and self.logger.isEnabledFor(logging.DEBUG))

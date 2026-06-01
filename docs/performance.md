@@ -8,19 +8,22 @@ Key rules:
 - MIDI callbacks do not update Qt widgets directly; they emit into Qt signals.
 - MIDI connect and reconnect work runs outside the GUI thread.
 - Blocking actions run through the action runner worker pool.
+- The action runner limits queued background work so repeated presses cannot build an unlimited backlog.
 - GUI updates happen on the Qt thread.
 - Network calls use timeouts.
 - Update checks and verified downloads run on Qt worker threads.
 - Sound playback is started through non-blocking QtMultimedia APIs.
 - Profile JSON stays small and human-readable.
-- Page lighting refreshes are batched through the lighting service.
+- Page lighting refreshes are batched through the lighting service and sent through a single background output worker.
 - Lighting refreshes skip redundant pad updates when the page state has not changed.
 - Grid cells skip text and stylesheet updates when their visible state has not changed.
-- Performance logging can be enabled in Settings.
+- Normal successful button presses do not write action logs at the default logging level.
+- Live MIDI debug UI callbacks stay disabled until the MIDI Debug window is opened.
+- Performance logging can be enabled in Settings when troubleshooting latency.
 
 ## Performance Monitor
 
-`PerformanceMonitor` is a lightweight timing helper used across the app. It records recent timing samples only when performance logging is enabled. When disabled, it logs timing details at debug level, which keeps normal logs quiet.
+`PerformanceMonitor` is a lightweight timing helper used across the app. It records recent timing samples only when performance logging is enabled. When disabled, it avoids sample storage and only emits debug-level timing logs if debug logging is actually enabled.
 
 Current timing points include:
 
@@ -42,6 +45,20 @@ MIDI and lighting timing details are logged at debug level or when debug logging
 - Lighting feedback and page refresh time
 
 Normal usage keeps these logs quiet. Enable MIDI debug logging or performance logging only while diagnosing latency.
+
+The MIDI Debug window is also treated as an on-demand diagnostic tool. Incoming and outgoing MIDI messages are not forwarded into the debug UI while the window is closed, which keeps background MIDI handling small during a game or stream.
+
+## Game And Stream Use
+
+Recommended low-impact defaults:
+
+- Leave performance logging off unless diagnosing a problem.
+- Leave MIDI debug logging off unless calibrating or troubleshooting hardware.
+- Leave startup update checks off while streaming if you want the quietest launch path.
+- Keep long command, HTTP, SSH, or script actions configured with timeouts.
+- Prefer short macros and avoid stacking many slow actions on one pad.
+
+OpenLaunchDeck should stay idle most of the time: no hardware means simulation mode with no MIDI polling, connected hardware uses MIDI callbacks instead of polling loops, and update checks only run when enabled or requested.
 
 ## Update Performance
 
