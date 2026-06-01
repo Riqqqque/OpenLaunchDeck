@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.3
+
+- Kept disabled grid buttons selectable so users can edit or re-enable them.
+- Added a regression test for disabled button editing.
+
 ## 0.1.2
 
 - Fixed installer shortcut icon metadata for Start Menu and Desktop shortcuts.
