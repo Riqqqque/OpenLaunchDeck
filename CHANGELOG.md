@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1
+
+- Added OpenLaunchDeck logo and Windows icon assets.
+- Wired the icon into the desktop window, system tray, PyInstaller executable, and installer.
+- Added release support documents and dependency update checks for repository maintenance.
+- Updated package metadata so icon assets are included with the application.
+
 ## 0.1.0
 
 - Initial public MVP application structure.

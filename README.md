@@ -1,5 +1,7 @@
 # OpenLaunchDeck
 
+![OpenLaunchDeck logo](openlaunchdeck/resources/icons/openlaunchdeck_wordmark.svg)
+
 OpenLaunchDeck turns a Novation Launchpad Mini MK3 into a Windows desktop macro deck with profiles, pages, actions, soundboard buttons, MIDI debug tools, update checks, and installer support.
 
 It is a normal desktop app: install it, launch it, assign actions, keep it running in the background, and store user data in AppData so upgrades do not overwrite profiles or settings.
@@ -114,8 +116,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.0
-git push origin v0.1.0
+git tag v0.1.1
+git push origin v0.1.1
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases.

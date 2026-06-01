@@ -26,6 +26,7 @@ UPDATES_DIR = APP_DATA_DIR / "updates"
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 RESOURCES_DIR = PACKAGE_DIR / "resources"
+ICONS_DIR = RESOURCES_DIR / "icons"
 STARTER_PROFILES_DIR = RESOURCES_DIR / "starter_profiles"
 THEMES_DIR = RESOURCES_DIR / "themes"
 

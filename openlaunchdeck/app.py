@@ -18,6 +18,7 @@ from .services.lighting_service import LightingService
 from .services.performance_monitor import PerformanceMonitor
 from .services.profile_service import ProfileService
 from .services.settings_service import SettingsService
+from .ui.icons import app_icon
 from .ui.main_window import MainWindow
 from .version import APP_NAME
 
@@ -84,6 +85,7 @@ def run() -> int:
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(APP_NAME)
+    app.setWindowIcon(app_icon())
     services = build_services()
     try:
         with services.performance_monitor.measure("app_startup_main_window"):
