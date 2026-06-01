@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.5
+
+- Redesigned the main window with a cleaner header, workspace panels, and quick actions.
+- Reworked grid pads into custom-rendered tiles with clearer labels, action tags, and state badges.
+- Added configurable grid density for compact, comfortable, and large layouts.
+- Improved dark and light themes and kept the system theme setting styled.
+
 ## 0.1.4
 
 - Refreshed the grid, sidebar, status bar, and lighting after Switch Page actions.

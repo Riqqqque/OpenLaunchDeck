@@ -12,17 +12,26 @@ class GridWidget(QWidget):
 
     def __init__(self) -> None:
         super().__init__()
+        self.setObjectName("LaunchpadGrid")
         self.cells: dict[str, ButtonCell] = {}
         self.selected_button_id = "A1"
         layout = QGridLayout(self)
-        layout.setSpacing(8)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(10)
         for row_index, row in enumerate(BUTTON_ROWS):
             for col_index, column in enumerate(BUTTON_COLUMNS):
                 button_id = f"{row}{column}"
                 cell = ButtonCell(button_id)
-                cell.clicked.connect(lambda _checked=False, bid=button_id: self.button_clicked.emit(bid))
+                cell.clicked.connect(lambda bid=button_id: self.button_clicked.emit(bid))
                 layout.addWidget(cell, row_index, col_index)
                 self.cells[button_id] = cell
+
+    def set_density(self, density: str) -> None:
+        spacing = {"compact": 7, "comfortable": 10, "large": 12}.get(density, 10)
+        if self.layout() is not None:
+            self.layout().setSpacing(spacing)
+        for cell in self.cells.values():
+            cell.set_density(density)
 
     def select(self, button_id: str) -> str:
         previous = self.selected_button_id

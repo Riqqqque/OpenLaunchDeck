@@ -7,16 +7,20 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
+    QFrame,
     QHBoxLayout,
     QInputDialog,
     QLabel,
     QMainWindow,
     QMessageBox,
+    QPushButton,
+    QScrollArea,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -81,7 +85,7 @@ class MainWindow(QMainWindow):
         self._startup_update_worker: UpdateCheckWorker | None = None
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
-        self.resize(1280, 800)
+        self.resize(1440, 900)
         self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
 
         self.services.action_runner.completion_callback = lambda button_id, result: self.action_finished.emit(button_id, result)
@@ -111,16 +115,92 @@ class MainWindow(QMainWindow):
 
     def _build_main_layout(self) -> None:
         central = QWidget()
-        layout = QHBoxLayout(central)
+        central.setObjectName("MainSurface")
+        root = QVBoxLayout(central)
+        root.setContentsMargins(18, 16, 18, 16)
+        root.setSpacing(14)
+
+        header = QFrame()
+        header.setObjectName("AppHeader")
+        header_layout = QHBoxLayout(header)
+        header_layout.setContentsMargins(18, 12, 18, 12)
+        header_layout.setSpacing(12)
+
+        brand = QWidget()
+        brand_layout = QVBoxLayout(brand)
+        brand_layout.setContentsMargins(0, 0, 0, 0)
+        brand_layout.setSpacing(1)
+        title = QLabel(APP_NAME)
+        title.setObjectName("HeaderTitle")
+        subtitle = QLabel("Macro deck workspace for Launchpad Mini MK3")
+        subtitle.setObjectName("HeaderSubtitle")
+        brand_layout.addWidget(title)
+        brand_layout.addWidget(subtitle)
+        header_layout.addWidget(brand, 1)
+
+        self.header_profile = QLabel("")
+        self.header_profile.setObjectName("HeaderChip")
+        self.header_mode = QLabel("Simulation")
+        self.header_mode.setObjectName("HeaderChip")
+        header_layout.addWidget(self.header_profile)
+        header_layout.addWidget(self.header_mode)
+
+        self.header_reconnect_button = QPushButton("Reconnect")
+        self.header_debug_button = QPushButton("MIDI Debug")
+        self.header_soundboard_button = QPushButton("Soundboard")
+        self.header_update_button = QPushButton("Updates")
+        for button in (
+            self.header_reconnect_button,
+            self.header_debug_button,
+            self.header_soundboard_button,
+            self.header_update_button,
+        ):
+            button.setObjectName("HeaderButton")
+            header_layout.addWidget(button)
+
+        root.addWidget(header)
+
+        layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(14)
         self.sidebar = ProfileSidebar()
-        self.sidebar.setFixedWidth(210)
+        self.sidebar.setFixedWidth(250)
         self.grid = GridWidget()
+        self.grid.set_density(self.services.settings_service.settings.grid_density)
         self.editor = ButtonEditor(self.services.action_registry)
-        self.editor.setFixedWidth(360)
+        self.editor_scroll = QScrollArea()
+        self.editor_scroll.setObjectName("InspectorScroll")
+        self.editor_scroll.setWidgetResizable(True)
+        self.editor_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.editor_scroll.setWidget(self.editor)
+        self.editor_scroll.setFixedWidth(400)
+
+        deck_panel = QFrame()
+        deck_panel.setObjectName("DeckPanel")
+        deck_layout = QVBoxLayout(deck_panel)
+        deck_layout.setContentsMargins(18, 18, 18, 18)
+        deck_layout.setSpacing(12)
+        deck_header = QHBoxLayout()
+        deck_title = QLabel("Launchpad Grid")
+        deck_title.setObjectName("PanelTitle")
+        deck_hint = QLabel("Click pads to test or select them for editing")
+        deck_hint.setObjectName("PanelHint")
+        deck_header.addWidget(deck_title)
+        deck_header.addStretch(1)
+        deck_header.addWidget(deck_hint)
+        deck_layout.addLayout(deck_header)
+        deck_layout.addWidget(self.grid, 1)
+
         layout.addWidget(self.sidebar)
-        layout.addWidget(self.grid, 1)
-        layout.addWidget(self.editor)
+        layout.addWidget(deck_panel, 1)
+        layout.addWidget(self.editor_scroll)
+        root.addLayout(layout, 1)
         self.setCentralWidget(central)
+
+        self.header_reconnect_button.clicked.connect(self.reconnect_device)
+        self.header_debug_button.clicked.connect(self.show_midi_debug)
+        self.header_soundboard_button.clicked.connect(self.show_soundboard_panel)
+        self.header_update_button.clicked.connect(self.check_updates)
 
     def _build_menu(self) -> None:
         menu_bar = self.menuBar()
@@ -237,6 +317,8 @@ class MainWindow(QMainWindow):
         self.page_status.setText(f"Page: {current_page.name}")
         self.mode_status.setText("Connected mode" if self.services.device.connected else "Simulation mode")
         self.device_status.setText("Device: Connected" if self.services.device.connected else "Device: Simulation")
+        self.header_profile.setText(f"{profile_service.current_profile.name} / {current_page.name}")
+        self.header_mode.setText("Connected" if self.services.device.connected else "Simulation")
 
     def refresh_lighting(self) -> None:
         self.services.lighting_service.refresh_page(
@@ -455,6 +537,7 @@ class MainWindow(QMainWindow):
         dialog = SettingsDialog(self.services.settings_service, self)
         if dialog.exec():
             self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
+            self.grid.set_density(self.services.settings_service.settings.grid_density)
             self.services.audio_engine.set_global_volume(self.services.settings_service.settings.soundboard_global_volume)
             self.services.audio_engine.set_default_output_device(self.services.settings_service.settings.soundboard_default_output_device)
             self.services.audio_engine.performance_logging_enabled = self.services.settings_service.settings.enable_performance_logging
