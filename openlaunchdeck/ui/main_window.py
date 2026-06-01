@@ -84,6 +84,7 @@ class MainWindow(QMainWindow):
         self._connect_worker: MidiConnectionWorker | None = None
         self._startup_update_thread: QThread | None = None
         self._startup_update_worker: UpdateCheckWorker | None = None
+        self._grid_focus_mode = False
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
         self.resize(1480, 920)
@@ -119,21 +120,16 @@ class MainWindow(QMainWindow):
         central = QWidget()
         central.setObjectName("MainSurface")
         root = QVBoxLayout(central)
+        self.main_root_layout = root
         root.setContentsMargins(18, 16, 18, 16)
         root.setSpacing(14)
 
         header = QFrame()
+        self.app_header = header
         header.setObjectName("AppHeader")
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(18, 14, 18, 14)
         header_layout.setSpacing(12)
-
-        icon = QLabel()
-        icon.setObjectName("HeaderIcon")
-        icon.setFixedSize(44, 44)
-        icon.setPixmap(app_icon().pixmap(44, 44))
-        icon.setScaledContents(True)
-        header_layout.addWidget(icon)
 
         brand = QWidget()
         brand.setObjectName("HeaderBrand")
@@ -208,6 +204,7 @@ class MainWindow(QMainWindow):
         deck_panel.setObjectName("DeckPanel")
         deck_panel.setMinimumWidth(520)
         deck_layout = QVBoxLayout(deck_panel)
+        self.deck_layout = deck_layout
         deck_layout.setContentsMargins(18, 18, 18, 18)
         deck_layout.setSpacing(12)
         deck_header = QHBoxLayout()
@@ -215,9 +212,13 @@ class MainWindow(QMainWindow):
         deck_title.setObjectName("PanelTitle")
         self.deck_hint = QLabel("Click pads to edit. Use Test to run the selected action.")
         self.deck_hint.setObjectName("PanelHint")
+        self.grid_focus_button = QPushButton("Focus Grid")
+        self.grid_focus_button.setObjectName("HeaderButton")
+        self.grid_focus_button.setToolTip("Hide the side panels and give the Launchpad grid more room.")
         deck_header.addWidget(deck_title)
         deck_header.addStretch(1)
         deck_header.addWidget(self.deck_hint)
+        deck_header.addWidget(self.grid_focus_button)
         deck_layout.addLayout(deck_header)
         self.grid_scroll = QScrollArea()
         self.grid_scroll.setObjectName("GridScroll")
@@ -245,6 +246,7 @@ class MainWindow(QMainWindow):
         self.header_debug_button.clicked.connect(self.show_midi_debug)
         self.header_soundboard_button.clicked.connect(self.show_soundboard_panel)
         self.header_update_button.clicked.connect(self.check_updates)
+        self.grid_focus_button.clicked.connect(self.toggle_grid_focus_mode)
 
     def _build_menu(self) -> None:
         menu_bar = self.menuBar()
@@ -267,6 +269,13 @@ class MainWindow(QMainWindow):
         paste_action.triggered.connect(self.paste_button_config)
         clear_action.triggered.connect(self.clear_selected_button)
         edit_menu.addActions([copy_action, paste_action, clear_action])
+
+        view_menu = menu_bar.addMenu("View")
+        self.grid_focus_action = QAction("Focus Launchpad Grid", self)
+        self.grid_focus_action.setCheckable(True)
+        self.grid_focus_action.setShortcut("Ctrl+G")
+        self.grid_focus_action.triggered.connect(self.set_grid_focus_mode)
+        view_menu.addAction(self.grid_focus_action)
 
         device_menu = menu_bar.addMenu("Device")
         connect_action = QAction("Connect", self)
@@ -367,6 +376,14 @@ class MainWindow(QMainWindow):
     def _set_header_mode(self, connected: bool) -> None:
         self.header_mode.setText("Connected mode" if connected else "Simulation mode")
         self.header_mode.setProperty("state", "connected" if connected else "simulation")
+        tooltip = (
+            "Connected mode: Launchpad MIDI input and output are active."
+            if connected
+            else "Simulation mode: no Launchpad Mini MK3 MIDI connection is active. Plug in the device, then use Reconnect or Device > Connect. The on-screen grid still works for editing."
+        )
+        self.header_mode.setToolTip(tooltip)
+        self.mode_status.setToolTip(tooltip)
+        self.device_status.setToolTip(tooltip)
         self.header_mode.style().unpolish(self.header_mode)
         self.header_mode.style().polish(self.header_mode)
 
@@ -596,6 +613,21 @@ class MainWindow(QMainWindow):
             self.services.performance_monitor.set_enabled(self.services.settings_service.settings.enable_performance_logging)
             native_acceleration.configure(self.services.settings_service.settings.use_native_acceleration, self.services.logger)
 
+    def toggle_grid_focus_mode(self) -> None:
+        self.set_grid_focus_mode(not self._grid_focus_mode)
+
+    def set_grid_focus_mode(self, enabled: bool) -> None:
+        self._grid_focus_mode = bool(enabled)
+        if hasattr(self, "grid_focus_action"):
+            self.grid_focus_action.setChecked(self._grid_focus_mode)
+        self.grid_focus_button.setText("Edit Layout" if self._grid_focus_mode else "Focus Grid")
+        self.grid_focus_button.setToolTip(
+            "Show the profile library and button editor."
+            if self._grid_focus_mode
+            else "Hide the side panels and give the Launchpad grid more room."
+        )
+        self._apply_responsive_layout()
+
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         if hasattr(self, "workspace_splitter"):
@@ -604,7 +636,14 @@ class MainWindow(QMainWindow):
     def _apply_responsive_layout(self) -> None:
         width = self.width()
         base_density = self.services.settings_service.settings.grid_density
-        if width < 1420:
+        if self._grid_focus_mode:
+            if width < 1350:
+                density = "mini"
+            elif width < 1550 and base_density != "compact":
+                density = "compact"
+            else:
+                density = base_density
+        elif width < 1600:
             density = "mini"
         elif width < 1700 and base_density != "compact":
             density = "compact"
@@ -617,14 +656,30 @@ class MainWindow(QMainWindow):
         compact_header = width < 1180
         narrow_header = width < 1080
         compact_workspace = width < 1350
-        self.deck_hint.setVisible(not compact_header)
+        self.app_header.setVisible(not self._grid_focus_mode)
+        if self._grid_focus_mode:
+            self.main_root_layout.setContentsMargins(14, 12, 14, 12)
+            self.main_root_layout.setSpacing(10)
+            self.deck_layout.setContentsMargins(12, 12, 12, 12)
+            self.deck_layout.setSpacing(8)
+        else:
+            self.main_root_layout.setContentsMargins(18, 16, 18, 16)
+            self.main_root_layout.setSpacing(14)
+            self.deck_layout.setContentsMargins(18, 18, 18, 18)
+            self.deck_layout.setSpacing(12)
+
+        self.deck_hint.setVisible(not compact_header and not self._grid_focus_mode)
         self.header_profile.setVisible(not compact_header)
         self.header_mode.setVisible(not narrow_header)
         self.header_soundboard_button.setText("Sounds" if compact_header else "Soundboard")
         self.header_reconnect_button.setText("Reconnect" if not narrow_header else "Link")
-        self.sidebar_scroll.setVisible(not compact_workspace)
+        self.sidebar_scroll.setVisible(not compact_workspace and not self._grid_focus_mode)
+        self.editor_scroll.setVisible(not self._grid_focus_mode)
 
-        if width < 1180:
+        if self._grid_focus_mode:
+            self.deck_panel.setMinimumWidth(360)
+            self.workspace_splitter.setSizes([0, max(760, width - 80), 0])
+        elif width < 1180:
             self.sidebar_scroll.setMinimumWidth(180)
             self.editor_scroll.setMinimumWidth(250)
             self.deck_panel.setMinimumWidth(360)

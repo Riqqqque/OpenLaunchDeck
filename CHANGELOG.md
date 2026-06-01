@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.13
+
+- Cleaned up the app icon edge so the white outline is the outer visible shape.
+- Removed the header icon from the main window for a cleaner workspace header.
+- Added hover text explaining why simulation mode is active.
+- Added a Focus Launchpad Grid view that hides side panels and gives the grid more room.
+
 ## 0.1.12
 
 - Improved window resizing with a splitter-based workspace layout.
