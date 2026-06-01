@@ -20,4 +20,9 @@ class SwitchPageAction(BaseAction):
             return ActionResult.fail("Profile service is unavailable.")
         if not context.profile_service.set_current_page(page_id):
             return ActionResult.fail(f"Page not found: {page_id}")
-        return ActionResult(True, f"Switched to {page_id}.", should_update_lighting=True)
+        return ActionResult.ok(
+            f"Switched to {page_id}.",
+            should_update_lighting=True,
+            page_changed=True,
+            page_id=page_id,
+        )
