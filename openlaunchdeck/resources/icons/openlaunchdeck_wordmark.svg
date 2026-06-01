@@ -1,42 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 240" role="img" aria-label="OpenLaunchDeck logo">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 220" role="img" aria-label="OpenLaunchDeck">
   <defs>
-    <linearGradient id="wm-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#111827"/>
-      <stop offset="1" stop-color="#020617"/>
+    <linearGradient id="shell" x1="24" y1="18" x2="190" y2="202" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#172033"/>
+      <stop offset="0.62" stop-color="#0a1020"/>
+      <stop offset="1" stop-color="#030712"/>
     </linearGradient>
-    <linearGradient id="wm-ring" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#2dd4bf"/>
-      <stop offset="0.52" stop-color="#38bdf8"/>
-      <stop offset="1" stop-color="#a78bfa"/>
+    <linearGradient id="edge" x1="26" y1="26" x2="194" y2="194" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#67e8f9"/>
+      <stop offset="0.48" stop-color="#22d3ee"/>
+      <stop offset="1" stop-color="#14b8a6"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5eead4"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+    <linearGradient id="blue" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#60a5fa"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="pink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fb7185"/>
+      <stop offset="1" stop-color="#be185d"/>
+    </linearGradient>
+    <linearGradient id="amber" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fde047"/>
+      <stop offset="1" stop-color="#f97316"/>
     </linearGradient>
   </defs>
-  <rect width="960" height="240" rx="32" fill="#0b1120"/>
-  <g transform="translate(46 36) scale(0.328125)">
-    <rect width="512" height="512" rx="104" fill="#020617"/>
-    <rect x="48" y="48" width="416" height="416" rx="94" fill="url(#wm-bg)"/>
-    <rect x="78" y="78" width="356" height="356" rx="72" fill="#0b1220"/>
-    <rect x="78" y="78" width="356" height="356" rx="72" fill="none" stroke="url(#wm-ring)" stroke-width="16"/>
-    <path d="M123 121h104" stroke="#e0f2fe" stroke-width="14" stroke-linecap="round" opacity="0.92"/>
-    <path d="M388 386H284" stroke="#2dd4bf" stroke-width="14" stroke-linecap="round" opacity="0.8"/>
-    <g transform="translate(130 142)">
-      <rect x="0" y="0" width="54" height="54" rx="14" fill="#2dd4bf"/>
-      <rect x="68" y="0" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="136" y="0" width="54" height="54" rx="14" fill="#60a5fa"/>
-      <rect x="204" y="0" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="0" y="68" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="68" y="68" width="54" height="54" rx="14" fill="#f472b6"/>
-      <rect x="136" y="68" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="204" y="68" width="54" height="54" rx="14" fill="#facc15"/>
-      <rect x="0" y="136" width="54" height="54" rx="14" fill="#60a5fa"/>
-      <rect x="68" y="136" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="136" y="136" width="54" height="54" rx="14" fill="#2dd4bf"/>
-      <rect x="204" y="136" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="0" y="204" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="68" y="204" width="54" height="54" rx="14" fill="#facc15"/>
-      <rect x="136" y="204" width="54" height="54" rx="14" fill="#182235"/>
-      <rect x="204" y="204" width="54" height="54" rx="14" fill="#f472b6"/>
-    </g>
+
+  <rect x="18" y="18" width="184" height="184" rx="38" fill="#020617"/>
+  <rect x="28" y="28" width="164" height="164" rx="34" fill="url(#shell)"/>
+  <rect x="38" y="38" width="144" height="144" rx="30" fill="none" stroke="url(#edge)" stroke-width="10"/>
+  <rect x="50" y="50" width="120" height="120" rx="22" fill="#0b1220"/>
+  <g transform="translate(58 58)">
+    <rect x="0" y="0" width="32" height="32" rx="8" fill="url(#teal)"/>
+    <rect x="44" y="0" width="32" height="32" rx="8" fill="#1b263a"/>
+    <rect x="88" y="0" width="32" height="32" rx="8" fill="url(#blue)"/>
+    <rect x="0" y="44" width="32" height="32" rx="8" fill="#1b263a"/>
+    <rect x="44" y="44" width="32" height="32" rx="8" fill="url(#pink)"/>
+    <rect x="88" y="44" width="32" height="32" rx="8" fill="url(#amber)"/>
+    <rect x="0" y="88" width="32" height="32" rx="8" fill="url(#blue)"/>
+    <rect x="44" y="88" width="32" height="32" rx="8" fill="url(#teal)"/>
+    <rect x="88" y="88" width="32" height="32" rx="8" fill="#1b263a"/>
   </g>
-  <text x="244" y="110" fill="#f8fafc" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="56" font-weight="750">OpenLaunchDeck</text>
-  <text x="248" y="158" fill="#94a3b8" font-family="Segoe UI, Inter, Arial, sans-serif" font-size="24">Windows macro deck for Launchpad Mini MK3</text>
+
+  <text x="238" y="108" fill="#0f172a" font-family="Segoe UI, Arial, sans-serif" font-size="56" font-weight="800">OpenLaunchDeck</text>
+  <text x="242" y="151" fill="#475569" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="500">Launchpad Mini MK3 macro deck for Windows</text>
 </svg>

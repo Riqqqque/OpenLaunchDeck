@@ -124,7 +124,14 @@ class MainWindow(QMainWindow):
         header.setObjectName("AppHeader")
         header_layout = QHBoxLayout(header)
         header_layout.setContentsMargins(18, 14, 18, 14)
-        header_layout.setSpacing(14)
+        header_layout.setSpacing(12)
+
+        icon = QLabel()
+        icon.setObjectName("HeaderIcon")
+        icon.setFixedSize(44, 44)
+        icon.setPixmap(app_icon().pixmap(44, 44))
+        icon.setScaledContents(True)
+        header_layout.addWidget(icon)
 
         brand = QWidget()
         brand.setObjectName("HeaderBrand")
