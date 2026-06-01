@@ -23,7 +23,7 @@ class ProfileSidebar(QWidget):
     def __init__(self) -> None:
         super().__init__()
         self.setObjectName("SidebarPanel")
-        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(self)
         layout.setContentsMargins(16, 18, 16, 18)
         layout.setSpacing(10)

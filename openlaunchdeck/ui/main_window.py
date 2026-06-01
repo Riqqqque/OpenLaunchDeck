@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSplitter,
     QVBoxLayout,
     QWidget,
 )
@@ -86,6 +87,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
         self.resize(1480, 920)
+        self.setMinimumSize(980, 640)
         self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
 
         self.services.action_runner.completion_callback = lambda button_id, result: self.action_finished.emit(button_id, result)
@@ -181,42 +183,63 @@ class MainWindow(QMainWindow):
 
         root.addWidget(header)
 
-        layout = QHBoxLayout()
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(14)
         self.sidebar = ProfileSidebar()
-        self.sidebar.setFixedWidth(238)
+        self.sidebar.setMinimumWidth(190)
+        self.sidebar.setMaximumWidth(320)
+        self.sidebar_scroll = QScrollArea()
+        self.sidebar_scroll.setObjectName("SidebarScroll")
+        self.sidebar_scroll.setWidgetResizable(True)
+        self.sidebar_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.sidebar_scroll.setWidget(self.sidebar)
+        self.sidebar_scroll.setMinimumWidth(210)
         self.grid = GridWidget()
-        self.grid.set_density(self.services.settings_service.settings.grid_density)
+        self._applied_grid_density = self.services.settings_service.settings.grid_density
+        self.grid.set_density(self._applied_grid_density)
         self.editor = ButtonEditor(self.services.action_registry)
         self.editor_scroll = QScrollArea()
         self.editor_scroll.setObjectName("InspectorScroll")
         self.editor_scroll.setWidgetResizable(True)
         self.editor_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.editor_scroll.setWidget(self.editor)
-        self.editor_scroll.setFixedWidth(382)
+        self.editor_scroll.setMinimumWidth(300)
 
         deck_panel = QFrame()
+        self.deck_panel = deck_panel
         deck_panel.setObjectName("DeckPanel")
+        deck_panel.setMinimumWidth(520)
         deck_layout = QVBoxLayout(deck_panel)
         deck_layout.setContentsMargins(18, 18, 18, 18)
         deck_layout.setSpacing(12)
         deck_header = QHBoxLayout()
         deck_title = QLabel("Launchpad Grid")
         deck_title.setObjectName("PanelTitle")
-        deck_hint = QLabel("Click pads to edit. Use Test to run the selected action.")
-        deck_hint.setObjectName("PanelHint")
+        self.deck_hint = QLabel("Click pads to edit. Use Test to run the selected action.")
+        self.deck_hint.setObjectName("PanelHint")
         deck_header.addWidget(deck_title)
         deck_header.addStretch(1)
-        deck_header.addWidget(deck_hint)
+        deck_header.addWidget(self.deck_hint)
         deck_layout.addLayout(deck_header)
-        deck_layout.addWidget(self.grid, 1)
+        self.grid_scroll = QScrollArea()
+        self.grid_scroll.setObjectName("GridScroll")
+        self.grid_scroll.setWidgetResizable(True)
+        self.grid_scroll.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.grid_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.grid_scroll.setWidget(self.grid)
+        deck_layout.addWidget(self.grid_scroll, 1)
 
-        layout.addWidget(self.sidebar)
-        layout.addWidget(deck_panel, 1)
-        layout.addWidget(self.editor_scroll)
-        root.addLayout(layout, 1)
+        self.workspace_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.workspace_splitter.setObjectName("WorkspaceSplitter")
+        self.workspace_splitter.setChildrenCollapsible(False)
+        self.workspace_splitter.addWidget(self.sidebar_scroll)
+        self.workspace_splitter.addWidget(deck_panel)
+        self.workspace_splitter.addWidget(self.editor_scroll)
+        self.workspace_splitter.setStretchFactor(0, 0)
+        self.workspace_splitter.setStretchFactor(1, 1)
+        self.workspace_splitter.setStretchFactor(2, 0)
+        self.workspace_splitter.setSizes([238, 850, 360])
+        root.addWidget(self.workspace_splitter, 1)
         self.setCentralWidget(central)
+        self._apply_responsive_layout()
 
         self.header_reconnect_button.clicked.connect(self.reconnect_device)
         self.header_debug_button.clicked.connect(self.show_midi_debug)
@@ -566,12 +589,50 @@ class MainWindow(QMainWindow):
         dialog = SettingsDialog(self.services.settings_service, self)
         if dialog.exec():
             self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
-            self.grid.set_density(self.services.settings_service.settings.grid_density)
+            self._apply_responsive_layout()
             self.services.audio_engine.set_global_volume(self.services.settings_service.settings.soundboard_global_volume)
             self.services.audio_engine.set_default_output_device(self.services.settings_service.settings.soundboard_default_output_device)
             self.services.audio_engine.performance_logging_enabled = self.services.settings_service.settings.enable_performance_logging
             self.services.performance_monitor.set_enabled(self.services.settings_service.settings.enable_performance_logging)
             native_acceleration.configure(self.services.settings_service.settings.use_native_acceleration, self.services.logger)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if hasattr(self, "workspace_splitter"):
+            self._apply_responsive_layout()
+
+    def _apply_responsive_layout(self) -> None:
+        width = self.width()
+        base_density = self.services.settings_service.settings.grid_density
+        if width < 1420:
+            density = "mini"
+        elif width < 1700 and base_density != "compact":
+            density = "compact"
+        else:
+            density = base_density
+        if density != getattr(self, "_applied_grid_density", None):
+            self._applied_grid_density = density
+            self.grid.set_density(density)
+
+        compact_header = width < 1180
+        narrow_header = width < 1080
+        compact_workspace = width < 1350
+        self.deck_hint.setVisible(not compact_header)
+        self.header_profile.setVisible(not compact_header)
+        self.header_mode.setVisible(not narrow_header)
+        self.header_soundboard_button.setText("Sounds" if compact_header else "Soundboard")
+        self.header_reconnect_button.setText("Reconnect" if not narrow_header else "Link")
+        self.sidebar_scroll.setVisible(not compact_workspace)
+
+        if width < 1180:
+            self.sidebar_scroll.setMinimumWidth(180)
+            self.editor_scroll.setMinimumWidth(250)
+            self.deck_panel.setMinimumWidth(360)
+            self.workspace_splitter.setSizes([0, max(560, width - 300), 270])
+        else:
+            self.sidebar_scroll.setMinimumWidth(210)
+            self.editor_scroll.setMinimumWidth(300)
+            self.deck_panel.setMinimumWidth(520)
 
     def show_first_run(self) -> None:
         dialog = SetupWizard(self.services.profile_service, self.services.settings_service, self)

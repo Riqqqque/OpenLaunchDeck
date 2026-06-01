@@ -27,7 +27,7 @@ class GridWidget(QWidget):
                 self.cells[button_id] = cell
 
     def set_density(self, density: str) -> None:
-        spacing = {"compact": 7, "comfortable": 10, "large": 12}.get(density, 10)
+        spacing = {"mini": 5, "compact": 7, "comfortable": 10, "large": 12}.get(density, 10)
         if self.layout() is not None:
             self.layout().setSpacing(spacing)
         for cell in self.cells.values():
