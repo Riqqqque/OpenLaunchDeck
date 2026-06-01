@@ -44,10 +44,13 @@ class ButtonCell(QPushButton):
         self._armed = armed
         self._playing = playing
         self.setText(f"{button.id}\n{label}\n{action_type}")
-        self.setEnabled(button.enabled)
+        self.setEnabled(True)
         background = NAMED_COLORS.get(color, color if color.startswith("#") else NAMED_COLORS["dim"])
         border = "#f5f7fb" if selected else ("#facc15" if armed else "#303846")
         text_color = "#f5f7fb" if color not in {"white", "yellow"} else "#111827"
+        if not button.enabled:
+            background = "#12151b"
+            text_color = "#7b8494"
         self.setStyleSheet(
             f"""
             QPushButton {{
@@ -61,10 +64,6 @@ class ButtonCell(QPushButton):
             }}
             QPushButton:pressed {{
                 border-color: #ffffff;
-            }}
-            QPushButton:disabled {{
-                color: #7b8494;
-                background: #12151b;
             }}
             """
         )
