@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openlaunchdeck"
-version = "0.1.0"
+version = "0.1.1"
 description = "A Windows desktop macro deck app for Novation Launchpad Mini MK3."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -36,6 +36,9 @@ include = ["openlaunchdeck*"]
 
 [tool.setuptools.package-data]
 openlaunchdeck = [
+  "resources/icons/*.ico",
+  "resources/icons/*.png",
+  "resources/icons/*.svg",
   "resources/starter_profiles/*.json",
   "resources/themes/*.qss"
 ]

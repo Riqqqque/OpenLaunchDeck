@@ -28,6 +28,7 @@ from ..paths import APP_DATA_DIR, LOGS_DIR, PROFILES_DIR
 from ..version import APP_NAME, __version__
 from .button_editor import ButtonEditor
 from .grid_widget import GridWidget
+from .icons import app_icon
 from .midi_debug_window import MidiDebugWindow
 from .profile_manager_dialog import ProfileManagerDialog
 from .profile_sidebar import ProfileSidebar
@@ -79,6 +80,7 @@ class MainWindow(QMainWindow):
         self._startup_update_thread: QThread | None = None
         self._startup_update_worker: UpdateCheckWorker | None = None
         self.setWindowTitle(f"{APP_NAME} {__version__}")
+        self.setWindowIcon(app_icon())
         self.resize(1280, 800)
         self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
 
