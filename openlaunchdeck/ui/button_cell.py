@@ -9,9 +9,9 @@ from ..models.button import ButtonConfig
 
 
 CELL_SIZES = {
-    "compact": QSize(80, 70),
-    "comfortable": QSize(96, 84),
-    "large": QSize(112, 98),
+    "compact": QSize(84, 74),
+    "comfortable": QSize(102, 88),
+    "large": QSize(118, 102),
 }
 
 ACTION_LABELS = {
@@ -167,7 +167,7 @@ class ButtonCell(QWidget):
         elif self._hover:
             border = self._blend(QColor("#64748b"), accent, 0.35)
 
-        painter.setPen(QPen(border, 2 if self._selected else 1.5))
+        painter.setPen(QPen(border, 2.2 if self._selected else 1.4))
         painter.setBrush(base)
         painter.drawRoundedRect(rect, 9, 9)
 
@@ -179,7 +179,7 @@ class ButtonCell(QWidget):
         painter.setPen(QColor("#dbeafe") if button.enabled else QColor("#64748b"))
         id_font = QFont("Segoe UI", 7 if self._density == "compact" else 8, QFont.Weight.DemiBold)
         painter.setFont(id_font)
-        painter.drawText(rect.adjusted(11, 15, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
+        painter.drawText(rect.adjusted(11, 14, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
 
         badge = self._badge_text(button.enabled)
         if badge:
@@ -190,16 +190,16 @@ class ButtonCell(QWidget):
         painter.setFont(title_font)
         title_color = QColor("#f8fafc") if button.enabled else QColor("#94a3b8")
         painter.setPen(title_color)
-        title_rect = rect.adjusted(7, 29, -7, -24)
+        title_rect = rect.adjusted(7, 29, -7, -21)
         self._draw_fitted_center(painter, title_rect, label, minimum_size=7)
 
         action_label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
-        action_font = QFont("Segoe UI", 8 if self._density == "compact" else 9, QFont.Weight.DemiBold)
+        action_font = QFont("Segoe UI", 7 if self._density == "compact" else 8, QFont.Weight.DemiBold)
         painter.setFont(action_font)
         action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=7)
         painter.setFont(action_font)
         action_text = metrics.elidedText(action_label, Qt.TextElideMode.ElideRight, max(18, rect.width() - 20))
-        pill_height = 17 if self._density == "compact" else 18
+        pill_height = 14 if self._density == "compact" else 15
         pill = QRect(rect.left() + 8, rect.bottom() - pill_height - 6, rect.width() - 16, pill_height)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(QColor(7, 12, 20, 190))
@@ -231,13 +231,11 @@ class ButtonCell(QWidget):
 
     def _draw_fitted_center(self, painter: QPainter, rect: QRect, text: str, minimum_size: int) -> None:
         base_font = QFont(painter.font())
-        text = text.strip()
+        text = self._humanize_compact_label(text.strip())
         words = text.split()
         if len(words) > 1:
             midpoint = (len(words) + 1) // 2
             lines = [" ".join(words[:midpoint]), " ".join(words[midpoint:])]
-        elif "/" in text and len(text) > 7:
-            lines = [part for part in text.split("/") if part]
         else:
             lines = [text]
 
@@ -246,14 +244,25 @@ class ButtonCell(QWidget):
             font, metrics = self._fit_font(base_font, line, rect.width(), minimum_size)
             fitted.append((line, font, metrics))
 
-        total_height = sum(metrics.height() for _, _, metrics in fitted)
+        line_gap = 1 if self._density == "compact" else 2
+        total_height = sum(metrics.height() for _, _, metrics in fitted) + max(0, len(fitted) - 1) * line_gap
+        while total_height > rect.height() and any(font.pointSize() > minimum_size for _, font, _ in fitted):
+            updated: list[tuple[str, QFont, QFontMetrics]] = []
+            for line, font, _ in fitted:
+                next_font = QFont(font)
+                if next_font.pointSize() > minimum_size:
+                    next_font.setPointSize(next_font.pointSize() - 1)
+                updated.append((line, next_font, QFontMetrics(next_font)))
+            fitted = updated
+            total_height = sum(metrics.height() for _, _, metrics in fitted) + max(0, len(fitted) - 1) * line_gap
+
         y = rect.center().y() - total_height // 2
-        for line, font, metrics in fitted:
+        for index, (line, font, metrics) in enumerate(fitted):
             painter.setFont(font)
             elided = metrics.elidedText(line, Qt.TextElideMode.ElideRight, rect.width())
             line_rect = QRect(rect.left(), y, rect.width(), metrics.height())
             painter.drawText(line_rect, Qt.AlignmentFlag.AlignCenter, elided)
-            y += metrics.height()
+            y += metrics.height() + (line_gap if index < len(fitted) - 1 else 0)
 
     @staticmethod
     def _fit_font(base_font: QFont, text: str, width: int, minimum_size: int) -> tuple[QFont, QFontMetrics]:
@@ -263,6 +272,21 @@ class ButtonCell(QWidget):
             font.setPointSize(font.pointSize() - 1)
             metrics = QFontMetrics(font)
         return font, metrics
+
+    @staticmethod
+    def _humanize_compact_label(text: str) -> str:
+        if " " in text or "/" in text:
+            return text
+        parts: list[str] = []
+        start = 0
+        for index in range(1, len(text)):
+            if text[index].isupper() and text[index - 1].islower():
+                parts.append(text[start:index])
+                start = index
+        if not parts:
+            return text
+        parts.append(text[start:])
+        return " ".join(parts)
 
     @staticmethod
     def _blend(base: QColor, accent: QColor, amount: float) -> QColor:

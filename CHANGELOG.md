@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.9
+
+- Reworked the app icon again with a clearer small-size design for desktop and taskbar use.
+- Restored the app icon in the main header with cleaner sizing.
+- Improved Launchpad grid label fitting, spacing, and compact text handling.
+- Refreshed dark and light screenshots.
+
 ## 0.1.8
 
 - Reworked the app icon and regenerated Windows icon assets.
