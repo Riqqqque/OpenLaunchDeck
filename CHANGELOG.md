@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.14
+
+- Reworked the small Windows icon layers used by the taskbar and pinned shortcuts.
+- Kept the outer shape as a clean white edge with transparent corners.
+- Rebuilt the ICO asset with taskbar-sized artwork instead of relying on scaled-down large icons.
+
 ## 0.1.13
 
 - Cleaned up the app icon edge so the white outline is the outer visible shape.
