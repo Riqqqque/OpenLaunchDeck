@@ -93,3 +93,38 @@ def test_disabled_grid_button_stays_selectable_for_editing():
     window.close()
     services.action_runner.shutdown()
     services.device.close()
+
+
+def test_simulation_tooltip_and_grid_focus_mode():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    window.show()
+    app.processEvents()
+
+    assert "no Launchpad Mini MK3 MIDI connection is active" in window.header_mode.toolTip()
+    assert window.mode_status.toolTip() == window.header_mode.toolTip()
+
+    window.set_grid_focus_mode(True)
+    app.processEvents()
+
+    assert window.grid_focus_action.isChecked()
+    assert window.grid_focus_button.text() == "Edit Layout"
+    assert not window.app_header.isVisible()
+    assert not window.editor_scroll.isVisible()
+    assert not window.sidebar_scroll.isVisible()
+
+    window.set_grid_focus_mode(False)
+    app.processEvents()
+
+    assert not window.grid_focus_action.isChecked()
+    assert window.grid_focus_button.text() == "Focus Grid"
+    assert window.app_header.isVisible()
+    assert window.editor_scroll.isVisible()
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()

@@ -28,12 +28,12 @@
     </linearGradient>
   </defs>
 
-  <rect width="512" height="512" rx="96" fill="#020617"/>
-  <rect x="28" y="28" width="456" height="456" rx="90" fill="url(#shell)"/>
-  <rect x="50" y="50" width="412" height="412" rx="78" fill="none" stroke="url(#edge)" stroke-width="22"/>
-  <rect x="78" y="78" width="356" height="356" rx="56" fill="#0b1220"/>
+  <rect x="12" y="12" width="488" height="488" rx="108" fill="#f8fafc"/>
+  <rect x="34" y="34" width="444" height="444" rx="92" fill="url(#shell)"/>
+  <rect x="58" y="58" width="396" height="396" rx="74" fill="none" stroke="url(#edge)" stroke-width="20"/>
+  <rect x="84" y="84" width="344" height="344" rx="54" fill="#0b1220"/>
 
-  <g transform="translate(105 105)">
+  <g transform="translate(108 108)">
     <rect x="0" y="0" width="84" height="84" rx="20" fill="url(#teal)"/>
     <rect x="107" y="0" width="84" height="84" rx="20" fill="#1b263a"/>
     <rect x="214" y="0" width="84" height="84" rx="20" fill="url(#blue)"/>
