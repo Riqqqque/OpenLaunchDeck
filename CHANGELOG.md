@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2
+
+- Fixed installer shortcut icon metadata for Start Menu and Desktop shortcuts.
+- Ensured installer-created shortcuts use the OpenLaunchDeck executable icon explicitly.
+
 ## 0.1.1
 
 - Added OpenLaunchDeck logo and Windows icon assets.

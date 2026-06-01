@@ -46,7 +46,9 @@
 
 - Clean install on a test Windows user profile.
 - Confirm Start Menu shortcut works.
+- Confirm Start Menu shortcut uses the OpenLaunchDeck icon.
 - Confirm optional Desktop shortcut works.
+- Confirm Desktop shortcut uses the OpenLaunchDeck icon.
 - Confirm first launch creates user data under `%APPDATA%\OpenLaunchDeck`.
 - Upgrade install over the previous version.
 - Confirm the installer closes or requests closing the running app before replacement.

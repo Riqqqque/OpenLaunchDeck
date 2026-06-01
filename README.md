@@ -116,8 +116,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.1
-git push origin v0.1.1
+git tag v0.1.2
+git push origin v0.1.2
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases.
