@@ -6,7 +6,7 @@ from ..paths import ICONS_DIR
 
 
 def app_icon() -> QIcon:
-    for file_name in ("openlaunchdeck_48.png", "openlaunchdeck.ico", "openlaunchdeck.svg", "openlaunchdeck_256.png"):
+    for file_name in ("openlaunchdeck_256.png", "openlaunchdeck.ico", "openlaunchdeck.svg"):
         icon_path = ICONS_DIR / file_name
         if icon_path.exists():
             icon = QIcon(str(icon_path))
