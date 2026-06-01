@@ -21,3 +21,13 @@ def test_build_script_keeps_local_safety_defaults():
     assert "if (!$SkipTests)" in script
     assert "New-PortableZip" in script
     assert "MyAppCompression=lzma2/fast" in script
+
+
+def test_windows_exe_metadata_and_icon_refresh_are_configured():
+    spec = (ROOT / "openlaunchdeck.spec").read_text(encoding="utf-8")
+    installer = (ROOT / "installer" / "openlaunchdeck.iss").read_text(encoding="utf-8")
+
+    assert "StringStruct('ProductName', '{APP_NAME}')" in spec
+    assert "StringStruct('ProductVersion', '{__version__}')" in spec
+    assert "version=str(version_info_path)" in spec
+    assert "ie4uinit.exe" in installer

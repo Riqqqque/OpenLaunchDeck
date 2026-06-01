@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.11
+
+- Added Windows EXE version metadata so Explorer shows OpenLaunchDeck product and file version details.
+- Refresh Windows shell icons after installer upgrades so desktop and taskbar icons update more reliably.
+
 ## 0.1.10
 
 - Lowered and slightly scaled the grid action chips so `Volume` and `No Action` labels have more breathing room.
