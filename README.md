@@ -23,6 +23,15 @@ Programmer Mode is recommended for predictable pad messages. Device mode can aff
 
 More screenshots are tracked in [docs/screenshots](docs/screenshots).
 
+## Setup Guides
+
+Short setup guides are tracked in [docs/wiki](docs/wiki) for GitHub Wiki-style pages:
+
+- [OBS WebSocket setup](docs/wiki/OBS-WebSocket-Setup.md)
+- [Launchpad Mini MK3 setup](docs/wiki/Launchpad-Mini-MK3-Setup.md)
+- [Soundboard and Discord routing](docs/wiki/Soundboard-and-Discord-Routing.md)
+- [Release and update flow](docs/wiki/Release-and-Update-Flow.md)
+
 ## Features
 
 - Editable 8x8 Launchpad-style grid

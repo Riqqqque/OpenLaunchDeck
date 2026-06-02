@@ -96,6 +96,8 @@
 ## Documentation And Source Cleanliness
 
 - Update README.
+- Update the setup guide pages under `docs/wiki`.
+- Publish the same setup guide content to the GitHub Wiki when the wiki remote is initialized.
 - Update `docs/updating.md`.
 - Update `docs/performance.md`.
 - Update `docs/troubleshooting.md` if behavior changed.
