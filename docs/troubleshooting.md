@@ -2,7 +2,7 @@
 
 ## No Device Detected
 
-Check USB connection, open `Device > MIDI Debug`, and confirm input/output ports are listed. If not, reconnect the Launchpad and press Reconnect.
+Check USB connection, open `Device > MIDI Debug`, and confirm input/output ports are listed. On Windows, look for names like `LPMiniMK3 MIDI`, `MIDIIN2 (LPMiniMK3 MIDI)`, or `MIDIOUT2 (LPMiniMK3 MIDI)`. If no ports appear, reconnect the Launchpad and press Reconnect.
 
 ## Pads Not Lighting
 

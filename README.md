@@ -121,8 +121,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.18
-git push origin v0.1.18
+git tag v0.1.19
+git push origin v0.1.19
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases. It uses the same build script with CI-specific fast packaging flags so tagged releases spend less time on packaging.
@@ -135,7 +135,7 @@ When the Launchpad is connected:
 
 1. Put the device in Programmer Mode.
 2. Open `Device > MIDI Debug`.
-3. Confirm input and output ports are detected.
+3. Confirm input and output ports are detected. On Windows, the Launchpad Mini MK3 can appear as `LPMiniMK3 MIDI`, `MIDIIN2 (LPMiniMK3 MIDI)`, and `MIDIOUT2 (LPMiniMK3 MIDI)`.
 4. Press pads and watch raw MIDI messages.
 5. Use calibration if parsed button IDs do not match A1-H8.
 6. Save the mapping and reconnect.
