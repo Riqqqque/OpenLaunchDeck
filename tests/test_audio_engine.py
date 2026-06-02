@@ -244,3 +244,21 @@ def test_voice_chat_route_can_disable_monitor(tmp_path):
     assert result.success is True
     assert len(engine.currently_playing()) == 1
     assert engine.currently_playing()[0].routed_to_voice_chat is True
+
+
+def test_voice_chat_route_cleans_up_when_monitor_output_is_missing(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"fake wav bytes")
+    engine = AudioEngine(
+        default_output_device_id="missing-monitor",
+        voice_chat_output_device_id="voice-cable",
+        monitor_voice_chat_routes=True,
+    )
+    install_fake_qt(engine)
+    FakeMediaDevices.devices = [FakeDevice("voice-cable", "Cable Input")]
+
+    result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
+
+    assert result.success is False
+    assert "selected soundboard output" in result.message.lower()
+    assert not engine.currently_playing()
