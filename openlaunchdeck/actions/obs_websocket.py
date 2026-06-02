@@ -3,8 +3,11 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import time
 import uuid
 from dataclasses import dataclass
+from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from .base import ActionResult, BaseAction
@@ -14,6 +17,7 @@ OBS_OPERATIONS = [
     "save_replay_buffer",
     "start_replay_buffer",
     "stop_replay_buffer",
+    "save_screenshot",
     "start_recording",
     "stop_recording",
     "start_streaming",
@@ -128,7 +132,11 @@ class ObsWebSocketAction(BaseAction):
         {"name": "password", "label": "Password", "type": "text"},
         {"name": "scene_name", "label": "Scene Name", "type": "text"},
         {"name": "input_name", "label": "Input Name", "type": "text"},
+        {"name": "screenshot_source", "label": "Screenshot Source", "type": "text"},
+        {"name": "screenshot_folder", "label": "Screenshot Folder", "type": "path"},
+        {"name": "screenshot_format", "label": "Screenshot Format", "type": "choice", "choices": ["png", "jpg"]},
         {"name": "start_if_stopped", "label": "Start Replay Buffer If Needed", "type": "bool"},
+        {"name": "replay_verify_timeout_ms", "label": "Replay Verify Timeout Ms", "type": "number"},
         {"name": "timeout_ms", "label": "Timeout Ms", "type": "number"},
     ]
     blocking = True
@@ -160,10 +168,22 @@ def run_obs_operation(client: ObsWebSocketClient, operation: str, config: dict) 
                     return _obs_fail("Could not start replay buffer.", started)
                 return ActionResult.ok("Replay buffer started. Press again to save a clip.")
             return ActionResult.fail("Replay buffer is not running.")
+        before = client.request("GetLastReplayBufferReplay")
+        before_path = str(before.data.get("savedReplayPath") or "") if before.ok else ""
+        save_started = time.time()
         saved = client.request("SaveReplayBuffer")
         if not saved.ok:
             return _obs_fail("Could not save replay buffer.", saved)
-        return ActionResult.ok("Replay buffer save requested.")
+        verify_value = config.get("replay_verify_timeout_ms")
+        verify_timeout = 10000 if verify_value in (None, "") else int(verify_value)
+        replay_path = _wait_for_replay_file(client, before_path, save_started, verify_timeout / 1000.0)
+        if replay_path is None:
+            return ActionResult.fail(
+                "OBS accepted the replay save request, but no replay file appeared. Restart the OBS replay buffer and try again."
+            )
+        return ActionResult.ok(f"Replay saved: {replay_path.name}", replay_path=str(replay_path))
+    if operation == "save_screenshot":
+        return _save_screenshot(client, config)
     if operation == "start_replay_buffer":
         return _simple_request(client, "StartReplayBuffer", "Replay buffer started.")
     if operation == "stop_replay_buffer":
@@ -187,6 +207,59 @@ def run_obs_operation(client: ObsWebSocketClient, operation: str, config: dict) 
             return ActionResult.fail("Input name is required.")
         return _simple_request(client, "ToggleInputMute", f"Toggled mute for {input_name}.", {"inputName": input_name})
     return ActionResult.fail(f"Unknown OBS operation: {operation}")
+
+
+def _save_screenshot(client: ObsWebSocketClient, config: dict) -> ActionResult:
+    source_name = str(config.get("screenshot_source") or "").strip()
+    if not source_name:
+        scene = client.request("GetCurrentProgramScene")
+        if not scene.ok:
+            return _obs_fail("Could not read current OBS scene.", scene)
+        source_name = str(scene.data.get("currentProgramSceneName") or "").strip()
+    if not source_name:
+        return ActionResult.fail("OBS screenshot source is required.")
+
+    folder_text = str(config.get("screenshot_folder") or "").strip()
+    folder = Path(folder_text).expanduser() if folder_text else Path.home() / "Pictures" / "OpenLaunchDeck OBS Screenshots"
+    folder.mkdir(parents=True, exist_ok=True)
+    image_format = str(config.get("screenshot_format") or "png").lower().strip()
+    if image_format not in {"png", "jpg"}:
+        image_format = "png"
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    output_path = folder / f"OBS Screenshot {timestamp}.{image_format}"
+    result = client.request(
+        "SaveSourceScreenshot",
+        {
+            "sourceName": source_name,
+            "imageFormat": image_format,
+            "imageFilePath": str(output_path),
+        },
+    )
+    if not result.ok:
+        return _obs_fail("Could not save OBS screenshot.", result)
+    return ActionResult.ok(f"Screenshot saved: {output_path.name}", screenshot_path=str(output_path))
+
+
+def _wait_for_replay_file(client: ObsWebSocketClient, before_path: str, save_started: float, timeout_seconds: float) -> Path | None:
+    deadline = time.time() + max(0.0, timeout_seconds)
+    before_key = _path_key(before_path)
+    while time.time() <= deadline:
+        current = client.request("GetLastReplayBufferReplay")
+        if current.ok:
+            replay_path = Path(str(current.data.get("savedReplayPath") or ""))
+            if replay_path.exists():
+                try:
+                    modified_at = replay_path.stat().st_mtime
+                except OSError:
+                    modified_at = 0
+                if _path_key(str(replay_path)) != before_key or modified_at >= save_started - 1:
+                    return replay_path
+        time.sleep(0.5)
+    return None
+
+
+def _path_key(path: str) -> str:
+    return str(Path(path)).replace("\\", "/").lower()
 
 
 def _simple_request(client: ObsWebSocketClient, request_type: str, message: str, data: dict[str, Any] | None = None) -> ActionResult:

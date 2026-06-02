@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.27
+
+- Added a direct OBS WebSocket screenshot action so screenshots do not depend on injected hotkeys.
+
 ## 0.1.26
 
 - Fixed packaged OBS WebSocket actions by bundling the WebSocket client dependency into the Windows build.
