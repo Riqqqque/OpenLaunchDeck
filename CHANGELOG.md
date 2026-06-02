@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.19
+
+- Fixed Launchpad Mini MK3 auto-detection on Windows when the device appears as `LPMiniMK3 MIDI`.
+- Added regression tests for the primary and secondary Windows MIDI port names.
+
 ## 0.1.18
 
 - Rebuilt every Windows icon size from the same desktop artwork.

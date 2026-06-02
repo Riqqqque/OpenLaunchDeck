@@ -31,11 +31,32 @@ class MidiManager:
 
 
 def _find_launchpad_name(ports: list[str]) -> str:
-    for port in ports:
-        lower = port.lower()
-        if "launchpad" in lower and ("mk3" in lower or "mini" in lower):
-            return port
-    for port in ports:
-        if "launchpad" in port.lower():
+    matches = sorted(
+        [(_launchpad_port_score(port), -index, port) for index, port in enumerate(ports)],
+        reverse=True,
+    )
+    for score, _index, port in matches:
+        if score > 0:
             return port
     return ""
+
+
+def _launchpad_port_score(port: str) -> int:
+    lower = port.lower()
+    compact = "".join(character for character in lower if character.isalnum())
+    score = 0
+    if "lpminimk3" in compact:
+        score += 100
+    if "launchpad" in lower:
+        score += 90
+    if "novation" in lower:
+        score += 25
+    if "mini" in lower or "mini" in compact:
+        score += 15
+    if "mk3" in lower or "mk3" in compact:
+        score += 15
+    if "daw" in lower:
+        score -= 30
+    if "midiin2" in compact or "midiout2" in compact:
+        score -= 5
+    return score
