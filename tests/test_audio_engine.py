@@ -29,9 +29,23 @@ class FakeAudioOutput:
 
 
 class FakeMediaDevices:
+    devices = []
+
     @staticmethod
     def audioOutputs():
-        return []
+        return list(FakeMediaDevices.devices)
+
+
+class FakeDevice:
+    def __init__(self, device_id, description):
+        self._device_id = device_id
+        self._description = description
+
+    def id(self):
+        return self._device_id.encode()
+
+    def description(self):
+        return self._description
 
 
 class FakeMediaPlayer:
@@ -68,6 +82,7 @@ class FakeMediaPlayer:
 
 
 def install_fake_qt(engine):
+    FakeMediaDevices.devices = []
     engine.qt_available = True
     engine._qt = (FakeQUrl, FakeAudioOutput, FakeMediaDevices, FakeMediaPlayer)
 
@@ -160,3 +175,46 @@ def test_audio_engine_stop_scopes(tmp_path):
     assert {item.button_id for item in engine.currently_playing()} == {"B1"}
     engine.stop_all()
     assert not engine.currently_playing()
+
+
+def test_voice_chat_route_requires_output_device(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"fake wav bytes")
+    engine = AudioEngine()
+    install_fake_qt(engine)
+
+    result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
+
+    assert result.success is False
+    assert "voice chat output" in result.message.lower()
+
+
+def test_voice_chat_route_plays_to_voice_output_and_monitor(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"fake wav bytes")
+    engine = AudioEngine(voice_chat_output_device_id="voice-cable", monitor_voice_chat_routes=True)
+    install_fake_qt(engine)
+    FakeMediaDevices.devices = [FakeDevice("voice-cable", "Cable Input")]
+
+    result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True, "volume": 25})
+
+    assert result.success is True
+    instances = engine.currently_playing()
+    assert len(instances) == 2
+    assert sum(1 for instance in instances if instance.routed_to_voice_chat) == 1
+    assert any(instance.audio_output.device is None for instance in instances)
+    assert any(getattr(instance.audio_output.device, "_device_id", "") == "voice-cable" for instance in instances)
+
+
+def test_voice_chat_route_can_disable_monitor(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"fake wav bytes")
+    engine = AudioEngine(voice_chat_output_device_id="voice-cable", monitor_voice_chat_routes=False)
+    install_fake_qt(engine)
+    FakeMediaDevices.devices = [FakeDevice("voice-cable", "Cable Input")]
+
+    result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
+
+    assert result.success is True
+    assert len(engine.currently_playing()) == 1
+    assert engine.currently_playing()[0].routed_to_voice_chat is True

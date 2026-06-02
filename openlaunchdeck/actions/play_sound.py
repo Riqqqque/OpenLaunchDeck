@@ -12,6 +12,7 @@ class PlaySoundAction(BaseAction):
     config_fields = [
         {"name": "file_path", "label": "Sound File", "type": "file"},
         {"name": "volume", "label": "Volume", "type": "number"},
+        {"name": "route_to_voice_chat", "label": "Route To Voice Chat", "type": "bool"},
         {"name": "loop", "label": "Loop", "type": "bool"},
         {"name": "behavior_when_already_playing", "label": "Already Playing", "type": "choice", "choices": ["restart", "overlap", "ignore", "toggle_stop"]},
         {"name": "active_color", "label": "Active Color", "type": "color"},

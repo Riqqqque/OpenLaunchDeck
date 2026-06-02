@@ -6,7 +6,7 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QComboBox, QDialog, QFormLayout, QLabel, QListWidget, QPushButton, QSpinBox, QVBoxLayout
+from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QFormLayout, QLabel, QListWidget, QPushButton, QSpinBox, QVBoxLayout
 
 from ..audio.output_devices import list_output_devices
 
@@ -26,17 +26,31 @@ class SoundboardPanel(QDialog):
         form.setSpacing(10)
         self.output_combo = QComboBox()
         self.output_combo.addItem("System default", "")
-        for device in list_output_devices():
+        devices = list_output_devices()
+        for device in devices:
             self.output_combo.addItem(device["description"], device["id"])
         current_device = audio_engine.default_output_device_id
         if current_device:
             index = self.output_combo.findData(current_device)
             if index >= 0:
                 self.output_combo.setCurrentIndex(index)
+        self.voice_output_combo = QComboBox()
+        self.voice_output_combo.addItem("Not configured", "")
+        for device in devices:
+            self.voice_output_combo.addItem(device["description"], device["id"])
+        current_voice_device = audio_engine.voice_chat_output_device_id
+        if current_voice_device:
+            index = self.voice_output_combo.findData(current_voice_device)
+            if index >= 0:
+                self.voice_output_combo.setCurrentIndex(index)
+        self.monitor_voice_check = QCheckBox()
+        self.monitor_voice_check.setChecked(audio_engine.monitor_voice_chat_routes)
         self.volume_spin = QSpinBox()
         self.volume_spin.setRange(0, 100)
         self.volume_spin.setValue(audio_engine.global_volume)
         form.addRow("Default Output", self.output_combo)
+        form.addRow("Voice Chat Output", self.voice_output_combo)
+        form.addRow("Monitor Voice Routes", self.monitor_voice_check)
         form.addRow("Global Volume", self.volume_spin)
         layout.addLayout(form)
 
@@ -58,6 +72,8 @@ class SoundboardPanel(QDialog):
         self.refresh_button.clicked.connect(self.refresh)
         self.docs_button.clicked.connect(self.open_docs)
         self.output_combo.currentIndexChanged.connect(lambda _index: self._set_output_device())
+        self.voice_output_combo.currentIndexChanged.connect(lambda _index: self._set_voice_output_device())
+        self.monitor_voice_check.stateChanged.connect(lambda _state: self._set_monitor_voice_routes())
         self.volume_spin.valueChanged.connect(self._set_global_volume)
         self.timer = QTimer(self)
         self.timer.setInterval(1000)
@@ -70,7 +86,8 @@ class SoundboardPanel(QDialog):
         for instance in self.audio_engine.currently_playing():
             name = instance.display_name or Path(instance.file_path).name
             loop_text = " loop" if instance.loop else ""
-            self.list_widget.addItem(f"{instance.button_id}: {name} ({instance.volume}%{loop_text})")
+            route_text = " voice" if instance.routed_to_voice_chat else ""
+            self.list_widget.addItem(f"{instance.button_id}: {name} ({instance.volume}%{loop_text}{route_text})")
 
     def _stop_all(self) -> None:
         self.audio_engine.stop_all()
@@ -81,6 +98,18 @@ class SoundboardPanel(QDialog):
         self.audio_engine.set_default_output_device(device_id)
         if self.settings_service is not None:
             self.settings_service.update(soundboard_default_output_device=device_id)
+
+    def _set_voice_output_device(self) -> None:
+        device_id = str(self.voice_output_combo.currentData() or "")
+        self.audio_engine.set_voice_chat_output_device(device_id)
+        if self.settings_service is not None:
+            self.settings_service.update(soundboard_voice_chat_output_device=device_id)
+
+    def _set_monitor_voice_routes(self) -> None:
+        enabled = self.monitor_voice_check.isChecked()
+        self.audio_engine.set_monitor_voice_chat_routes(enabled)
+        if self.settings_service is not None:
+            self.settings_service.update(soundboard_monitor_voice_chat=enabled)
 
     def _set_global_volume(self, volume: int) -> None:
         self.audio_engine.set_global_volume(volume)

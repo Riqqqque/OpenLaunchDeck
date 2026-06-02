@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.22
+
+- Added per-sound voice chat routing with local monitoring for soundboard buttons.
+- Added Soundboard panel controls for the voice chat output device and monitoring behavior.
+
 ## 0.1.21
 
 - Corrected stale saved Launchpad port settings when a better second MIDI interface is available.

@@ -70,7 +70,7 @@ Sound playback is started through QtMultimedia and does not load entire sound fi
 
 Sound action start latency is logged at debug level, or at info level when performance logging is enabled. The Soundboard panel refreshes the current playback list on a lightweight timer and can be refreshed manually.
 
-Per-sound volume and global soundboard volume are combined before playback. Existing playback instances are tracked by button and page so Stop Sound can stop one button, one page, or all sounds without scanning profile files.
+Per-sound volume and global soundboard volume are combined before playback. Existing playback instances are tracked by button and page so Stop Sound can stop one button, one page, or all sounds without scanning profile files. Voice-chat routing starts a second playback instance only for sounds that explicitly enable `Route To Voice Chat`.
 
 ## Native Acceleration
 

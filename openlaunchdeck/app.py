@@ -59,6 +59,8 @@ def build_services() -> AppServices:
         logger=logger,
         global_volume=settings_service.settings.soundboard_global_volume,
         default_output_device_id=settings_service.settings.soundboard_default_output_device,
+        voice_chat_output_device_id=settings_service.settings.soundboard_voice_chat_output_device,
+        monitor_voice_chat_routes=settings_service.settings.soundboard_monitor_voice_chat,
         performance_logging_enabled=settings_service.settings.enable_performance_logging,
         performance_monitor=performance_monitor,
     )
