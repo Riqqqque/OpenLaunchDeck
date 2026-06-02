@@ -37,6 +37,10 @@ The Soundboard panel also has a Stop All Sounds button.
 
 The Soundboard panel lists QtMultimedia output devices when Windows exposes them. If a selected device cannot be used, playback falls back to the system default output.
 
+Windows and virtual audio software can expose multiple outputs with the exact same visible name. VoiceMeeter can also expose advanced virtual buses such as `Voicemeeter In 1` through `Voicemeeter In 5`.
+
+OpenLaunchDeck hides duplicate names and those advanced VoiceMeeter buses in the Soundboard and Settings selectors so normal setups stay readable. The useful routes, such as `Voicemeeter Input`, `Voicemeeter AUX Input`, real headphones, and audio interfaces remain visible. If a hidden device ID was already saved, the app keeps the saved ID instead of silently changing it.
+
 Global soundboard volume is combined with each button's per-sound volume. For example, 50% global volume and 80% button volume play at 40% effective output.
 
 ## Soundboard Panel

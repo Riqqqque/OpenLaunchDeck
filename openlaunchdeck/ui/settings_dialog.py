@@ -6,12 +6,14 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QLabel,
     QLineEdit,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
 )
 
+from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
 from ..paths import APP_DATA_DIR
 
 
@@ -56,8 +58,15 @@ class SettingsDialog(QDialog):
         self.autosave.setChecked(settings.profile_autosave)
         self.backups = QCheckBox()
         self.backups.setChecked(settings.backup_profiles_automatically)
-        self.output_device = QLineEdit(settings.soundboard_default_output_device)
-        self.voice_output_device = QLineEdit(settings.soundboard_voice_chat_output_device)
+        devices = list_output_devices()
+        self.output_device = QComboBox()
+        self.output_device.addItem("System default", "")
+        self._add_device_items(self.output_device, devices)
+        self._select_saved_device(self.output_device, settings.soundboard_default_output_device)
+        self.voice_output_device = QComboBox()
+        self.voice_output_device.addItem("Not configured", "")
+        self._add_device_items(self.voice_output_device, devices)
+        self._select_saved_device(self.voice_output_device, settings.soundboard_voice_chat_output_device)
         self.monitor_voice_routes = QCheckBox()
         self.monitor_voice_routes.setChecked(settings.soundboard_monitor_voice_chat)
         self.global_volume = QSpinBox()
@@ -94,6 +103,18 @@ class SettingsDialog(QDialog):
         form.addRow("Automatic backups", self.backups)
         form.addRow("Sound output device", self.output_device)
         form.addRow("Voice chat output device", self.voice_output_device)
+        hidden_duplicates = hidden_duplicate_count(devices)
+        hidden_advanced = hidden_advanced_output_count()
+        note_parts = []
+        if hidden_duplicates:
+            note_parts.append(f"{hidden_duplicates} duplicate Windows outputs")
+        if hidden_advanced:
+            note_parts.append(f"{hidden_advanced} advanced VoiceMeeter buses")
+        if note_parts:
+            note = QLabel("Hidden " + " and ".join(note_parts))
+            note.setWordWrap(True)
+            note.setObjectName("MutedText")
+            form.addRow("Audio devices", note)
         form.addRow("Monitor voice routes", self.monitor_voice_routes)
         form.addRow("Soundboard volume", self.global_volume)
         form.addRow("Stop sounds on exit", self.stop_on_exit)
@@ -122,8 +143,8 @@ class SettingsDialog(QDialog):
             midi_debug_logging=self.midi_debug.isChecked(),
             profile_autosave=self.autosave.isChecked(),
             backup_profiles_automatically=self.backups.isChecked(),
-            soundboard_default_output_device=self.output_device.text(),
-            soundboard_voice_chat_output_device=self.voice_output_device.text(),
+            soundboard_default_output_device=str(self.output_device.currentData() or ""),
+            soundboard_voice_chat_output_device=str(self.voice_output_device.currentData() or ""),
             soundboard_monitor_voice_chat=self.monitor_voice_routes.isChecked(),
             soundboard_global_volume=self.global_volume.value(),
             soundboard_stop_sounds_on_exit=self.stop_on_exit.isChecked(),
@@ -134,3 +155,17 @@ class SettingsDialog(QDialog):
             use_native_acceleration=self.native_acceleration.isChecked(),
         )
         super().accept()
+
+    def _add_device_items(self, combo: QComboBox, devices: list[dict[str, str | int]]) -> None:
+        for device in devices:
+            combo.addItem(str(device.get("display_name") or device.get("description") or "Audio output"), str(device.get("id") or ""))
+
+    def _select_saved_device(self, combo: QComboBox, device_id: str) -> None:
+        if not device_id:
+            combo.setCurrentIndex(0)
+            return
+        index = combo.findData(device_id)
+        if index < 0:
+            combo.addItem("Saved device not currently available", device_id)
+            index = combo.findData(device_id)
+        combo.setCurrentIndex(max(0, index))

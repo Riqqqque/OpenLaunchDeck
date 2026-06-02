@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.29
+
+- Hid duplicate Windows audio outputs with identical names in Soundboard and Settings device selectors.
+- Added GitHub Wiki setup pages for beginner-friendly OBS, Launchpad, soundboard, and update workflows.
+
 ## 0.1.28
 
 - Made OBS screenshots save to the normal OBS/Videos folder by default and verify the image file before reporting success.
