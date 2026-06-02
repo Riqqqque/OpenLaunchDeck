@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.32
+
+- Cleaned up partially started soundboard routes when a second output device is unavailable.
+
 ## 0.1.31
 
 - Kept normal soundboard monitoring on the Windows system default route by default.

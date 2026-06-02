@@ -86,6 +86,8 @@ class AudioEngine:
                     allow_default=not routed_to_voice_chat,
                 )
                 if audio_output is None:
+                    for instance_id in started_instance_ids:
+                        self._stop_instance(instance_id)
                     if route_name == "voice_chat":
                         return ActionResult.fail("Voice chat output device is not available.")
                     return ActionResult.fail("Selected soundboard output device is not available.")
