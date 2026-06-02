@@ -100,9 +100,7 @@ class ActionRunner:
                 return result
             future = self.executor.submit(self._run_action, button_id, action, context, config)
             future.add_done_callback(self._release_action_slot)
-            result = ActionResult.ok("Action started.")
-            self._complete(button_id, result)
-            return result
+            return ActionResult.ok("Action started.")
         result = self._run_action(button_id, action, context, config)
         return result
 

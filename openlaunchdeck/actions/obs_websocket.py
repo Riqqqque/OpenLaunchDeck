@@ -23,6 +23,11 @@ OBS_OPERATIONS = [
     "start_streaming",
     "stop_streaming",
     "switch_scene",
+    "show_source",
+    "hide_source",
+    "toggle_source",
+    "mute_input",
+    "unmute_input",
     "toggle_input_mute",
 ]
 
@@ -131,6 +136,7 @@ class ObsWebSocketAction(BaseAction):
         {"name": "port", "label": "Port", "type": "number"},
         {"name": "password", "label": "Password", "type": "text"},
         {"name": "scene_name", "label": "Scene Name", "type": "text"},
+        {"name": "source_name", "label": "Source Name", "type": "text"},
         {"name": "input_name", "label": "Input Name", "type": "text"},
         {"name": "screenshot_source", "label": "Screenshot Source", "type": "text"},
         {"name": "screenshot_folder", "label": "Screenshot Folder", "type": "path"},
@@ -201,6 +207,16 @@ def run_obs_operation(client: ObsWebSocketClient, operation: str, config: dict) 
         if not scene_name:
             return ActionResult.fail("Scene name is required.")
         return _simple_request(client, "SetCurrentProgramScene", f"Switched to scene {scene_name}.", {"sceneName": scene_name})
+    if operation == "show_source":
+        return _set_source_enabled(client, config, True)
+    if operation == "hide_source":
+        return _set_source_enabled(client, config, False)
+    if operation == "toggle_source":
+        return _toggle_source_enabled(client, config)
+    if operation == "mute_input":
+        return _set_input_muted(client, config, True)
+    if operation == "unmute_input":
+        return _set_input_muted(client, config, False)
     if operation == "toggle_input_mute":
         input_name = str(config.get("input_name") or "").strip()
         if not input_name:
@@ -241,6 +257,111 @@ def _save_screenshot(client: ObsWebSocketClient, config: dict) -> ActionResult:
     if screenshot_path is None:
         return ActionResult.fail("OBS accepted the screenshot request, but no screenshot file appeared.")
     return ActionResult.ok(f"Screenshot saved: {output_path.name}", screenshot_path=str(output_path))
+
+
+def _set_input_muted(client: ObsWebSocketClient, config: dict, muted: bool) -> ActionResult:
+    input_name = str(config.get("input_name") or "").strip()
+    if not input_name:
+        return ActionResult.fail("Input name is required.")
+    result = client.request("SetInputMute", {"inputName": input_name, "inputMuted": muted})
+    if not result.ok:
+        return _obs_fail(f"Could not {'mute' if muted else 'unmute'} {input_name}.", result)
+    status = client.request("GetInputMute", {"inputName": input_name})
+    if not status.ok:
+        return _obs_fail(f"Could not verify mute state for {input_name}.", status)
+    actual = bool(status.data.get("inputMuted"))
+    if actual != muted:
+        state = "muted" if muted else "unmuted"
+        return ActionResult.fail(f"OBS did not verify {input_name} as {state}.")
+    return ActionResult.ok(f"{input_name} {'muted' if muted else 'unmuted'}.")
+
+
+def _set_source_enabled(client: ObsWebSocketClient, config: dict, enabled: bool) -> ActionResult:
+    scene_name_result = _configured_or_current_scene(client, config)
+    if isinstance(scene_name_result, ActionResult):
+        return scene_name_result
+    scene_name = scene_name_result
+    source_name = _configured_source_name(config)
+    if not source_name:
+        return ActionResult.fail("Source name is required.")
+    item = _find_scene_item(client, scene_name, source_name)
+    if isinstance(item, ActionResult):
+        return item
+    result = client.request(
+        "SetSceneItemEnabled",
+        {
+            "sceneName": scene_name,
+            "sceneItemId": item["id"],
+            "sceneItemEnabled": enabled,
+        },
+    )
+    if not result.ok:
+        return _obs_fail(f"Could not {'show' if enabled else 'hide'} {source_name}.", result)
+    verified = _scene_item_enabled(client, scene_name, item["id"])
+    if isinstance(verified, ActionResult):
+        return verified
+    if verified != enabled:
+        return ActionResult.fail(f"OBS did not verify {source_name} as {'visible' if enabled else 'hidden'}.")
+    return ActionResult.ok(f"{source_name} {'shown' if enabled else 'hidden'}.")
+
+
+def _toggle_source_enabled(client: ObsWebSocketClient, config: dict) -> ActionResult:
+    scene_name_result = _configured_or_current_scene(client, config)
+    if isinstance(scene_name_result, ActionResult):
+        return scene_name_result
+    scene_name = scene_name_result
+    source_name = _configured_source_name(config)
+    if not source_name:
+        return ActionResult.fail("Source name is required.")
+    item = _find_scene_item(client, scene_name, source_name)
+    if isinstance(item, ActionResult):
+        return item
+    return _set_source_enabled(client, {**config, "scene_name": scene_name, "source_name": source_name}, not item["enabled"])
+
+
+def _configured_or_current_scene(client: ObsWebSocketClient, config: dict) -> str | ActionResult:
+    scene_name = str(config.get("scene_name") or "").strip()
+    if scene_name:
+        return scene_name
+    scene = client.request("GetCurrentProgramScene")
+    if not scene.ok:
+        return _obs_fail("Could not read current OBS scene.", scene)
+    scene_name = str(scene.data.get("currentProgramSceneName") or "").strip()
+    if not scene_name:
+        return ActionResult.fail("Scene name is required.")
+    return scene_name
+
+
+def _configured_source_name(config: dict) -> str:
+    return str(config.get("source_name") or config.get("input_name") or config.get("screenshot_source") or "").strip()
+
+
+def _find_scene_item(client: ObsWebSocketClient, scene_name: str, source_name: str) -> dict[str, Any] | ActionResult:
+    by_id = client.request("GetSceneItemId", {"sceneName": scene_name, "sourceName": source_name, "searchOffset": 0})
+    if by_id.ok and "sceneItemId" in by_id.data:
+        item_id = int(by_id.data["sceneItemId"])
+        enabled = _scene_item_enabled(client, scene_name, item_id)
+        if isinstance(enabled, ActionResult):
+            return enabled
+        return {"id": item_id, "enabled": enabled}
+
+    items = client.request("GetSceneItemList", {"sceneName": scene_name})
+    if not items.ok:
+        return _obs_fail(f"Could not find source {source_name}.", items)
+    for item in items.data.get("sceneItems", []):
+        if str(item.get("sourceName") or "") == source_name:
+            return {
+                "id": int(item.get("sceneItemId")),
+                "enabled": bool(item.get("sceneItemEnabled")),
+            }
+    return ActionResult.fail(f"Source {source_name} was not found in scene {scene_name}.")
+
+
+def _scene_item_enabled(client: ObsWebSocketClient, scene_name: str, scene_item_id: int) -> bool | ActionResult:
+    status = client.request("GetSceneItemEnabled", {"sceneName": scene_name, "sceneItemId": scene_item_id})
+    if not status.ok:
+        return _obs_fail("Could not verify source visibility.", status)
+    return bool(status.data.get("sceneItemEnabled"))
 
 
 def _obs_record_directory(client: ObsWebSocketClient) -> Path:

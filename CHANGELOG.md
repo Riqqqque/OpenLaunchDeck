@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.30
+
+- Added verified OBS WebSocket actions for showing/hiding scene sources and muting/unmuting inputs.
+- Updated blocking actions so the UI and lighting only report the real completed result, not the initial dispatch.
+- Sent F13-F24 hotkeys as Windows virtual-key events for better extended-key compatibility.
+
 ## 0.1.29
 
 - Hid duplicate Windows audio outputs with identical names in Soundboard and Settings device selectors.

@@ -159,8 +159,8 @@ def _send_hotkey_windows(keys: list[str]) -> None:
     import ctypes
     from ctypes import wintypes
 
-    vk_codes = [_vk_code_for_key(key) for key in keys]
-    if not vk_codes:
+    key_events = [(normalize_key_name(key), _vk_code_for_key(key)) for key in keys]
+    if not key_events:
         raise ValueError("Hotkey is empty.")
 
     user32 = ctypes.WinDLL("user32", use_last_error=True)
@@ -205,8 +205,14 @@ def _send_hotkey_windows(keys: list[str]) -> None:
         _anonymous_ = ("union",)
         _fields_ = [("type", wintypes.DWORD), ("union", INPUT_UNION)]
 
-    def make_input(vk_code: int, key_up: bool = False) -> INPUT:
+    def make_input(key: str, vk_code: int, key_up: bool = False) -> INPUT:
         scan_code = user32.MapVirtualKeyW(vk_code, MAPVK_VK_TO_VSC)
+        if _should_send_virtual_key(key, scan_code):
+            flags = 0
+            if key_up:
+                flags |= KEYEVENTF_KEYUP
+            return INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(vk_code, 0, flags, 0, 0))
+
         flags = KEYEVENTF_SCANCODE
         if vk_code in {0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2D, 0x2E, 0x5B, 0x5C, 0x5D}:
             flags |= KEYEVENTF_EXTENDEDKEY
@@ -214,8 +220,8 @@ def _send_hotkey_windows(keys: list[str]) -> None:
             flags |= KEYEVENTF_KEYUP
         return INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(0, scan_code, flags, 0, 0))
 
-    inputs = [make_input(vk_code, False) for vk_code in vk_codes]
-    inputs.extend(make_input(vk_code, True) for vk_code in reversed(vk_codes))
+    inputs = [make_input(key, vk_code, False) for key, vk_code in key_events]
+    inputs.extend(make_input(key, vk_code, True) for key, vk_code in reversed(key_events))
     array_type = INPUT * len(inputs)
     sent = user32.SendInput(len(inputs), array_type(*inputs), ctypes.sizeof(INPUT))
     if sent != len(inputs):
@@ -229,6 +235,11 @@ def _vk_code_for_key(key: str) -> int:
         return VK_CODES[normalized]
     except KeyError as exc:
         raise ValueError(f"Unsupported hotkey key: {key}") from exc
+
+
+def _should_send_virtual_key(key: str, scan_code: int) -> bool:
+    normalized = normalize_key_name(key)
+    return normalized in EXTENDED_FUNCTION_KEYS or scan_code == 0
 
 
 class HotkeyAction(BaseAction):

@@ -96,13 +96,20 @@ Supported OBS WebSocket operations include:
 - `start_streaming`
 - `stop_streaming`
 - `switch_scene`
+- `show_source`
+- `hide_source`
+- `toggle_source`
+- `mute_input`
+- `unmute_input`
 - `toggle_input_mute`
 - `save_replay_buffer`
 - `save_screenshot`
 
 For `switch_scene`, set `Scene Name` to the exact OBS scene name.
 
-For `toggle_input_mute`, set `Input Name` to the exact OBS input name, such as `Mic/Aux`.
+For source visibility, set `Scene Name` and `Source Name` to the exact OBS names. A common camera source name is `Video Capture Device`.
+
+For input mute actions, set `Input Name` to the exact OBS input name, such as `Mic/Aux`.
 
 ## Camera Source Toggle
 
@@ -111,8 +118,8 @@ To toggle a camera source:
 1. In OBS, confirm the scene name.
 2. Confirm the source/input name.
 3. In OpenLaunchDeck, choose `OBS WebSocket`.
-4. Use the source/input toggle operation available in the action editor.
-5. Enter the exact OBS source or input name.
+4. Use `show_source`, `hide_source`, or `toggle_source`.
+5. Enter the exact OBS scene and source names.
 
 Names must match OBS. Copy them from OBS if needed.
 
