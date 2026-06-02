@@ -34,27 +34,55 @@
           }
         },
         "A3": {
-          "label": "Scene",
+          "label": "Show Cam",
           "color": "purple",
           "enabled": true,
           "dangerous": false,
           "action": {
             "type": "obs_websocket",
             "config": {
-              "operation": "switch_scene",
-              "scene_name": "Scene"
+              "operation": "show_source",
+              "scene_name": "Scene",
+              "source_name": "Video Capture Device"
             }
           }
         },
         "A4": {
-          "label": "Mic",
+          "label": "Hide Cam",
+          "color": "orange",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "hide_source",
+              "scene_name": "Scene",
+              "source_name": "Video Capture Device"
+            }
+          }
+        },
+        "A5": {
+          "label": "Mute",
           "color": "cyan",
           "enabled": true,
           "dangerous": false,
           "action": {
             "type": "obs_websocket",
             "config": {
-              "operation": "toggle_input_mute",
+              "operation": "mute_input",
+              "input_name": "Mic/Aux"
+            }
+          }
+        },
+        "A6": {
+          "label": "Unmute",
+          "color": "green",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "unmute_input",
               "input_name": "Mic/Aux"
             }
           }

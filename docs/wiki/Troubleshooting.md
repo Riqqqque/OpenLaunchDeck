@@ -65,6 +65,8 @@ Try this:
 3. Make sure OpenLaunchDeck is not running with lower privileges than the game.
 4. Avoid hotkeys that the game already uses.
 
+For OBS camera, mic, stream, replay, screenshot, and scene controls, prefer the `OBS WebSocket` action over hotkeys. Direct OBS actions can verify the source or mute state after the command runs.
+
 ## Too Many Audio Outputs In The Soundboard Panel
 
 Windows can report duplicate output endpoints with the same visible name, especially after installing virtual audio software. VoiceMeeter can also expose advanced buses such as `Voicemeeter In 1` through `Voicemeeter In 5`.

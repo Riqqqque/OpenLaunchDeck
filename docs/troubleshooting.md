@@ -38,6 +38,8 @@ OpenLaunchDeck waits for OBS to report a real replay file. If OBS accepts the sa
 
 For screenshots, use the `OBS WebSocket` action with `save_screenshot`. It saves the current OBS program scene directly and does not require the game to accept a keyboard shortcut. By default, screenshots go to the OBS recording folder, usually your Videos folder.
 
+For camera visibility and microphone mute buttons, use OBS WebSocket operations such as `show_source`, `hide_source`, `mute_input`, and `unmute_input`. They verify the OBS state after running, which is more reliable than sending F-key hotkeys into OBS.
+
 ## Sound Not Playing
 
 Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and the logs folder.

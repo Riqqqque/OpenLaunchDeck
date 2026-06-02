@@ -4,7 +4,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication, QComboBox
 
-from openlaunchdeck.actions.hotkey import _vk_code_for_key, build_hotkey_suggestions, parse_hotkey
+from openlaunchdeck.actions.hotkey import _should_send_virtual_key, _vk_code_for_key, build_hotkey_suggestions, parse_hotkey
 from openlaunchdeck.actions.registry import create_default_registry
 from openlaunchdeck.ui.action_editor import ActionEditor
 
@@ -28,6 +28,12 @@ def test_windows_vk_mapping_includes_extended_function_keys():
     assert _vk_code_for_key("f13") == 0x7C
     assert _vk_code_for_key("f14") == 0x7D
     assert _vk_code_for_key("f24") == 0x87
+
+
+def test_extended_function_keys_use_virtual_key_events():
+    assert _should_send_virtual_key("f13", 100)
+    assert _should_send_virtual_key("f24", 118)
+    assert not _should_send_virtual_key("f12", 88)
 
 
 def test_hotkey_editor_uses_editable_autocomplete_combo():

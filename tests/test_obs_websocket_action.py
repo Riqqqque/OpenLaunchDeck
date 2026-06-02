@@ -148,3 +148,78 @@ def test_save_screenshot_defaults_to_obs_record_directory(tmp_path):
     assert result.success is True
     assert result.details["screenshot_path"].startswith(str(tmp_path))
     assert client.requests[1] == ("GetRecordDirectory", {})
+
+
+def test_hide_source_sets_and_verifies_scene_item_visibility():
+    client = FakeObsClient(
+        [
+            ObsRequestResult(True, {"sceneItemId": 4}),
+            ObsRequestResult(True, {"sceneItemEnabled": True}),
+            ObsRequestResult(True, {}),
+            ObsRequestResult(True, {"sceneItemEnabled": False}),
+        ]
+    )
+
+    result = run_obs_operation(client, "hide_source", {"scene_name": "Scene", "source_name": "Camera"})
+
+    assert result.success is True
+    assert result.message == "Camera hidden."
+    assert client.requests == [
+        ("GetSceneItemId", {"sceneName": "Scene", "sourceName": "Camera", "searchOffset": 0}),
+        ("GetSceneItemEnabled", {"sceneName": "Scene", "sceneItemId": 4}),
+        ("SetSceneItemEnabled", {"sceneName": "Scene", "sceneItemId": 4, "sceneItemEnabled": False}),
+        ("GetSceneItemEnabled", {"sceneName": "Scene", "sceneItemId": 4}),
+    ]
+
+
+def test_toggle_source_uses_current_scene_when_scene_name_is_blank():
+    client = FakeObsClient(
+        [
+            ObsRequestResult(True, {"currentProgramSceneName": "Scene"}),
+            ObsRequestResult(True, {"sceneItemId": 4}),
+            ObsRequestResult(True, {"sceneItemEnabled": False}),
+            ObsRequestResult(True, {"sceneItemId": 4}),
+            ObsRequestResult(True, {"sceneItemEnabled": False}),
+            ObsRequestResult(True, {}),
+            ObsRequestResult(True, {"sceneItemEnabled": True}),
+        ]
+    )
+
+    result = run_obs_operation(client, "toggle_source", {"source_name": "Camera"})
+
+    assert result.success is True
+    assert result.message == "Camera shown."
+    assert client.requests[0] == ("GetCurrentProgramScene", {})
+    assert client.requests[-1] == ("GetSceneItemEnabled", {"sceneName": "Scene", "sceneItemId": 4})
+
+
+def test_set_input_mute_verifies_obs_state():
+    client = FakeObsClient(
+        [
+            ObsRequestResult(True, {}),
+            ObsRequestResult(True, {"inputMuted": True}),
+        ]
+    )
+
+    result = run_obs_operation(client, "mute_input", {"input_name": "Mic/Aux"})
+
+    assert result.success is True
+    assert result.message == "Mic/Aux muted."
+    assert client.requests == [
+        ("SetInputMute", {"inputName": "Mic/Aux", "inputMuted": True}),
+        ("GetInputMute", {"inputName": "Mic/Aux"}),
+    ]
+
+
+def test_set_input_mute_fails_if_verification_disagrees():
+    client = FakeObsClient(
+        [
+            ObsRequestResult(True, {}),
+            ObsRequestResult(True, {"inputMuted": False}),
+        ]
+    )
+
+    result = run_obs_operation(client, "mute_input", {"input_name": "Mic/Aux"})
+
+    assert result.success is False
+    assert "did not verify" in result.message
