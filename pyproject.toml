@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "openlaunchdeck"
-version = "0.1.25"
+version = "0.1.26"
 description = "A Windows desktop macro deck app for Novation Launchpad Mini MK3."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -17,7 +17,8 @@ dependencies = [
   "requests>=2.32",
   "packaging>=24.0",
   "pyautogui>=0.9.54",
-  "paramiko>=3.4"
+  "paramiko>=3.4",
+  "websocket-client>=1.8"
 ]
 
 [project.optional-dependencies]

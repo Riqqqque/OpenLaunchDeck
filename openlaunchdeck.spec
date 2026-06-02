@@ -55,6 +55,7 @@ VSVersionInfo(
 hidden_imports = [
     "PySide6.QtMultimedia",
     "mido.backends.rtmidi",
+    "websocket",
 ]
 try:
     import openlaunchdeck_native  # noqa: F401

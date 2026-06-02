@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.26
+
+- Fixed packaged OBS WebSocket actions by bundling the WebSocket client dependency into the Windows build.
+
 ## 0.1.25
 
 - Added working OBS WebSocket actions for replay buffer, recording, streaming, scene switching, and input mute toggles.
