@@ -6,4 +6,5 @@ packaging>=24.0
 pytest>=8.0
 pyautogui>=0.9.54
 paramiko>=3.4
+websocket-client>=1.8
 pyinstaller>=6.6

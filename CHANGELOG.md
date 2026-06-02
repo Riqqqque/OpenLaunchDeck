@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.25
+
+- Added working OBS WebSocket actions for replay buffer, recording, streaming, scene switching, and input mute toggles.
+- Fixed the Windows native hotkey sender so `SendInput` events are accepted correctly on 64-bit Windows.
+
 ## 0.1.24
 
 - Switched hotkey actions to a Windows native keyboard path first for better in-game and OBS shortcut reliability.

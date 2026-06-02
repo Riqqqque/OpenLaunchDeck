@@ -121,8 +121,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.24
-git push origin v0.1.24
+git tag v0.1.25
+git push origin v0.1.25
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases. It uses the same build script with CI-specific fast packaging flags so tagged releases spend less time on packaging.
@@ -253,7 +253,7 @@ Return clear `ActionResult` values so the GUI, logs, and Launchpad feedback can 
 ## Roadmap
 
 - Hardware-verified Launchpad Mini MK3 mapping and lighting presets
-- Full OBS WebSocket implementation
+- More OBS WebSocket operations and friendlier setup helpers
 - Secure SSH secrets flow
 - More advanced audio output routing
 - Richer first-run wizard and tray polish
@@ -262,7 +262,7 @@ Return clear `ActionResult` values so the GUI, logs, and Launchpad feedback can 
 
 ## Known Limitations
 
-- OBS WebSocket support is structured but not implemented yet.
+- OBS WebSocket actions require the OBS WebSocket server to be enabled. If authentication is enabled in OBS, set the button password field to the OBS WebSocket password.
 - SSH command support depends on Paramiko and key-based authentication setup.
 - Endpoint-specific Windows volume control is not implemented; current volume actions use media keys.
 - Launchpad mappings should be verified in MIDI Debug before relying on them live.
