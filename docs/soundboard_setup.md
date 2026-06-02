@@ -57,6 +57,8 @@ Typical setup:
 
 If no virtual cable output is selected, routed sound buttons show a clear error and do not play to the wrong device.
 
+For a complete VoiceMeeter Banana setup that routes OpenLaunchDeck soundboard clips into Discord while still letting you hear your friends, see [Discord Voice Chat Routing](discord_voice_routing.md).
+
 ## Troubleshooting
 
 If sound does not play, confirm the file exists, try a `.wav` or `.mp3`, check Windows volume mixer, check the selected output device, and open the logs folder from the Help menu.

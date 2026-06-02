@@ -24,6 +24,24 @@ Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and
 
 Route the playback device through an external virtual audio cable app. OpenLaunchDeck does not install audio drivers.
 
+For Discord with VoiceMeeter Banana, use this baseline route:
+
+- Windows output: `Voicemeeter AUX Input`
+- Windows input: `Voicemeeter Out B1`
+- Discord output: `Default` or `Voicemeeter AUX Input`
+- Discord input: `Default` or `Voicemeeter Out B1`
+- OpenLaunchDeck voice-chat output: `Voicemeeter Input`
+
+In VoiceMeeter, route the main virtual input strip to `A1` and `B1`, and route the AUX strip to `A1` only. If Discord output is sent directly to the real headphones while VoiceMeeter is using that device as `A1`, Discord playback may fail or friends may not be audible.
+
+See [Discord Voice Chat Routing](discord_voice_routing.md) for the full step-by-step setup.
+
+## Soundboard Sounds Bad In Discord
+
+If friends say routed soundboard clips are muffled, crunchy, or underwater, Discord is usually processing the clip like microphone noise. In `User Settings > Voice & Video`, try turning off noise suppression, echo cancellation, noise reduction, and automatic gain control. Use `.wav` or high-quality `.mp3` files where possible.
+
+If friends can barely hear clips, raise the per-button volume in OpenLaunchDeck first. Start around `60` to `80`. Also check that the VoiceMeeter strip carrying soundboard audio is near `0 dB`.
+
 ## Command Action Not Working
 
 Enable `wait` on the command action to capture an exit code. Check the working directory and logs.
