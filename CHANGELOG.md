@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.28
+
+- Made OBS screenshots save to the normal OBS/Videos folder by default and verify the image file before reporting success.
+
 ## 0.1.27
 
 - Added a direct OBS WebSocket screenshot action so screenshots do not depend on injected hotkeys.

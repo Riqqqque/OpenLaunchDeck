@@ -36,7 +36,7 @@ In OBS, enable `Tools > WebSocket Server Settings > Enable WebSocket server`. If
 
 OpenLaunchDeck waits for OBS to report a real replay file. If OBS accepts the save command but no MP4 appears, the action returns a failure instead of pretending the clip was saved. Restart the OBS replay buffer or restart OBS, then press the clip button again.
 
-For screenshots, use the `OBS WebSocket` action with `save_screenshot`. It saves the current OBS program scene directly and does not require the game to accept a keyboard shortcut.
+For screenshots, use the `OBS WebSocket` action with `save_screenshot`. It saves the current OBS program scene directly and does not require the game to accept a keyboard shortcut. By default, screenshots go to the OBS recording folder, usually your Videos folder.
 
 ## Sound Not Playing
 

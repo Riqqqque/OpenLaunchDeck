@@ -6,12 +6,18 @@ from openlaunchdeck.actions.obs_websocket import ObsRequestResult, build_obs_aut
 
 
 class FakeObsClient:
-    def __init__(self, responses):
+    def __init__(self, responses, write_screenshots: bool = False):
         self.responses = list(responses)
         self.requests = []
+        self.write_screenshots = write_screenshots
 
     def request(self, request_type, request_data=None):
         self.requests.append((request_type, request_data or {}))
+        if self.write_screenshots and request_type == "SaveSourceScreenshot" and request_data:
+            screenshot_path = request_data.get("imageFilePath")
+            if screenshot_path:
+                with open(screenshot_path, "wb") as file:
+                    file.write(b"png")
         return self.responses.pop(0)
 
 
@@ -107,7 +113,8 @@ def test_save_screenshot_uses_current_scene(tmp_path):
         [
             ObsRequestResult(True, {"currentProgramSceneName": "Scene"}),
             ObsRequestResult(True, {}),
-        ]
+        ],
+        write_screenshots=True,
     )
 
     result = run_obs_operation(
@@ -124,3 +131,20 @@ def test_save_screenshot_uses_current_scene(tmp_path):
     assert request_data["sourceName"] == "Scene"
     assert request_data["imageFormat"] == "png"
     assert str(tmp_path) in request_data["imageFilePath"]
+
+
+def test_save_screenshot_defaults_to_obs_record_directory(tmp_path):
+    client = FakeObsClient(
+        [
+            ObsRequestResult(True, {"currentProgramSceneName": "Scene"}),
+            ObsRequestResult(True, {"recordDirectory": str(tmp_path)}),
+            ObsRequestResult(True, {}),
+        ],
+        write_screenshots=True,
+    )
+
+    result = run_obs_operation(client, "save_screenshot", {"screenshot_format": "png"})
+
+    assert result.success is True
+    assert result.details["screenshot_path"].startswith(str(tmp_path))
+    assert client.requests[1] == ("GetRecordDirectory", {})
