@@ -121,8 +121,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.23
-git push origin v0.1.23
+git tag v0.1.24
+git push origin v0.1.24
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases. It uses the same build script with CI-specific fast packaging flags so tagged releases spend less time on packaging.
@@ -174,6 +174,7 @@ OpenLaunchDeck keeps expensive work away from the GUI thread:
 - Blocking actions run through a bounded worker pool
 - Update checks and downloads run on Qt worker threads
 - Sound playback uses non-blocking QtMultimedia APIs
+- Hotkeys use a Windows native keyboard path first, with Python automation as a fallback
 - Lighting refreshes skip unchanged pad colors and send MIDI output on a background worker
 - Grid cells skip redundant text/style updates
 - MIDI Debug UI updates stay off unless the debug window is open

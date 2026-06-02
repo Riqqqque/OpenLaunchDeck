@@ -16,6 +16,18 @@ Open MIDI Debug and press a pad. If raw messages appear but parsed button IDs do
 
 Use calibration and save the mapping. User mappings are stored in AppData.
 
+## Hotkeys Do Not Work In Game
+
+OpenLaunchDeck sends hotkeys through a Windows native keyboard path first, which is the best fit for game and OBS shortcuts. Use unused keys such as `F13` through `F24` for game-facing actions so they do not conflict with normal keyboard controls.
+
+If a pad press works on the desktop but not in a game, check these items:
+
+- Make sure the button action is `Hotkey`, not `No Action`.
+- In the game or OBS, bind the same key shown in OpenLaunchDeck, such as `F14`.
+- If the game is running as administrator, run OpenLaunchDeck as administrator too. Windows can block keyboard events from a normal app into an elevated game.
+- Try borderless fullscreen if exclusive fullscreen ignores synthetic keyboard input.
+- Open `Device > MIDI Debug` and press the pad. If MIDI events appear instantly, the Launchpad path is working and the issue is the target app accepting the hotkey.
+
 ## Sound Not Playing
 
 Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and the logs folder.
