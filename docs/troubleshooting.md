@@ -34,6 +34,10 @@ Use the `OBS WebSocket` action with `save_replay_buffer` for clipping. It is mor
 
 In OBS, enable `Tools > WebSocket Server Settings > Enable WebSocket server`. If authentication is enabled, copy the OBS WebSocket password into the button's password field. When the replay buffer is stopped, the first press starts it and the next press saves a clip.
 
+OpenLaunchDeck waits for OBS to report a real replay file. If OBS accepts the save command but no MP4 appears, the action returns a failure instead of pretending the clip was saved. Restart the OBS replay buffer or restart OBS, then press the clip button again.
+
+For screenshots, use the `OBS WebSocket` action with `save_screenshot`. It saves the current OBS program scene directly and does not require the game to accept a keyboard shortcut.
+
 ## Sound Not Playing
 
 Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and the logs folder.

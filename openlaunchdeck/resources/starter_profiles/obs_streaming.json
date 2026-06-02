@@ -82,6 +82,39 @@
               "url": "https://example.com/stream-dashboard"
             }
           }
+        },
+        "B3": {
+          "label": "Clip",
+          "color": "purple",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "save_replay_buffer",
+              "host": "127.0.0.1",
+              "port": 4455,
+              "start_if_stopped": true,
+              "replay_verify_timeout_ms": 10000,
+              "timeout_ms": 3000
+            }
+          }
+        },
+        "B4": {
+          "label": "Screenshot",
+          "color": "cyan",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "obs_websocket",
+            "config": {
+              "operation": "save_screenshot",
+              "host": "127.0.0.1",
+              "port": 4455,
+              "screenshot_format": "png",
+              "timeout_ms": 3000
+            }
+          }
         }
       }
     }
