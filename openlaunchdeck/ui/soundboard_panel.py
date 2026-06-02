@@ -25,7 +25,7 @@ class SoundboardPanel(QDialog):
         form = QFormLayout()
         form.setSpacing(10)
         self.output_combo = QComboBox()
-        self.output_combo.addItem("System default", "")
+        self.output_combo.addItem("System default (recommended)", "")
         devices = list_output_devices()
         self._add_device_items(self.output_combo, devices)
         current_device = audio_engine.default_output_device_id

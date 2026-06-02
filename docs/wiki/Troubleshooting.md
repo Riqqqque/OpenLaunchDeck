@@ -78,7 +78,8 @@ If Windows itself shows many duplicate outputs:
 1. Reboot after installing VoiceMeeter or other virtual audio software.
 2. Open Windows Sound Settings.
 3. Disable unused duplicate endpoints if Windows exposes them separately.
-4. Keep one clear route for headphones, one for Discord playback, and one for soundboard voice routing.
+4. Keep browser, game, and Discord playback on your real hardware output for the simple route.
+5. Use one virtual route for soundboard voice routing.
 
 ## Friends Cannot Hear Soundboard Clips
 
@@ -100,10 +101,18 @@ Try this:
 
 ## You Cannot Hear Friends In Discord
 
-1. Set Discord output to `Default` or the VoiceMeeter AUX playback route.
-2. Make sure VoiceMeeter AUX routes to `A1`.
-3. Make sure Hardware Out `A1` is your real headphones or audio interface.
+1. Set Discord output to `Default` or your real headphones, speakers, or audio interface.
+2. Make sure Windows output is still your real hardware output.
+3. Restart VoiceMeeter if Discord input is routed through it.
 4. Do not route Discord output back into the Discord input bus.
+
+## Browser Shows Audio Renderer Error
+
+1. Set Windows output to your real headphones, speakers, or audio interface.
+2. In OpenLaunchDeck, set Default Output to `System default`.
+3. Keep Voice Chat Output pointed at the virtual mixer input.
+4. Restart the browser after changing audio routes.
+5. If it still fails, restart VoiceMeeter and the Windows Audio service.
 
 ## Logs
 

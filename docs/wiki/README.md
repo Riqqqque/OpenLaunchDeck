@@ -24,14 +24,14 @@ If you are new, start with Quick Start. If something goes wrong, jump to Trouble
 
 ## Current Release
 
-Latest verified release: `v0.1.30`
+Latest verified release: `v0.1.31`
 
 Release assets include:
 
-- `OpenLaunchDeckSetup-0.1.30.exe`
-- `OpenLaunchDeckSetup-0.1.30.exe.sha256`
-- `OpenLaunchDeck-0.1.30-Windows.zip`
-- `OpenLaunchDeck-0.1.30-Windows.zip.sha256`
+- `OpenLaunchDeckSetup-0.1.31.exe`
+- `OpenLaunchDeckSetup-0.1.31.exe.sha256`
+- `OpenLaunchDeck-0.1.31-Windows.zip`
+- `OpenLaunchDeck-0.1.31-Windows.zip.sha256`
 
 Install the setup EXE for normal use. The portable ZIP is useful for testing without replacing the installed copy.
 

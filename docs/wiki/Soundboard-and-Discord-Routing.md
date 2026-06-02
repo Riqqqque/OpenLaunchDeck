@@ -61,20 +61,20 @@ Typical routing idea:
 
 One practical setup:
 
-- Windows output: `Voicemeeter AUX Input`
+- Windows output: your real headphones, speakers, or audio interface
 - Windows input: `Voicemeeter Out B1`
-- Discord output: `Voicemeeter AUX Input`
+- Discord output: `Default` or your real headphones, speakers, or audio interface
 - Discord input: `Voicemeeter Out B1`
-- OpenLaunchDeck default output: `Voicemeeter AUX Input`
+- OpenLaunchDeck default output: `System default`
 - OpenLaunchDeck voice-chat output: `Voicemeeter Input`
-- OpenLaunchDeck monitor voice routes: off
+- OpenLaunchDeck monitor voice routes: on
 
 In VoiceMeeter:
 
 - Set Hardware Out `A1` to your real headphones or audio interface.
 - Route your microphone to `B1`.
 - Route `Voicemeeter Input` to `A1` and `B1`.
-- Route `Voicemeeter AUX` to `A1` only.
+- Leave `Voicemeeter AUX` unused unless you choose the advanced full-mixer route.
 
 This lets friends hear routed soundboard clips while preventing Discord from hearing itself.
 
@@ -99,8 +99,13 @@ If the clip is distorted, lower the OpenLaunchDeck button volume or the VoiceMee
 
 ## Common Mistakes
 
-- Discord output goes to real headphones instead of the VoiceMeeter AUX route.
 - The soundboard route goes to headphones only, not the Discord input bus.
 - Discord input sensitivity is too high, so the clip does not open voice activity.
 - VoiceMeeter is not running after reboot.
-- Monitor voice routes is on while VoiceMeeter is already monitoring locally, causing two copies of the same clip.
+- The advanced full-mixer route is half-configured, so browser or Discord audio depends on a broken virtual output.
+
+## Advanced Full-Mixer Route
+
+If you want VoiceMeeter to manage all Windows audio, set Windows output and Discord output to `Voicemeeter AUX Input`, set OpenLaunchDeck default output to `Voicemeeter AUX Input`, and turn `Monitor Voice Routes` off. Route `Voicemeeter AUX` to `A1` only, and route `Voicemeeter Input` to `A1` and `B1`.
+
+Use the simple route first. If YouTube shows `Audio renderer error` or Discord audio disappears, keep Windows output on the real hardware device and use VoiceMeeter only for the soundboard voice-chat route.

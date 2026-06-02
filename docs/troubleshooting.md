@@ -50,13 +50,14 @@ Route the playback device through an external virtual audio cable app. OpenLaunc
 
 For Discord with VoiceMeeter Banana, use this baseline route:
 
-- Windows output: `Voicemeeter AUX Input`
+- Windows output: your real headphones, speakers, or audio interface
 - Windows input: `Voicemeeter Out B1`
-- Discord output: `Default` or `Voicemeeter AUX Input`
+- Discord output: `Default` or your real headphones, speakers, or audio interface
 - Discord input: `Default` or `Voicemeeter Out B1`
+- OpenLaunchDeck default output: `System default`
 - OpenLaunchDeck voice-chat output: `Voicemeeter Input`
 
-In VoiceMeeter, route the main virtual input strip to `A1` and `B1`, and route the AUX strip to `A1` only. If Discord output is sent directly to the real headphones while VoiceMeeter is using that device as `A1`, Discord playback may fail or friends may not be audible.
+In VoiceMeeter, route the main virtual input strip to `A1` and `B1`. Keep browser, game, and Discord playback on the real Windows output unless you intentionally use the advanced full-mixer route.
 
 See [Discord Voice Chat Routing](discord_voice_routing.md) for the full step-by-step setup.
 
@@ -65,6 +66,10 @@ See [Discord Voice Chat Routing](discord_voice_routing.md) for the full step-by-
 If friends say routed soundboard clips are muffled, crunchy, or underwater, Discord is usually processing the clip like microphone noise. In `User Settings > Voice & Video`, try turning off noise suppression, echo cancellation, noise reduction, and automatic gain control. Use `.wav` or high-quality `.mp3` files where possible.
 
 If friends can barely hear clips, raise the per-button volume in OpenLaunchDeck first. Start around `60` to `80`. Also check that the VoiceMeeter strip carrying soundboard audio is near `0 dB`.
+
+## Browser Shows Audio Renderer Error
+
+Keep Windows output set to a real hardware device, not a virtual mixer input. Then restart the browser. If the error remains, restart VoiceMeeter and the Windows Audio service. In OpenLaunchDeck, use `System default` for the normal sound output device and reserve `Voicemeeter Input` for the voice-chat output route.
 
 ## Command Action Not Working
 

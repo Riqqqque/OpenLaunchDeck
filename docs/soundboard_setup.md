@@ -35,7 +35,9 @@ The Soundboard panel also has a Stop All Sounds button.
 
 ## Output Devices
 
-The Soundboard panel lists QtMultimedia output devices when Windows exposes them. If a selected device cannot be used, playback falls back to the system default output.
+The Soundboard panel lists QtMultimedia output devices when Windows exposes them. If a selected device cannot be used, playback fails with a clear message instead of silently playing through the wrong output.
+
+Use `System default` for normal soundboard monitoring unless you have a specific reason to pin a hardware device. Use the voice-chat output selector for virtual mixer routes such as `Voicemeeter Input`.
 
 Windows and virtual audio software can expose multiple outputs with the exact same visible name. VoiceMeeter can also expose advanced virtual buses such as `Voicemeeter In 1` through `Voicemeeter In 5`.
 
@@ -54,10 +56,12 @@ To let Discord or a game hear soundboard playback, use external virtual audio ca
 Typical setup:
 
 1. Install a virtual audio cable app.
-2. In OpenLaunchDeck, open the Soundboard panel and set `Voice Chat Output` to the virtual cable playback device.
-3. Leave `Monitor Voice Routes` enabled if you still want to hear routed sounds through your normal output.
-4. In Discord or the game, set the microphone/input device to the matching virtual cable recording device.
-5. On each sound button that should be heard in voice chat, enable `Route To Voice Chat`.
+2. Keep Windows output on your real headphones, speakers, or audio interface.
+3. In OpenLaunchDeck, open the Soundboard panel and leave `Default Output` on `System default`.
+4. Set `Voice Chat Output` to the virtual cable playback device.
+5. Leave `Monitor Voice Routes` enabled if you still want to hear routed sounds through your normal output.
+6. In Discord or the game, set the microphone/input device to the matching virtual cable recording device.
+7. On each sound button that should be heard in voice chat, enable `Route To Voice Chat`.
 
 If no virtual cable output is selected, routed sound buttons show a clear error and do not play to the wrong device.
 
