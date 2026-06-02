@@ -73,6 +73,8 @@ Set:
 
 This keeps normal/local sounds on the AUX strip and sends routed voice-chat sounds to the main VoiceMeeter strip. VoiceMeeter handles the local monitoring, so OpenLaunchDeck does not need to play a second monitor copy.
 
+If Windows reports the same VoiceMeeter output name many times, OpenLaunchDeck hides duplicate names in its Soundboard and Settings selectors. It also hides advanced VoiceMeeter buses such as `Voicemeeter In 1` through `Voicemeeter In 5` for normal users. The Windows tray can still show more entries than OpenLaunchDeck because Windows exposes the raw endpoint list.
+
 For each soundboard button that Discord should hear:
 
 1. Select the button.

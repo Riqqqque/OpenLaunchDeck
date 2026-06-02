@@ -5,10 +5,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QTimer
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QFormLayout, QLabel, QListWidget, QPushButton, QSpinBox, QVBoxLayout
 
-from ..audio.output_devices import list_output_devices
+from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
 
 
 class SoundboardPanel(QDialog):
@@ -27,22 +27,16 @@ class SoundboardPanel(QDialog):
         self.output_combo = QComboBox()
         self.output_combo.addItem("System default", "")
         devices = list_output_devices()
-        for device in devices:
-            self.output_combo.addItem(device["description"], device["id"])
+        self._add_device_items(self.output_combo, devices)
         current_device = audio_engine.default_output_device_id
         if current_device:
-            index = self.output_combo.findData(current_device)
-            if index >= 0:
-                self.output_combo.setCurrentIndex(index)
+            self._select_saved_device(self.output_combo, current_device)
         self.voice_output_combo = QComboBox()
         self.voice_output_combo.addItem("Not configured", "")
-        for device in devices:
-            self.voice_output_combo.addItem(device["description"], device["id"])
+        self._add_device_items(self.voice_output_combo, devices)
         current_voice_device = audio_engine.voice_chat_output_device_id
         if current_voice_device:
-            index = self.voice_output_combo.findData(current_voice_device)
-            if index >= 0:
-                self.voice_output_combo.setCurrentIndex(index)
+            self._select_saved_device(self.voice_output_combo, current_voice_device)
         self.monitor_voice_check = QCheckBox()
         self.monitor_voice_check.setChecked(audio_engine.monitor_voice_chat_routes)
         self.volume_spin = QSpinBox()
@@ -53,6 +47,22 @@ class SoundboardPanel(QDialog):
         form.addRow("Monitor Voice Routes", self.monitor_voice_check)
         form.addRow("Global Volume", self.volume_spin)
         layout.addLayout(form)
+        hidden_duplicates = hidden_duplicate_count(devices)
+        hidden_advanced = hidden_advanced_output_count()
+        self.device_note = QLabel()
+        self.device_note.setWordWrap(True)
+        self.device_note.setObjectName("MutedText")
+        note_parts = []
+        if hidden_duplicates:
+            note_parts.append(f"{hidden_duplicates} duplicate Windows output names")
+        if hidden_advanced:
+            note_parts.append(f"{hidden_advanced} advanced VoiceMeeter buses")
+        if note_parts:
+            self.device_note.setText(
+                "Hidden " + " and ".join(note_parts) + ". "
+                "The selected device still uses a real Windows output ID."
+            )
+            layout.addWidget(self.device_note)
 
         title = QLabel("Currently Playing")
         title.setObjectName("SectionTitle")
@@ -125,3 +135,24 @@ class SoundboardPanel(QDialog):
                 os.startfile(str(docs_path))  # type: ignore[attr-defined]
             else:
                 subprocess.Popen(["xdg-open", str(docs_path)])
+
+    def _add_device_items(self, combo: QComboBox, devices: list[dict[str, str | int]]) -> None:
+        for device in devices:
+            duplicate_count = int(device.get("duplicate_count", 1))
+            label = str(device.get("display_name") or device.get("description") or "Audio output")
+            combo.addItem(label, str(device.get("id") or ""))
+            if duplicate_count > 1:
+                index = combo.count() - 1
+                combo.setItemData(
+                    index,
+                    f"Windows reported {duplicate_count} outputs named {label}. "
+                    "OpenLaunchDeck shows one entry to keep this list usable.",
+                    Qt.ItemDataRole.ToolTipRole,
+                )
+
+    def _select_saved_device(self, combo: QComboBox, device_id: str) -> None:
+        index = combo.findData(device_id)
+        if index < 0:
+            combo.addItem("Saved device not shown in current Windows list", device_id)
+            index = combo.findData(device_id)
+        combo.setCurrentIndex(max(0, index))

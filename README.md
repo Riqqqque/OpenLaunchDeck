@@ -44,6 +44,7 @@ Short setup guides are tracked in [docs/wiki](docs/wiki) for GitHub Wiki-style p
 - Button editor with action-specific settings
 - Dangerous action double-press confirmation
 - Soundboard playback with stop controls
+- Soundboard output selectors that hide duplicate Windows device names
 - Background action execution
 - Manual update checks with SHA256 verification
 - Optional startup update checks
@@ -130,8 +131,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.28
-git push origin v0.1.28
+git tag v<version>
+git push origin v<version>
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases. It uses the same build script with CI-specific fast packaging flags so tagged releases spend less time on packaging.
