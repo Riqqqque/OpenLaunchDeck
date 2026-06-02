@@ -523,12 +523,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("MIDI connection is already in progress.", 2500)
             return
         settings = self.services.settings_service.settings
-        input_port = settings.midi_input_port
-        output_port = settings.midi_output_port
-        if not input_port or not output_port:
-            detected_input, detected_output = MidiManager.detect_launchpad_ports()
-            input_port = input_port or detected_input
-            output_port = output_port or detected_output
+        input_port, output_port = MidiManager.resolve_launchpad_ports(settings.midi_input_port, settings.midi_output_port)
         if not input_port and not output_port:
             self.statusBar().showMessage("No Launchpad MIDI ports detected; simulation mode is active.", 4000)
             self.refresh_all()

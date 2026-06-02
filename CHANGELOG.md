@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.21
+
+- Corrected stale saved Launchpad port settings when a better second MIDI interface is available.
+
 ## 0.1.20
 
 - Preferred the Launchpad Mini MK3 MIDI interface instead of the DAW/session interface on Windows.

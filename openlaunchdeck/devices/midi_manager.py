@@ -31,6 +31,13 @@ class MidiManager:
         output_port = _find_launchpad_name(outputs)
         return input_port, output_port
 
+    @classmethod
+    def resolve_launchpad_ports(cls, input_port: str, output_port: str) -> tuple[str, str]:
+        return (
+            _resolve_launchpad_port(input_port, cls.available_input_ports()),
+            _resolve_launchpad_port(output_port, cls.available_output_ports()),
+        )
+
 
 def _find_launchpad_name(ports: list[str]) -> str:
     matches = sorted(
@@ -41,6 +48,22 @@ def _find_launchpad_name(ports: list[str]) -> str:
         if score > 0:
             return port
     return ""
+
+
+def _resolve_launchpad_port(configured_port: str, available_ports: list[str]) -> str:
+    preferred_port = _find_launchpad_name(available_ports)
+    if not configured_port:
+        return preferred_port
+    if configured_port not in available_ports:
+        return preferred_port or configured_port
+    if (
+        preferred_port
+        and preferred_port != configured_port
+        and _launchpad_port_score(configured_port) > 0
+        and _launchpad_port_score(preferred_port) > _launchpad_port_score(configured_port)
+    ):
+        return preferred_port
+    return configured_port
 
 
 def _launchpad_port_score(port: str) -> int:

@@ -1,4 +1,4 @@
-from openlaunchdeck.devices.midi_manager import _find_launchpad_name
+from openlaunchdeck.devices.midi_manager import _find_launchpad_name, _resolve_launchpad_port
 
 
 def test_detects_windows_launchpad_mini_mk3_abbreviated_port_name():
@@ -36,3 +36,21 @@ def test_detects_launchpad_name_without_exact_windows_abbreviation():
     ]
 
     assert _find_launchpad_name(ports) == "Launchpad Mini MK3 MIDI"
+
+
+def test_resolve_replaces_stale_primary_launchpad_interface():
+    ports = [
+        "LPMiniMK3 MIDI 0",
+        "LPMiniMK3 MIDI 1",
+    ]
+
+    assert _resolve_launchpad_port("LPMiniMK3 MIDI 0", ports) == "LPMiniMK3 MIDI 1"
+
+
+def test_resolve_keeps_available_manual_non_launchpad_port():
+    ports = [
+        "Custom MIDI Device",
+        "LPMiniMK3 MIDI 1",
+    ]
+
+    assert _resolve_launchpad_port("Custom MIDI Device", ports) == "Custom MIDI Device"
