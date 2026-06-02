@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 
 class MidiManager:
     def __init__(self, logger=None) -> None:
@@ -55,8 +57,10 @@ def _launchpad_port_score(port: str) -> int:
         score += 15
     if "mk3" in lower or "mk3" in compact:
         score += 15
+    if "midiin2" in compact or "midiout2" in compact:
+        score += 45
+    if re.search(r"(?:^|\s)lpminimk3\s+midi\s+1$", lower):
+        score += 40
     if "daw" in lower:
         score -= 30
-    if "midiin2" in compact or "midiout2" in compact:
-        score -= 5
     return score

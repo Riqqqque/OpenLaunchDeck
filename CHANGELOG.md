@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.20
+
+- Preferred the Launchpad Mini MK3 MIDI interface instead of the DAW/session interface on Windows.
+- Switched the Launchpad into Programmer Mode on connect so pad presses send the expected MIDI messages.
+
 ## 0.1.19
 
 - Fixed Launchpad Mini MK3 auto-detection on Windows when the device appears as `LPMiniMK3 MIDI`.

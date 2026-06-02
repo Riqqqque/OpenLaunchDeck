@@ -4,13 +4,15 @@ OpenLaunchDeck targets the Novation Launchpad Mini MK3. The device communicates 
 
 For source builds on Windows, Python 3.11-3.13 is recommended for hardware MIDI work because the real-time MIDI backend is most likely to install from a prebuilt wheel. Newer Python versions can still run simulation mode, but may need a local C++ toolchain for the MIDI backend.
 
-On Windows, the device may appear as `LPMiniMK3 MIDI`, `MIDIIN2 (LPMiniMK3 MIDI)`, and `MIDIOUT2 (LPMiniMK3 MIDI)`. OpenLaunchDeck recognizes the abbreviated `LPMiniMK3` name during auto-detection, and MIDI Debug still lets you choose ports manually if a specific device mode needs the secondary interface.
+On Windows, the device may appear as `LPMiniMK3 MIDI`, `MIDIIN2 (LPMiniMK3 MIDI)`, and `MIDIOUT2 (LPMiniMK3 MIDI)`. The first interface is the DAW/session interface. OpenLaunchDeck prefers the second MIDI interface for macro control and lighting because the Launchpad Mini MK3 reference manual identifies that interface for Custom modes, Lighting Custom Modes, and Programmer Mode.
 
 The Launchpad Mini MK3 has 64 RGB pads plus extra navigation and scene-launch buttons around the grid. OpenLaunchDeck currently treats the 8x8 pad grid as the supported macro surface. Use grid pads with the Switch Page action for OpenLaunchDeck page changes. The extra hardware buttons can be inspected in MIDI Debug, but they are not assigned to previous/next OpenLaunchDeck pages by default until their exact messages are verified on hardware.
 
 ## Programmer Mode
 
 Programmer Mode is recommended because it gives a predictable MIDI layout for pad messages. If pad presses or lighting do not match the grid, open `Device > MIDI Debug`, press pads, and verify the raw messages.
+
+OpenLaunchDeck sends the documented Programmer Mode SysEx message when it connects. If another music app changes the device mode afterward, press Reconnect or put the device back into Programmer Mode from the hardware setup menu.
 
 ## Testing Raw MIDI
 

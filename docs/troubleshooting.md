@@ -10,7 +10,7 @@ Confirm an output port is selected. Try Programmer Mode and press `Device > Reco
 
 ## Pad Presses Not Recognized
 
-Open MIDI Debug and press a pad. If raw messages appear but parsed button IDs do not, run calibration.
+Open MIDI Debug and press a pad. If raw messages appear but parsed button IDs do not, run calibration. If no raw messages appear but the app says connected, reconnect after closing other MIDI apps and make sure the selected input is the second Launchpad MIDI interface, such as `MIDIIN2 (LPMiniMK3 MIDI)` or `LPMiniMK3 MIDI 1`.
 
 ## Wrong Pad Mapping
 
