@@ -13,7 +13,7 @@
           "color": "red",
           "enabled": true,
           "dangerous": false,
-          "notes": "OBS WebSocket transport is not implemented yet.",
+          "notes": "Enable OBS WebSocket and enter the password if OBS requires authentication.",
           "action": {
             "type": "obs_websocket",
             "config": {
@@ -54,7 +54,8 @@
           "action": {
             "type": "obs_websocket",
             "config": {
-              "operation": "toggle_mic"
+              "operation": "toggle_input_mute",
+              "input_name": "Mic/Aux"
             }
           }
         },

@@ -28,6 +28,12 @@ If a pad press works on the desktop but not in a game, check these items:
 - Try borderless fullscreen if exclusive fullscreen ignores synthetic keyboard input.
 - Open `Device > MIDI Debug` and press the pad. If MIDI events appear instantly, the Launchpad path is working and the issue is the target app accepting the hotkey.
 
+## OBS Clip Button Does Not Save
+
+Use the `OBS WebSocket` action with `save_replay_buffer` for clipping. It is more reliable than a hotkey while gaming because it talks to OBS directly.
+
+In OBS, enable `Tools > WebSocket Server Settings > Enable WebSocket server`. If authentication is enabled, copy the OBS WebSocket password into the button's password field. When the replay buffer is stopped, the first press starts it and the next press saves a clip.
+
 ## Sound Not Playing
 
 Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and the logs folder.
