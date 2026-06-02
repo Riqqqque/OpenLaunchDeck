@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import sys
+import time
+
 from .base import ActionResult, BaseAction
 
 
@@ -31,6 +34,76 @@ STREAMING_HOTKEY_PREFIXES = [
     "ctrl+alt+shift+",
 ]
 
+VK_CODES: dict[str, int] = {
+    "backspace": 0x08,
+    "tab": 0x09,
+    "enter": 0x0D,
+    "return": 0x0D,
+    "shift": 0x10,
+    "ctrl": 0x11,
+    "control": 0x11,
+    "alt": 0x12,
+    "pause": 0x13,
+    "capslock": 0x14,
+    "caps_lock": 0x14,
+    "escape": 0x1B,
+    "esc": 0x1B,
+    "space": 0x20,
+    "pageup": 0x21,
+    "page_up": 0x21,
+    "pagedown": 0x22,
+    "page_down": 0x22,
+    "end": 0x23,
+    "home": 0x24,
+    "left": 0x25,
+    "up": 0x26,
+    "right": 0x27,
+    "down": 0x28,
+    "printscreen": 0x2C,
+    "print_screen": 0x2C,
+    "prtsc": 0x2C,
+    "insert": 0x2D,
+    "ins": 0x2D,
+    "delete": 0x2E,
+    "del": 0x2E,
+    "win": 0x5B,
+    "windows": 0x5B,
+    "cmd": 0x5B,
+    "lwin": 0x5B,
+    "rwin": 0x5C,
+    "apps": 0x5D,
+    "menu": 0x5D,
+    "numlock": 0x90,
+    "num_lock": 0x90,
+    "scrolllock": 0x91,
+    "scroll_lock": 0x91,
+    "volume_mute": 0xAD,
+    "volume_down": 0xAE,
+    "volume_up": 0xAF,
+    "media_next": 0xB0,
+    "media_previous": 0xB1,
+    "media_prev": 0xB1,
+    "media_stop": 0xB2,
+    "media_play_pause": 0xB3,
+}
+
+for _index in range(1, 25):
+    VK_CODES[f"f{_index}"] = 0x6F + _index
+for _index in range(10):
+    VK_CODES[str(_index)] = 0x30 + _index
+for _index, _char in enumerate("abcdefghijklmnopqrstuvwxyz"):
+    VK_CODES[_char] = 0x41 + _index
+
+KEY_ALIASES = {
+    "command": "win",
+    "option": "alt",
+    "plus": "+",
+    "pgup": "pageup",
+    "pgdn": "pagedown",
+    "prior": "pageup",
+    "next": "pagedown",
+}
+
 
 def build_hotkey_suggestions() -> list[str]:
     suggestions: list[str] = []
@@ -49,6 +122,93 @@ def build_hotkey_suggestions() -> list[str]:
         for key in EXTENDED_FUNCTION_KEYS:
             add(f"{prefix}{key}")
     return suggestions
+
+
+def parse_hotkey(hotkey: str) -> list[str]:
+    keys = [normalize_key_name(key) for key in hotkey.replace("+", ",").split(",") if key.strip()]
+    return [key for key in keys if key]
+
+
+def normalize_key_name(key: str) -> str:
+    value = key.strip().lower().replace(" ", "_")
+    return KEY_ALIASES.get(value, value)
+
+
+def send_hotkey(keys: list[str]) -> str:
+    if sys.platform == "win32":
+        try:
+            _send_hotkey_windows(keys)
+            return "windows"
+        except ValueError:
+            raise
+        except Exception:
+            pass
+    _send_hotkey_pyautogui(keys)
+    return "pyautogui"
+
+
+def _send_hotkey_pyautogui(keys: list[str]) -> None:
+    try:
+        import pyautogui
+    except Exception as exc:
+        raise RuntimeError("Keyboard automation dependency is not installed.") from exc
+    pyautogui.hotkey(*keys)
+
+
+def _send_hotkey_windows(keys: list[str]) -> None:
+    import ctypes
+    from ctypes import wintypes
+
+    vk_codes = [_vk_code_for_key(key) for key in keys]
+    if not vk_codes:
+        raise ValueError("Hotkey is empty.")
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    INPUT_KEYBOARD = 1
+    KEYEVENTF_KEYUP = 0x0002
+    KEYEVENTF_SCANCODE = 0x0008
+    KEYEVENTF_EXTENDEDKEY = 0x0001
+    MAPVK_VK_TO_VSC = 0
+
+    class KEYBDINPUT(ctypes.Structure):
+        _fields_ = [
+            ("wVk", wintypes.WORD),
+            ("wScan", wintypes.WORD),
+            ("dwFlags", wintypes.DWORD),
+            ("time", wintypes.DWORD),
+            ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+        ]
+
+    class INPUT_UNION(ctypes.Union):
+        _fields_ = [("ki", KEYBDINPUT)]
+
+    class INPUT(ctypes.Structure):
+        _fields_ = [("type", wintypes.DWORD), ("union", INPUT_UNION)]
+
+    def make_input(vk_code: int, key_up: bool = False) -> INPUT:
+        scan_code = user32.MapVirtualKeyW(vk_code, MAPVK_VK_TO_VSC)
+        flags = KEYEVENTF_SCANCODE
+        if vk_code in {0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2D, 0x2E, 0x5B, 0x5C, 0x5D}:
+            flags |= KEYEVENTF_EXTENDEDKEY
+        if key_up:
+            flags |= KEYEVENTF_KEYUP
+        return INPUT(type=INPUT_KEYBOARD, union=INPUT_UNION(ki=KEYBDINPUT(0, scan_code, flags, 0, None)))
+
+    inputs = [make_input(vk_code, False) for vk_code in vk_codes]
+    inputs.extend(make_input(vk_code, True) for vk_code in reversed(vk_codes))
+    array_type = INPUT * len(inputs)
+    sent = user32.SendInput(len(inputs), array_type(*inputs), ctypes.sizeof(INPUT))
+    if sent != len(inputs):
+        raise RuntimeError(f"SendInput sent {sent} of {len(inputs)} keyboard events.")
+    time.sleep(0.005)
+
+
+def _vk_code_for_key(key: str) -> int:
+    normalized = normalize_key_name(key)
+    try:
+        return VK_CODES[normalized]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported hotkey key: {key}") from exc
 
 
 class HotkeyAction(BaseAction):
@@ -70,15 +230,15 @@ class HotkeyAction(BaseAction):
         hotkey = str(config.get("hotkey") or "").strip()
         if not hotkey:
             return ActionResult.fail("Hotkey is empty.")
-        try:
-            import pyautogui
-        except Exception:
-            return ActionResult.fail("Keyboard automation dependency is not installed.")
-        keys = [key.strip().lower() for key in hotkey.replace("+", ",").split(",") if key.strip()]
+        keys = parse_hotkey(hotkey)
         if not keys:
             return ActionResult.fail("Hotkey is empty.")
         try:
-            pyautogui.hotkey(*keys)
+            backend = send_hotkey(keys)
+        except ValueError as exc:
+            return ActionResult.fail(str(exc))
         except Exception as exc:
             return ActionResult.fail(f"Hotkey failed: {exc}")
+        if context.logger:
+            context.logger.debug("Sent hotkey %s with %s backend.", hotkey, backend)
         return ActionResult.ok(f"Sent hotkey {hotkey}.")

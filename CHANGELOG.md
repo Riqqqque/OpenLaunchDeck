@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.24
+
+- Switched hotkey actions to a Windows native keyboard path first for better in-game and OBS shortcut reliability.
+- Added troubleshooting notes for game hotkeys, elevated games, and F13-F24 bindings.
+
 ## 0.1.23
 
 - Added hotkey autocomplete with common shortcuts and F1-F24 options, including extended streaming keys like F15.
