@@ -3,10 +3,11 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
+    QCompleter,
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
@@ -69,7 +70,10 @@ class ActionEditor(QWidget):
             elif isinstance(widget, QSpinBox):
                 config[name] = widget.value()
             elif isinstance(widget, QComboBox):
-                config[name] = widget.currentData()
+                if widget.isEditable():
+                    config[name] = widget.currentText().strip()
+                else:
+                    config[name] = widget.currentData()
         return str(action_type or "noop"), config
 
     def _clear_dynamic_rows(self) -> None:
@@ -105,6 +109,31 @@ class ActionEditor(QWidget):
             index = widget.findData(value)
             if index >= 0:
                 widget.setCurrentIndex(index)
+            return widget
+        if field_type == "hotkey":
+            widget = QComboBox()
+            widget.setEditable(True)
+            widget.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+            widget.addItem("", "")
+            suggestions = [str(item) for item in field.get("suggestions", []) if str(item).strip()]
+            for suggestion in suggestions:
+                widget.addItem(suggestion, suggestion)
+            if widget.lineEdit():
+                widget.lineEdit().setPlaceholderText(str(field.get("placeholder") or "Choose or type a hotkey"))
+            completer = QCompleter(suggestions, widget)
+            completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
+            completer.setFilterMode(Qt.MatchFlag.MatchContains)
+            widget.setCompleter(completer)
+            if value:
+                text = str(value)
+                index = widget.findText(text, Qt.MatchFlag.MatchFixedString)
+                if index >= 0:
+                    widget.setCurrentIndex(index)
+                else:
+                    widget.setEditText(text)
+            else:
+                widget.setCurrentIndex(0)
             return widget
         if field_type == "color":
             widget = QComboBox()
@@ -148,6 +177,8 @@ class ActionEditor(QWidget):
             widget.valueChanged.connect(lambda _value: self.changed.emit())
         elif isinstance(widget, QComboBox):
             widget.currentIndexChanged.connect(lambda _index: self.changed.emit())
+            if widget.isEditable():
+                widget.editTextChanged.connect(lambda _text: self.changed.emit())
 
     def _browse(self, edit: QLineEdit, field_type: str) -> None:
         if field_type == "file":

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.23
+
+- Added hotkey autocomplete with common shortcuts and F1-F24 options, including extended streaming keys like F15.
+- Added step-by-step Discord and VoiceMeeter soundboard routing docs.
+
 ## 0.1.22
 
 - Added per-sound voice chat routing with local monitoring for soundboard buttons.

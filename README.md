@@ -121,8 +121,8 @@ When Inno Setup is available, the script builds `dist\installer\OpenLaunchDeckSe
 Every tagged release should publish ready-to-download Windows packages. Push a `v<version>` tag after the version bump is committed:
 
 ```powershell
-git tag v0.1.22
-git push origin v0.1.22
+git tag v0.1.23
+git push origin v0.1.23
 ```
 
 The Release workflow builds and uploads the installer EXE, portable ZIP, and SHA256 checksum files to GitHub Releases. It uses the same build script with CI-specific fast packaging flags so tagged releases spend less time on packaging.
@@ -162,7 +162,9 @@ Soundboard buttons can play local `.wav`, `.mp3`, and platform-supported `.ogg` 
 
 To make Discord or a game hear the soundboard, route audio through external virtual audio cable software, choose that cable in the Soundboard panel's voice-chat output selector, and set Discord/game input to the matching virtual cable recording device. The app can also monitor routed sounds through your normal output. It does not install or bundle audio drivers.
 
-See [docs/soundboard_setup.md](docs/soundboard_setup.md).
+For a practical Discord route with VoiceMeeter Banana, use `Voicemeeter AUX Input` for Discord playback, `Voicemeeter Out B1` for Discord input, and `Voicemeeter Input` for OpenLaunchDeck's voice-chat soundboard output.
+
+See [docs/soundboard_setup.md](docs/soundboard_setup.md) and [docs/discord_voice_routing.md](docs/discord_voice_routing.md).
 
 ## Performance Notes
 
