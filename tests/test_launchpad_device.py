@@ -1,4 +1,8 @@
-from openlaunchdeck.devices.launchpad_mini_mk3 import LaunchpadMiniMk3, color_to_palette_value
+from openlaunchdeck.devices.launchpad_mini_mk3 import (
+    PROGRAMMER_MODE_SYSEX,
+    LaunchpadMiniMk3,
+    color_to_palette_value,
+)
 
 
 class FakeOutputPort:
@@ -28,3 +32,15 @@ def test_batch_lighting_sends_midi_messages():
     assert sent == 2
     assert len(port.messages) == 2
     assert len(outgoing) == 2
+
+
+def test_enter_programmer_mode_sends_documented_sysex_message():
+    device = LaunchpadMiniMk3()
+    port = FakeOutputPort()
+    device.output_port = port
+
+    device.enter_programmer_mode()
+
+    assert len(port.messages) == 1
+    assert port.messages[0].type == "sysex"
+    assert list(port.messages[0].data) == PROGRAMMER_MODE_SYSEX

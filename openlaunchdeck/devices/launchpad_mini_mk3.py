@@ -26,6 +26,10 @@ LAUNCHPAD_PALETTE = {
     "pink": 53,
 }
 
+LAUNCHPAD_SYSEX_HEADER = [0, 32, 41, 2, 13]
+PROGRAMMER_MODE_SYSEX = LAUNCHPAD_SYSEX_HEADER + [14, 1]
+LIVE_MODE_SYSEX = LAUNCHPAD_SYSEX_HEADER + [14, 0]
+
 
 class LaunchpadMiniMk3:
     def __init__(
@@ -71,11 +75,19 @@ class LaunchpadMiniMk3:
                 raise
             else:
                 self.connected = bool(self.input_port or self.output_port)
+                if self.output_port:
+                    self.enter_programmer_mode()
                 if self.logger:
                     self.logger.info("Launchpad connected input=%s output=%s", input_port_name, output_port_name)
 
     def close(self) -> None:
         with self._lock:
+            if self.output_port:
+                try:
+                    self.enter_live_mode()
+                except Exception:
+                    if self.logger:
+                        self.logger.exception("Could not restore Launchpad Live mode.")
             for port in (self.input_port, self.output_port):
                 try:
                     if port is not None:
@@ -152,6 +164,26 @@ class LaunchpadMiniMk3:
         if address.message_type == "note":
             return mido.Message("note_on", note=address.number, velocity=value, channel=address.channel)
         return mido.Message("control_change", control=address.number, value=value, channel=address.channel)
+
+    def enter_programmer_mode(self) -> None:
+        self._send_sysex(PROGRAMMER_MODE_SYSEX, "programmer_mode")
+
+    def enter_live_mode(self) -> None:
+        self._send_sysex(LIVE_MODE_SYSEX, "live_mode")
+
+    def _send_sysex(self, data: list[int], label: str) -> None:
+        if not self.output_port:
+            return
+        try:
+            import mido
+            message = mido.Message("sysex", data=data)
+            self.output_port.send(message)
+            if self.midi_out_callback:
+                self.midi_out_callback(message, repr(message))
+            if self.logger:
+                self.logger.debug("MIDI OUT %s %r", label, message)
+        except Exception as exc:
+            self._mark_disconnected(f"Could not send MIDI SysEx {label}: {exc}")
 
     def clear_all_pads(self) -> None:
         self.set_many_pad_colors({button_id: "off" for button_id in self.mapping.button_to_address})
