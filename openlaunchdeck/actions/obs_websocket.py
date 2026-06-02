@@ -220,13 +220,13 @@ def _save_screenshot(client: ObsWebSocketClient, config: dict) -> ActionResult:
         return ActionResult.fail("OBS screenshot source is required.")
 
     folder_text = str(config.get("screenshot_folder") or "").strip()
-    folder = Path(folder_text).expanduser() if folder_text else Path.home() / "Pictures" / "OpenLaunchDeck OBS Screenshots"
+    folder = Path(folder_text).expanduser() if folder_text else _obs_record_directory(client)
     folder.mkdir(parents=True, exist_ok=True)
     image_format = str(config.get("screenshot_format") or "png").lower().strip()
     if image_format not in {"png", "jpg"}:
         image_format = "png"
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    output_path = folder / f"OBS Screenshot {timestamp}.{image_format}"
+    output_path = folder / f"Screenshot {timestamp}.{image_format}"
     result = client.request(
         "SaveSourceScreenshot",
         {
@@ -237,7 +237,19 @@ def _save_screenshot(client: ObsWebSocketClient, config: dict) -> ActionResult:
     )
     if not result.ok:
         return _obs_fail("Could not save OBS screenshot.", result)
+    screenshot_path = _wait_for_file(output_path, 2.0)
+    if screenshot_path is None:
+        return ActionResult.fail("OBS accepted the screenshot request, but no screenshot file appeared.")
     return ActionResult.ok(f"Screenshot saved: {output_path.name}", screenshot_path=str(output_path))
+
+
+def _obs_record_directory(client: ObsWebSocketClient) -> Path:
+    result = client.request("GetRecordDirectory")
+    if result.ok:
+        folder = str(result.data.get("recordDirectory") or "").strip()
+        if folder:
+            return Path(folder)
+    return Path.home() / "Videos"
 
 
 def _wait_for_replay_file(client: ObsWebSocketClient, before_path: str, save_started: float, timeout_seconds: float) -> Path | None:
@@ -255,6 +267,18 @@ def _wait_for_replay_file(client: ObsWebSocketClient, before_path: str, save_sta
                 if _path_key(str(replay_path)) != before_key or modified_at >= save_started - 1:
                     return replay_path
         time.sleep(0.5)
+    return None
+
+
+def _wait_for_file(path: Path, timeout_seconds: float) -> Path | None:
+    deadline = time.time() + max(0.0, timeout_seconds)
+    while time.time() <= deadline:
+        try:
+            if path.exists() and path.stat().st_size > 0:
+                return path
+        except OSError:
+            pass
+        time.sleep(0.1)
     return None
 
 

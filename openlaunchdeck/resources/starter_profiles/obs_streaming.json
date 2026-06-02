@@ -111,6 +111,7 @@
               "operation": "save_screenshot",
               "host": "127.0.0.1",
               "port": 4455,
+              "screenshot_folder": "",
               "screenshot_format": "png",
               "timeout_ms": 3000
             }
