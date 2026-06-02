@@ -36,3 +36,4 @@ class SoundInstance:
     audio_output: Any = None
     loop: bool = False
     volume: int = 100
+    routed_to_voice_chat: bool = False

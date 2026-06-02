@@ -57,6 +57,9 @@ class SettingsDialog(QDialog):
         self.backups = QCheckBox()
         self.backups.setChecked(settings.backup_profiles_automatically)
         self.output_device = QLineEdit(settings.soundboard_default_output_device)
+        self.voice_output_device = QLineEdit(settings.soundboard_voice_chat_output_device)
+        self.monitor_voice_routes = QCheckBox()
+        self.monitor_voice_routes.setChecked(settings.soundboard_monitor_voice_chat)
         self.global_volume = QSpinBox()
         self.global_volume.setRange(0, 100)
         self.global_volume.setValue(settings.soundboard_global_volume)
@@ -90,6 +93,8 @@ class SettingsDialog(QDialog):
         form.addRow("Profile autosave", self.autosave)
         form.addRow("Automatic backups", self.backups)
         form.addRow("Sound output device", self.output_device)
+        form.addRow("Voice chat output device", self.voice_output_device)
+        form.addRow("Monitor voice routes", self.monitor_voice_routes)
         form.addRow("Soundboard volume", self.global_volume)
         form.addRow("Stop sounds on exit", self.stop_on_exit)
         form.addRow("Check updates on startup", self.check_updates)
@@ -118,6 +123,8 @@ class SettingsDialog(QDialog):
             profile_autosave=self.autosave.isChecked(),
             backup_profiles_automatically=self.backups.isChecked(),
             soundboard_default_output_device=self.output_device.text(),
+            soundboard_voice_chat_output_device=self.voice_output_device.text(),
+            soundboard_monitor_voice_chat=self.monitor_voice_routes.isChecked(),
             soundboard_global_volume=self.global_volume.value(),
             soundboard_stop_sounds_on_exit=self.stop_on_exit.isChecked(),
             check_updates_on_startup=self.check_updates.isChecked(),

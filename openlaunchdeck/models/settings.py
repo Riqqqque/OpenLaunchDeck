@@ -19,6 +19,8 @@ class Settings:
     profile_autosave: bool = True
     backup_profiles_automatically: bool = True
     soundboard_default_output_device: str = ""
+    soundboard_voice_chat_output_device: str = ""
+    soundboard_monitor_voice_chat: bool = True
     soundboard_global_volume: int = 100
     soundboard_stop_sounds_on_exit: bool = True
     check_updates_on_startup: bool = False

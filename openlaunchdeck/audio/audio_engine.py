@@ -20,12 +20,16 @@ class AudioEngine:
         logger=None,
         global_volume: int = 100,
         default_output_device_id: str = "",
+        voice_chat_output_device_id: str = "",
+        monitor_voice_chat_routes: bool = True,
         performance_logging_enabled: bool = False,
         performance_monitor: PerformanceMonitor | None = None,
     ) -> None:
         self.logger = logger
         self.global_volume = max(0, min(100, int(global_volume)))
         self.default_output_device_id = default_output_device_id
+        self.voice_chat_output_device_id = voice_chat_output_device_id
+        self.monitor_voice_chat_routes = bool(monitor_voice_chat_routes)
         self.performance_logging_enabled = performance_logging_enabled
         self.performance_monitor = performance_monitor or PerformanceMonitor(logger, performance_logging_enabled)
         self.state_changed_callback: Callable[[], None] | None = None
@@ -63,47 +67,65 @@ class AudioEngine:
             self.stop_button(button_id)
 
         QUrl, QAudioOutput, QMediaDevices, QMediaPlayer = self._qt
-        player = QMediaPlayer()
-        audio_output = self._create_audio_output(QAudioOutput, QMediaDevices, str(config.get("output_device_id") or ""))
         volume = max(0, min(100, int(config.get("volume", 100) or 100)))
         effective_volume = (volume / 100.0) * (self.global_volume / 100.0)
-        audio_output.setVolume(effective_volume)
-        player.setAudioOutput(audio_output)
-        player.setSource(QUrl.fromLocalFile(metadata.file_path))
         loop = bool(config.get("loop", False))
-        if loop and hasattr(player, "setLoops"):
-            try:
-                player.setLoops(QMediaPlayer.Loops.Infinite)
-            except Exception:
-                player.setLoops(-1)
-        instance_id = f"{button_id}-{next(self._counter)}"
-        instance = SoundInstance(
-            instance_id=instance_id,
-            button_id=button_id,
-            page_id=str(config.get("_page_id") or ""),
-            file_path=metadata.file_path,
-            display_name=metadata.display_name,
-            player=player,
-            audio_output=audio_output,
-            loop=loop,
-            volume=volume,
-        )
-        with self._lock:
-            self._instances[instance_id] = instance
-
-        def cleanup(status) -> None:
-            try:
-                if status == QMediaPlayer.MediaStatus.EndOfMedia and not loop:
-                    self._remove_instance(instance_id)
-            except Exception:
-                self._remove_instance(instance_id)
-
+        route_to_voice_chat = bool(config.get("route_to_voice_chat", False))
+        output_routes = self._build_output_routes(config, route_to_voice_chat)
+        if isinstance(output_routes, ActionResult):
+            return output_routes
+        started_instance_ids: list[str] = []
         try:
-            player.mediaStatusChanged.connect(cleanup)
-            player.errorOccurred.connect(lambda *_: self._on_player_error(instance_id))
-            player.play()
+            for route_name, requested_device_id, routed_to_voice_chat in output_routes:
+                audio_output = self._create_audio_output(
+                    QAudioOutput,
+                    QMediaDevices,
+                    requested_device_id,
+                    allow_default=not routed_to_voice_chat,
+                )
+                if audio_output is None:
+                    return ActionResult.fail("Voice chat output device is not available.")
+                audio_output.setVolume(effective_volume)
+                player = QMediaPlayer()
+                player.setAudioOutput(audio_output)
+                player.setSource(QUrl.fromLocalFile(metadata.file_path))
+                if loop and hasattr(player, "setLoops"):
+                    try:
+                        player.setLoops(QMediaPlayer.Loops.Infinite)
+                    except Exception:
+                        player.setLoops(-1)
+                instance_id = f"{button_id}-{next(self._counter)}"
+                instance = SoundInstance(
+                    instance_id=instance_id,
+                    button_id=button_id,
+                    page_id=str(config.get("_page_id") or ""),
+                    file_path=metadata.file_path,
+                    display_name=metadata.display_name,
+                    player=player,
+                    audio_output=audio_output,
+                    loop=loop,
+                    volume=volume,
+                    routed_to_voice_chat=routed_to_voice_chat,
+                )
+                with self._lock:
+                    self._instances[instance_id] = instance
+                started_instance_ids.append(instance_id)
+
+                def cleanup(status, captured_instance_id=instance_id) -> None:
+                    try:
+                        if status == QMediaPlayer.MediaStatus.EndOfMedia and not loop:
+                            self._remove_instance(captured_instance_id)
+                    except Exception:
+                        self._remove_instance(captured_instance_id)
+
+                player.mediaStatusChanged.connect(cleanup)
+                player.errorOccurred.connect(lambda *_, captured_instance_id=instance_id: self._on_player_error(captured_instance_id))
+                player.play()
+                if self.logger and route_name:
+                    self.logger.debug("Started sound output route %s for %s.", route_name, button_id)
         except Exception as exc:
-            self._remove_instance(instance_id)
+            for instance_id in started_instance_ids:
+                self._stop_instance(instance_id)
             if self.logger:
                 self.logger.exception("Audio playback failed.")
             return ActionResult.fail(f"Sound playback failed: {exc}")
@@ -111,6 +133,8 @@ class AudioEngine:
         self.performance_monitor.record("sound_playback_trigger", elapsed_ms, button=button_id)
         self._log_timing("Sound action started", elapsed_ms)
         self._emit_state_changed()
+        if route_to_voice_chat:
+            return ActionResult.ok("Sound routed to voice chat.", should_update_lighting=True)
         return ActionResult.ok("Sound started.", should_update_lighting=True)
 
     def get_metadata(self, file_path: str) -> SoundMetadata | ActionResult:
@@ -171,6 +195,12 @@ class AudioEngine:
     def set_default_output_device(self, device_id: str) -> None:
         self.default_output_device_id = device_id
 
+    def set_voice_chat_output_device(self, device_id: str) -> None:
+        self.voice_chat_output_device_id = device_id
+
+    def set_monitor_voice_chat_routes(self, enabled: bool) -> None:
+        self.monitor_voice_chat_routes = bool(enabled)
+
     def currently_playing(self) -> list[SoundInstance]:
         with self._lock:
             return list(self._instances.values())
@@ -199,7 +229,20 @@ class AudioEngine:
             self.logger.warning("Audio backend reported a playback error for %s.", instance_id)
         self._remove_instance(instance_id)
 
-    def _create_audio_output(self, QAudioOutput, QMediaDevices, requested_device_id: str):
+    def _build_output_routes(self, config: dict, route_to_voice_chat: bool) -> list[tuple[str, str, bool]] | ActionResult:
+        if not route_to_voice_chat:
+            return [("default", str(config.get("output_device_id") or ""), False)]
+        voice_device_id = str(config.get("voice_chat_output_device_id") or self.voice_chat_output_device_id or "")
+        if not voice_device_id:
+            return ActionResult.fail("Choose a voice chat output device in the Soundboard panel.")
+        routes: list[tuple[str, str, bool]] = [("voice_chat", voice_device_id, True)]
+        if self.monitor_voice_chat_routes:
+            monitor_device_id = str(config.get("output_device_id") or self.default_output_device_id or "")
+            if monitor_device_id != voice_device_id:
+                routes.append(("monitor", monitor_device_id, False))
+        return routes
+
+    def _create_audio_output(self, QAudioOutput, QMediaDevices, requested_device_id: str, allow_default: bool = True):
         device_id = requested_device_id or self.default_output_device_id
         if device_id:
             try:
@@ -209,6 +252,8 @@ class AudioEngine:
             except Exception:
                 if self.logger:
                     self.logger.exception("Could not select requested audio output device.")
+            if not allow_default:
+                return None
         return QAudioOutput()
 
     def _emit_state_changed(self) -> None:

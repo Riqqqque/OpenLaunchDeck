@@ -6,6 +6,7 @@ Each play sound button supports:
 
 - File path
 - Volume
+- Voice chat routing
 - Looping
 - Already-playing behavior
 - Active lighting color
@@ -32,7 +33,7 @@ The Stop Sound action supports:
 
 The Soundboard panel also has a Stop All Sounds button.
 
-## Output Device
+## Output Devices
 
 The Soundboard panel lists QtMultimedia output devices when Windows exposes them. If a selected device cannot be used, playback falls back to the system default output.
 
@@ -40,11 +41,21 @@ Global soundboard volume is combined with each button's per-sound volume. For ex
 
 ## Soundboard Panel
 
-Open `Soundboard > Open Soundboard Panel` to view currently playing sounds, stop all sounds, select the default output device, adjust global volume, refresh the list, or open this setup document.
+Open `Soundboard > Open Soundboard Panel` to view currently playing sounds, stop all sounds, select the default output device, select the voice chat output device, choose whether routed sounds are monitored locally, adjust global volume, refresh the list, or open this setup document.
 
 ## Discord And Game Chat
 
-To let Discord or a game hear soundboard playback, route audio through external virtual audio cable software and select that cable as the output device. OpenLaunchDeck does not install or bundle audio drivers, and it does not make Discord/game voice routing work automatically.
+To let Discord or a game hear soundboard playback, use external virtual audio cable software. OpenLaunchDeck does not install or bundle audio drivers.
+
+Typical setup:
+
+1. Install a virtual audio cable app.
+2. In OpenLaunchDeck, open the Soundboard panel and set `Voice Chat Output` to the virtual cable playback device.
+3. Leave `Monitor Voice Routes` enabled if you still want to hear routed sounds through your normal output.
+4. In Discord or the game, set the microphone/input device to the matching virtual cable recording device.
+5. On each sound button that should be heard in voice chat, enable `Route To Voice Chat`.
+
+If no virtual cable output is selected, routed sound buttons show a clear error and do not play to the wrong device.
 
 ## Troubleshooting
 

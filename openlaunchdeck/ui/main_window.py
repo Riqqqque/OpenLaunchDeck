@@ -620,6 +620,8 @@ class MainWindow(QMainWindow):
             self._apply_responsive_layout()
             self.services.audio_engine.set_global_volume(self.services.settings_service.settings.soundboard_global_volume)
             self.services.audio_engine.set_default_output_device(self.services.settings_service.settings.soundboard_default_output_device)
+            self.services.audio_engine.set_voice_chat_output_device(self.services.settings_service.settings.soundboard_voice_chat_output_device)
+            self.services.audio_engine.set_monitor_voice_chat_routes(self.services.settings_service.settings.soundboard_monitor_voice_chat)
             self.services.audio_engine.performance_logging_enabled = self.services.settings_service.settings.enable_performance_logging
             self.services.performance_monitor.set_enabled(self.services.settings_service.settings.enable_performance_logging)
             native_acceleration.configure(self.services.settings_service.settings.use_native_acceleration, self.services.logger)
