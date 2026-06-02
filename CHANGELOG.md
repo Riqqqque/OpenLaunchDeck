@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.31
+
+- Kept normal soundboard monitoring on the Windows system default route by default.
+- Made stale selected soundboard outputs fail clearly instead of falling back to the wrong output.
+- Allowed settings and profile JSON files with a UTF-8 BOM so Windows-edited files do not crash startup.
+- Updated Discord/Voicemeeter docs to use the safer split route for browser, game, and Discord playback.
+
 ## 0.1.30
 
 - Added verified OBS WebSocket actions for showing/hiding scene sources and muting/unmuting inputs.

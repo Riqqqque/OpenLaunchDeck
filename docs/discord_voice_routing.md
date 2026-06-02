@@ -28,10 +28,10 @@ VoiceMeeter must be running for this route to work. Add it to Windows startup if
 
 Open Windows sound settings and set:
 
-- **Output device:** `Voicemeeter AUX Input`
+- **Output device:** your real headphones, speakers, or audio interface
 - **Input device:** `Voicemeeter Out B1`
 
-Do not set Windows output directly to your headphones while Discord is routed through VoiceMeeter. VoiceMeeter should own the real hardware output.
+This keeps normal browser, game, and system audio on the real Windows output instead of making YouTube, games, and Discord depend on the virtual mixer. If you want VoiceMeeter to manage all system audio, use the advanced full-mixer setup below after the simple route is working.
 
 ## VoiceMeeter Banana Routing
 
@@ -47,10 +47,7 @@ In VoiceMeeter Banana:
    - This strip receives routed OpenLaunchDeck soundboard audio.
    - `A1` lets you hear it.
    - `B1` sends it to Discord.
-6. On the AUX virtual input strip, usually labeled **Voicemeeter AUX**, enable `A1` and disable `B1`.
-   - This strip receives Discord and normal Windows playback.
-   - `A1` lets you hear it.
-   - Leaving `B1` off prevents Discord audio from looping back into Discord.
+6. Leave the AUX virtual input strip unused unless you choose the advanced full-mixer setup.
 
 Recommended starting levels:
 
@@ -67,11 +64,11 @@ Open `Soundboard > Open Soundboard Panel`.
 
 Set:
 
-- **Default Output Device:** `Voicemeeter AUX Input`
+- **Default Output Device:** `System default`
 - **Voice Chat Output:** `Voicemeeter Input`
-- **Monitor Voice Routes:** off
+- **Monitor Voice Routes:** on
 
-This keeps normal/local sounds on the AUX strip and sends routed voice-chat sounds to the main VoiceMeeter strip. VoiceMeeter handles the local monitoring, so OpenLaunchDeck does not need to play a second monitor copy.
+This sends routed soundboard clips to VoiceMeeter for Discord and also plays a monitor copy through your normal Windows output so you hear the clip locally.
 
 If Windows reports the same VoiceMeeter output name many times, OpenLaunchDeck hides duplicate names in its Soundboard and Settings selectors. It also hides advanced VoiceMeeter buses such as `Voicemeeter In 1` through `Voicemeeter In 5` for normal users. The Windows tray can still show more entries than OpenLaunchDeck because Windows exposes the raw endpoint list.
 
@@ -93,10 +90,10 @@ Open `User Settings > Voice & Video`.
 Set:
 
 - **Input Device:** `Default` or `Voicemeeter Out B1`
-- **Output Device:** `Default` or `Voicemeeter AUX Input`
+- **Output Device:** `Default` or your real headphones, speakers, or audio interface
 - **Audio Subsystem:** `Standard`
 
-Do not set Discord output to your real headphones while VoiceMeeter is using that device as A1. If Discord tries to open the hardware output directly, playback can fail or behave inconsistently.
+Keep Discord output off the VoiceMeeter strip that feeds `B1`. That prevents friends from hearing themselves.
 
 For better soundboard quality, turn off:
 
@@ -133,15 +130,14 @@ If the clip sounds muffled, crunchy, or underwater:
 
 If you cannot hear your friends:
 
-- Confirm Discord output is `Default` or `Voicemeeter AUX Input`.
-- Confirm the VoiceMeeter AUX strip has `A1` enabled.
-- Confirm the VoiceMeeter AUX strip has `B1` disabled.
-- Confirm Hardware Out `A1` is your real headphones or audio interface.
+- Confirm Discord output is `Default` or your real headphones, speakers, or audio interface.
+- Confirm Windows output is still your real headphones, speakers, or audio interface.
+- Restart VoiceMeeter if Discord input is still routed through it.
 
 If your friends hear themselves:
 
-- Confirm the VoiceMeeter AUX strip has `B1` disabled.
-- Confirm Discord output is not going to the same strip that feeds `B1`.
+- Confirm Discord output is not going to `Voicemeeter Input`, which feeds `B1`.
+- Confirm only your microphone and the routed OpenLaunchDeck soundboard strip feed `B1`.
 
 ## Working Example
 
@@ -149,11 +145,17 @@ Example device choices from a typical setup:
 
 - Hardware Out A1: `Headphones (USB DAC)`
 - Hardware Input 1: `Microphone (USB audio interface)`
-- Windows output: `Voicemeeter AUX Input`
+- Windows output: `Headphones (USB DAC)`
 - Windows input: `Voicemeeter Out B1`
-- Discord output: `Voicemeeter AUX Input`
+- Discord output: `Headphones (USB DAC)` or `Default`
 - Discord input: `Voicemeeter Out B1`
-- OpenLaunchDeck default output: `Voicemeeter AUX Input`
+- OpenLaunchDeck default output: `System default`
 - OpenLaunchDeck voice-chat output: `Voicemeeter Input`
 
 Your device names may be different. Match the role of each device, not only the exact name.
+
+## Advanced Full-Mixer Setup
+
+If you want VoiceMeeter to manage all Windows audio, set Windows output and Discord output to `Voicemeeter AUX Input`, set OpenLaunchDeck default output to `Voicemeeter AUX Input`, and turn `Monitor Voice Routes` off. In VoiceMeeter, route `Voicemeeter AUX` to `A1` only, and route `Voicemeeter Input` to `A1` and `B1`.
+
+Only use this route if the simple setup is stable. If YouTube shows `Audio renderer error`, Discord stops playing, or games lose audio after a device change, go back to the simple setup and keep Windows output on the real hardware device.

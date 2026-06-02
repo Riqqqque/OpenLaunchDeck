@@ -170,9 +170,9 @@ See [docs/hardware_notes.md](docs/hardware_notes.md) and [docs/midi_mapping.md](
 
 Soundboard buttons can play local `.wav`, `.mp3`, and platform-supported `.ogg` files through QtMultimedia. Each button supports volume, looping, voice-chat routing, already-playing behavior, active color, and stop behavior.
 
-To make Discord or a game hear the soundboard, route audio through external virtual audio cable software, choose that cable in the Soundboard panel's voice-chat output selector, and set Discord/game input to the matching virtual cable recording device. The app can also monitor routed sounds through your normal output. It does not install or bundle audio drivers.
+To make Discord or a game hear the soundboard, route only the soundboard voice-chat output through external virtual audio cable software, then set Discord/game input to the matching virtual cable recording device. Keep Windows, browser, game, and Discord playback on your real headphones, speakers, or audio interface unless you intentionally use an advanced full-mixer setup. The app can monitor routed sounds through your normal output. It does not install or bundle audio drivers.
 
-For a practical Discord route with VoiceMeeter Banana, use `Voicemeeter AUX Input` for Discord playback, `Voicemeeter Out B1` for Discord input, and `Voicemeeter Input` for OpenLaunchDeck's voice-chat soundboard output.
+For a practical Discord route with VoiceMeeter Banana, use your real audio output for Windows and Discord playback, `Voicemeeter Out B1` for Discord input, `System default` for OpenLaunchDeck's default output, and `Voicemeeter Input` for OpenLaunchDeck's voice-chat soundboard output.
 
 See [docs/soundboard_setup.md](docs/soundboard_setup.md) and [docs/discord_voice_routing.md](docs/discord_voice_routing.md).
 

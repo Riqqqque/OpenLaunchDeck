@@ -8,6 +8,7 @@ from typing import Callable
 
 from ..actions.base import ActionResult
 from ..services.performance_monitor import PerformanceMonitor
+from .output_devices import device_id_from_qt
 from .sound_instance import SoundInstance, SoundMetadata
 
 
@@ -81,10 +82,13 @@ class AudioEngine:
                     QAudioOutput,
                     QMediaDevices,
                     requested_device_id,
+                    route_name=route_name,
                     allow_default=not routed_to_voice_chat,
                 )
                 if audio_output is None:
-                    return ActionResult.fail("Voice chat output device is not available.")
+                    if route_name == "voice_chat":
+                        return ActionResult.fail("Voice chat output device is not available.")
+                    return ActionResult.fail("Selected soundboard output device is not available.")
                 audio_output.setVolume(effective_volume)
                 player = QMediaPlayer()
                 player.setAudioOutput(audio_output)
@@ -242,18 +246,29 @@ class AudioEngine:
                 routes.append(("monitor", monitor_device_id, False))
         return routes
 
-    def _create_audio_output(self, QAudioOutput, QMediaDevices, requested_device_id: str, allow_default: bool = True):
-        device_id = requested_device_id or self.default_output_device_id
+    def _create_audio_output(
+        self,
+        QAudioOutput,
+        QMediaDevices,
+        requested_device_id: str,
+        route_name: str,
+        allow_default: bool = True,
+    ):
+        explicit_device_id = str(requested_device_id or "")
+        saved_default_id = str(self.default_output_device_id or "")
+        device_id = explicit_device_id or saved_default_id
         if device_id:
             try:
                 for device in QMediaDevices.audioOutputs():
-                    if bytes(device.id()).decode(errors="replace") == device_id:
+                    if device_id_from_qt(device) == device_id:
                         return QAudioOutput(device)
             except Exception:
                 if self.logger:
                     self.logger.exception("Could not select requested audio output device.")
-            if not allow_default:
                 return None
+            if self.logger:
+                self.logger.warning("Selected soundboard output is unavailable for %s route: %s", route_name, device_id)
+            return None
         return QAudioOutput()
 
     def _emit_state_changed(self) -> None:

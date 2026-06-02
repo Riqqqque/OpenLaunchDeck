@@ -189,6 +189,32 @@ def test_voice_chat_route_requires_output_device(tmp_path):
     assert "voice chat output" in result.message.lower()
 
 
+def test_selected_default_output_must_be_available(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"fake wav bytes")
+    engine = AudioEngine(default_output_device_id="missing-output")
+    install_fake_qt(engine)
+    FakeMediaDevices.devices = [FakeDevice("real-output", "Speakers")]
+
+    result = engine.play_button_sound("A1", {"file_path": str(path)})
+
+    assert result.success is False
+    assert "selected soundboard output" in result.message.lower()
+    assert not engine.currently_playing()
+
+
+def test_system_default_output_can_be_used_without_saved_device(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"fake wav bytes")
+    engine = AudioEngine(default_output_device_id="")
+    install_fake_qt(engine)
+
+    result = engine.play_button_sound("A1", {"file_path": str(path)})
+
+    assert result.success is True
+    assert engine.currently_playing()[0].audio_output.device is None
+
+
 def test_voice_chat_route_plays_to_voice_output_and_monitor(tmp_path):
     path = tmp_path / "sound.wav"
     path.write_bytes(b"fake wav bytes")
