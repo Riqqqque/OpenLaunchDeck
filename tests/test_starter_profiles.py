@@ -11,6 +11,11 @@ PRIVATE_MARKERS = [
     "@" + "gmail.com",
     "@" + "outlook.com",
     "@" + "hotmail.com",
+    "replace" + "-this",
+    "place" + "holder",
+    "plan" + "ned",
+    "example" + ".com",
+    "example" + ".local",
 ]
 
 

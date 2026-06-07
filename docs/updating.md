@@ -48,18 +48,17 @@ Before launching a downloaded installer, OpenLaunchDeck tries to back up profile
 
 ```json
 {
-  "latest_version": "0.2.0",
+  "latest_version": "0.1.33",
   "minimum_supported_version": "0.1.0",
   "required": false,
-  "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
-  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-  "release_notes_url": "https://example.com/releases/tag/v0.2.0",
-  "published_at": "2026-01-01T00:00:00Z"
+  "download_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/download/v0.1.33/OpenLaunchDeckSetup-0.1.33.exe",
+  "sha256": "2c02779c04123492635adaeadfbf5093244ffbc66ad0ef56847272c40f5bf4fa",
+  "release_notes_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/tag/v0.1.33",
+  "published_at": "2026-06-07T07:30:00Z"
 }
 ```
 
-The checksum in this example is a placeholder. Replace it with the real SHA256
-for the installer before publishing a release manifest.
+The checksum must match the installer named by `download_url`.
 
 Rules:
 
@@ -117,7 +116,7 @@ Use the installer for normal updates. Use the ZIP for portable testing or troubl
 3. Generate SHA256:
 
    ```powershell
-   Get-FileHash .\OpenLaunchDeckSetup-0.2.0.exe -Algorithm SHA256
+   Get-FileHash .\OpenLaunchDeckSetup-<version>.exe -Algorithm SHA256
    ```
 
 4. Create a manifest JSON using that checksum.

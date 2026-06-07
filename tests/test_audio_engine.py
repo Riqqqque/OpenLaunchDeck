@@ -1,7 +1,7 @@
-from openlaunchdeck.audio.audio_engine import AudioEngine
+﻿from openlaunchdeck.audio.audio_engine import AudioEngine
 
 
-class FakeSignal:
+class SignalTestDouble:
     def __init__(self):
         self.callbacks = []
 
@@ -13,13 +13,13 @@ class FakeSignal:
             callback(*args)
 
 
-class FakeQUrl:
+class QUrlTestDouble:
     @staticmethod
     def fromLocalFile(path):
         return path
 
 
-class FakeAudioOutput:
+class AudioOutputTestDouble:
     def __init__(self, device=None):
         self.device = device
         self.volume = 0
@@ -28,15 +28,15 @@ class FakeAudioOutput:
         self.volume = volume
 
 
-class FakeMediaDevices:
+class MediaDevicesTestDouble:
     devices = []
 
     @staticmethod
     def audioOutputs():
-        return list(FakeMediaDevices.devices)
+        return list(MediaDevicesTestDouble.devices)
 
 
-class FakeDevice:
+class DeviceTestDouble:
     def __init__(self, device_id, description):
         self._device_id = device_id
         self._description = description
@@ -48,7 +48,7 @@ class FakeDevice:
         return self._description
 
 
-class FakeMediaPlayer:
+class MediaPlayerTestDouble:
     class MediaStatus:
         EndOfMedia = "end"
 
@@ -56,8 +56,8 @@ class FakeMediaPlayer:
         Infinite = -1
 
     def __init__(self):
-        self.mediaStatusChanged = FakeSignal()
-        self.errorOccurred = FakeSignal()
+        self.mediaStatusChanged = SignalTestDouble()
+        self.errorOccurred = SignalTestDouble()
         self.audio_output = None
         self.source = ""
         self.loops = 1
@@ -81,10 +81,10 @@ class FakeMediaPlayer:
         self.playing = False
 
 
-def install_fake_qt(engine):
-    FakeMediaDevices.devices = []
+def install_qt_test_double(engine):
+    MediaDevicesTestDouble.devices = []
     engine.qt_available = True
-    engine._qt = (FakeQUrl, FakeAudioOutput, FakeMediaDevices, FakeMediaPlayer)
+    engine._qt = (QUrlTestDouble, AudioOutputTestDouble, MediaDevicesTestDouble, MediaPlayerTestDouble)
 
 
 def test_audio_engine_reports_missing_file():
@@ -108,9 +108,9 @@ def test_audio_engine_rejects_unsupported_format(tmp_path):
 
 def test_audio_engine_plays_local_file_with_volume_and_loop(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(global_volume=50)
-    install_fake_qt(engine)
+    install_qt_test_double(engine)
     changed = []
     engine.state_changed_callback = lambda: changed.append(True)
 
@@ -136,9 +136,9 @@ def test_audio_engine_plays_local_file_with_volume_and_loop(tmp_path):
 
 def test_audio_engine_already_playing_behaviors(tmp_path):
     path = tmp_path / "sound.mp3"
-    path.write_bytes(b"fake mp3 bytes")
+    path.write_bytes(b"minimal mp3 bytes")
     engine = AudioEngine()
-    install_fake_qt(engine)
+    install_qt_test_double(engine)
     config = {"file_path": str(path), "behavior_when_already_playing": "restart"}
 
     assert engine.play_button_sound("A1", config).success is True
@@ -162,9 +162,9 @@ def test_audio_engine_already_playing_behaviors(tmp_path):
 
 def test_audio_engine_stop_scopes(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine()
-    install_fake_qt(engine)
+    install_qt_test_double(engine)
 
     engine.play_button_sound("A1", {"file_path": str(path), "_page_id": "main"})
     engine.play_button_sound("A2", {"file_path": str(path), "_page_id": "main"})
@@ -179,9 +179,9 @@ def test_audio_engine_stop_scopes(tmp_path):
 
 def test_voice_chat_route_requires_output_device(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine()
-    install_fake_qt(engine)
+    install_qt_test_double(engine)
 
     result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
 
@@ -191,10 +191,10 @@ def test_voice_chat_route_requires_output_device(tmp_path):
 
 def test_selected_default_output_must_be_available(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(default_output_device_id="missing-output")
-    install_fake_qt(engine)
-    FakeMediaDevices.devices = [FakeDevice("real-output", "Speakers")]
+    install_qt_test_double(engine)
+    MediaDevicesTestDouble.devices = [DeviceTestDouble("real-output", "Speakers")]
 
     result = engine.play_button_sound("A1", {"file_path": str(path)})
 
@@ -205,9 +205,9 @@ def test_selected_default_output_must_be_available(tmp_path):
 
 def test_system_default_output_can_be_used_without_saved_device(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(default_output_device_id="")
-    install_fake_qt(engine)
+    install_qt_test_double(engine)
 
     result = engine.play_button_sound("A1", {"file_path": str(path)})
 
@@ -217,10 +217,10 @@ def test_system_default_output_can_be_used_without_saved_device(tmp_path):
 
 def test_voice_chat_route_plays_to_voice_output_and_monitor(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(voice_chat_output_device_id="voice-cable", monitor_voice_chat_routes=True)
-    install_fake_qt(engine)
-    FakeMediaDevices.devices = [FakeDevice("voice-cable", "Cable Input")]
+    install_qt_test_double(engine)
+    MediaDevicesTestDouble.devices = [DeviceTestDouble("voice-cable", "Cable Input")]
 
     result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True, "volume": 25})
 
@@ -234,10 +234,10 @@ def test_voice_chat_route_plays_to_voice_output_and_monitor(tmp_path):
 
 def test_voice_chat_route_can_disable_monitor(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(voice_chat_output_device_id="voice-cable", monitor_voice_chat_routes=False)
-    install_fake_qt(engine)
-    FakeMediaDevices.devices = [FakeDevice("voice-cable", "Cable Input")]
+    install_qt_test_double(engine)
+    MediaDevicesTestDouble.devices = [DeviceTestDouble("voice-cable", "Cable Input")]
 
     result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
 
@@ -248,17 +248,18 @@ def test_voice_chat_route_can_disable_monitor(tmp_path):
 
 def test_voice_chat_route_cleans_up_when_monitor_output_is_missing(tmp_path):
     path = tmp_path / "sound.wav"
-    path.write_bytes(b"fake wav bytes")
+    path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(
         default_output_device_id="missing-monitor",
         voice_chat_output_device_id="voice-cable",
         monitor_voice_chat_routes=True,
     )
-    install_fake_qt(engine)
-    FakeMediaDevices.devices = [FakeDevice("voice-cable", "Cable Input")]
+    install_qt_test_double(engine)
+    MediaDevicesTestDouble.devices = [DeviceTestDouble("voice-cable", "Cable Input")]
 
     result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
 
     assert result.success is False
     assert "selected soundboard output" in result.message.lower()
     assert not engine.currently_playing()
+

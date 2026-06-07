@@ -149,7 +149,7 @@
           "action": {
             "type": "volume_control",
             "config": {
-              "mode": "mute"
+              "mode": "toggle_mute"
             }
           }
         }

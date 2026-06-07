@@ -252,7 +252,6 @@ class HotkeyAction(BaseAction):
             "label": "Hotkey",
             "type": "hotkey",
             "suggestions": build_hotkey_suggestions(),
-            "placeholder": "Choose or type a hotkey, such as f15 or ctrl+shift+f13",
         }
     ]
     blocking = True

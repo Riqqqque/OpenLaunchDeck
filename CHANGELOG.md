@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.34
+
+- Added real Windows endpoint volume control for set volume, mute, unmute, toggle mute, and volume steps.
+- Removed server-specific starter profiles that required user-only host and command values.
+- Updated the soundboard starter profile to use real Windows system sounds.
+- Moved old unconfigured server starter profiles into backups instead of loading replacement commands.
+- Cleaned public docs and update examples so release guidance uses real asset URLs and checksums.
+
 ## 0.1.33
 
 - Made Launch at startup write the Windows user startup entry instead of only saving the setting.
@@ -190,7 +198,7 @@
 
 ## 0.1.0
 
-- Initial public MVP application structure.
+- Initial public application structure.
 - Added PySide6 desktop UI with editable 8x8 grid and button editor.
 - Added profile/page models, JSON load/save, starter profiles, and AppData storage.
 - Added simulation mode and action runner.
