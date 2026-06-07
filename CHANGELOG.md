@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.42
+
+- Detected the Windows names used by the lightweight virtual cable route.
+- Updated Discord routing docs for the simple cable endpoint pair.
+
 ## 0.1.41
 
 - Added OpenLaunchDeck Audio Bridge endpoint detection and route preference.

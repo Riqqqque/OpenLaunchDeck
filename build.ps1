@@ -68,6 +68,25 @@ function Write-Checksum {
     Write-Host "SHA256:    $($Hash.Hash.ToLower())"
 }
 
+function Get-InnoSetupCompiler {
+    $Command = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+    if ($Command) {
+        return $Command.Source
+    }
+
+    $Candidates = @(
+        "$env:LOCALAPPDATA\Programs\Inno Setup 6\ISCC.exe",
+        "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+        "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+    )
+    foreach ($Candidate in $Candidates) {
+        if ($Candidate -and (Test-Path -LiteralPath $Candidate)) {
+            return $Candidate
+        }
+    }
+    return $null
+}
+
 if ($UseCurrentPython) {
     $PythonCommand = Get-Command python -ErrorAction Stop
     $Python = $PythonCommand.Source
@@ -129,7 +148,7 @@ Write-Host "Portable ZIP: $PortableZip"
 Write-Checksum -Path $PortableZip
 
 if (!$SkipInstaller) {
-    $Iscc = Get-Command ISCC.exe -ErrorAction SilentlyContinue
+    $Iscc = Get-InnoSetupCompiler
     if ($Iscc) {
         $InstallerArgs = @("/DMyAppName=$AppName", "/DMyAppVersion=$AppVersion")
         if ($FastPackage) {
@@ -137,7 +156,7 @@ if (!$SkipInstaller) {
             $InstallerArgs += "/DMyAppSolidCompression=no"
         }
         $InstallerArgs += "installer\openlaunchdeck.iss"
-        Invoke-Checked { & $Iscc.Source @InstallerArgs } "Build installer"
+        Invoke-Checked { & $Iscc @InstallerArgs } "Build installer"
         $Installer = Join-Path $Root "dist\installer\${AppName}Setup-$AppVersion.exe"
         if (Test-Path $Installer) {
             Write-Host "Installer: $Installer"

@@ -34,6 +34,18 @@ def test_voice_route_matches_simple_cable_pair():
     assert status.discord_input_name == "CABLE Output (Virtual Cable)"
 
 
+def test_voice_route_matches_vb_audio_cable_windows_names():
+    outputs = [device("out", "Speakers (VB-Audio Virtual Cable)")]
+    inputs = [device("in", "CABLE Output (VB-Audio Virtual Cable)")]
+
+    status = analyze_voice_route("out", outputs, inputs)
+
+    assert status.ready is True
+    assert status.route_kind == "paired_bridge"
+    assert status.uses_legacy_mixer is False
+    assert status.discord_input_name == "CABLE Output (VB-Audio Virtual Cable)"
+
+
 def test_voice_route_matches_virtual_audio_cable_line():
     outputs = [device("out", "Line 1 (Virtual Audio Cable)")]
     inputs = [device("in", "Line 1 (Virtual Audio Cable)")]

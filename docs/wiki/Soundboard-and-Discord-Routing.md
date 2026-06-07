@@ -50,6 +50,13 @@ OpenLaunchDeck handles the routing split itself:
 
 Discord can only receive audio through a Windows recording device. OpenLaunchDeck can mix and play your mic and routed clips, but Windows still needs a playback-to-recording bridge endpoint or hardware loopback.
 
+For a simple signed cable endpoint pair, Windows may show:
+
+- Playback: `Speakers (VB-Audio Virtual Cable)`
+- Recording: `CABLE Output (VB-Audio Virtual Cable)`
+
+In that setup, OpenLaunchDeck sends routed clips and the selected microphone to the playback side. Discord uses the recording side as its input.
+
 OpenLaunchDeck now looks for a dedicated bridge pair:
 
 - `OpenLaunchDeck Voice Output`
