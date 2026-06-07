@@ -42,14 +42,14 @@ Install the setup EXE for normal use. The portable ZIP is useful for testing wit
 - RGB lighting structure with page refresh and feedback states.
 - Profiles and pages stored in AppData.
 - Soundboard playback for local `.wav` and `.mp3` files.
-- Voice-chat soundboard routing with OpenLaunchDeck's simple route controls.
+- Voice-chat soundboard routing with OpenLaunchDeck's simple route controls and bridge endpoint detection.
 - OBS WebSocket actions for recording, streaming, replay buffer clips, screenshots, scene switching, and input mute toggles.
 - Hotkey actions, including extended function keys such as `F13` through `F24`.
 - Manual update checks with checksum verification.
 
 ## Known Limits
 
-- OpenLaunchDeck does not install audio drivers. Voice-chat routing needs a Windows recording endpoint that receives the routed soundboard playback.
+- The OpenLaunchDeck Audio Bridge driver must be built and signed separately before the app can use its own dedicated Windows recording endpoint.
 - The Launchpad Mini MK3 8x8 grid is the supported macro surface. Extra hardware navigation buttons can be inspected in MIDI Debug, but they are not bound to previous/next app pages by default.
 - OBS actions need OBS running with WebSocket enabled.
 - Some games block normal keyboard automation. Use OBS WebSocket for clips/screenshots when possible.

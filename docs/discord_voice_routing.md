@@ -29,7 +29,18 @@ Open `Soundboard > Open Soundboard Panel`.
    - Enable `Route To Voice Chat`.
    - Start with volume around `60` to `80`.
 
-If Auto Find Route cannot find a route, Windows does not currently expose a matching playback-to-recording bridge. Add a simple audio bridge endpoint or use hardware loopback from an audio interface, then run Auto Find Route again.
+If Auto Find Route cannot find a route, Windows does not currently expose a matching playback-to-recording bridge. Install a signed OpenLaunchDeck Audio Bridge package or use hardware loopback from an audio interface, then run Auto Find Route again.
+
+## OpenLaunchDeck Audio Bridge
+
+When installed, the bridge appears as:
+
+- Playback: `OpenLaunchDeck Voice Output`
+- Recording: `OpenLaunchDeck Voice Input`
+
+OpenLaunchDeck prefers this pair automatically. Set Discord input to `OpenLaunchDeck Voice Input`, keep Discord output on your real listening device, and enable **Route Microphone** in the Soundboard panel.
+
+See [audio_bridge.md](audio_bridge.md) for driver build and install requirements.
 
 ## Discord Settings
 

@@ -46,6 +46,7 @@ Short setup guides are tracked in [docs/wiki](docs/wiki) for GitHub Wiki-style p
 - Soundboard playback with stop controls
 - Soundboard output selectors that hide duplicate Windows device names
 - Microphone routing into the selected soundboard voice route
+- OpenLaunchDeck Audio Bridge detection for a built-in voice route endpoint pair
 - Background action execution
 - Manual update checks with SHA256 verification
 - Launch at startup using the current Windows user startup entry
@@ -176,9 +177,11 @@ See [docs/hardware_notes.md](docs/hardware_notes.md) and [docs/midi_mapping.md](
 
 Soundboard buttons can play local `.wav`, `.mp3`, and platform-supported `.ogg` files through QtMultimedia. Each button supports volume, looping, voice-chat routing, already-playing behavior, active color, and stop behavior. Per-button and global soundboard volume use the same effective gain for local monitoring and routed voice-chat playback.
 
-OpenLaunchDeck handles routed sound playback and microphone routing itself: a routed clip can play to the voice route and to your normal output at the same time, and the selected microphone can be mixed into that route. The Soundboard panel can auto-detect a ready route and show the exact Discord input device to select. Discord still needs a Windows recording endpoint that receives the routed playback; OpenLaunchDeck does not install or bundle audio drivers.
+OpenLaunchDeck handles routed sound playback and microphone routing itself: a routed clip can play to the voice route and to your normal output at the same time, and the selected microphone can be mixed into that route. The Soundboard panel can auto-detect a ready route and show the exact Discord input device to select.
 
-See [docs/soundboard_setup.md](docs/soundboard_setup.md) and [docs/discord_voice_routing.md](docs/discord_voice_routing.md).
+The planned OpenLaunchDeck Audio Bridge provides a dedicated Windows endpoint pair named `OpenLaunchDeck Voice Output` and `OpenLaunchDeck Voice Input`. The app already detects and prefers that pair when it exists. The bridge driver must be built and signed separately before Windows will load it.
+
+See [docs/soundboard_setup.md](docs/soundboard_setup.md), [docs/discord_voice_routing.md](docs/discord_voice_routing.md), and [docs/audio_bridge.md](docs/audio_bridge.md).
 
 ## Performance Notes
 

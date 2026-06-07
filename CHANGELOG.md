@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.41
+
+- Added OpenLaunchDeck Audio Bridge endpoint detection and route preference.
+- Added bridge driver package scripts with WDK and signature safety checks.
+- Added bridge setup docs for the dedicated voice input/output route.
+
 ## 0.1.40
 
 - Added microphone routing into the selected soundboard voice route.
