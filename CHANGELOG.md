@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.35
+
+- Made left-click and double-click on the system tray icon restore the main window.
+- Made the tray menu Open action restore, raise, and activate the window instead of only showing it.
+
 ## 0.1.34
 
 - Added real Windows endpoint volume control for set volume, mute, unmute, toggle mute, and volume steps.

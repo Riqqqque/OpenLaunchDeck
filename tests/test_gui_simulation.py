@@ -2,7 +2,7 @@
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from openlaunchdeck.app import build_services
 from openlaunchdeck.models.action_config import ActionConfig
@@ -123,6 +123,32 @@ def test_simulation_tooltip_and_grid_focus_mode():
     assert window.grid_focus_button.text() == "Focus Grid"
     assert window.app_header.isVisible()
     assert window.editor_scroll.isVisible()
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_restore_from_tray_shows_hidden_window():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    window.show()
+    app.processEvents()
+
+    window.hide()
+    app.processEvents()
+
+    assert not window.isVisible()
+
+    window.tray.on_activated(QSystemTrayIcon.ActivationReason.Trigger)
+    app.processEvents()
+
+    assert window.isVisible()
+    assert not window.isMinimized()
 
     window._force_quit = True
     window.close()

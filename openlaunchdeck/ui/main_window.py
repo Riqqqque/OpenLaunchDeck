@@ -822,6 +822,11 @@ class MainWindow(QMainWindow):
         self.services.device.close()
         super().closeEvent(event)
 
+    def restore_from_tray(self) -> None:
+        self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
     def quit_app(self) -> None:
         self._force_quit = True
         self.close()
