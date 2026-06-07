@@ -46,18 +46,9 @@ Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and
 
 ## Soundboard Not Heard In Discord
 
-Route the playback device through an external virtual audio cable app. OpenLaunchDeck does not install audio drivers.
+Open `Soundboard > Open Soundboard Panel` and click `Auto Find Route`. If OpenLaunchDeck shows `Discord input: ...`, set Discord input to that device and make sure each sound button has `Route To Voice Chat` enabled.
 
-For Discord with VoiceMeeter Banana, use this baseline route:
-
-- Windows output: your real headphones, speakers, or audio interface
-- Windows input: `Voicemeeter Out B1`
-- Discord output: `Default` or your real headphones, speakers, or audio interface
-- Discord input: `Default` or `Voicemeeter Out B1`
-- OpenLaunchDeck default output: `System default`
-- OpenLaunchDeck voice-chat output: `Voicemeeter Input`
-
-In VoiceMeeter, route the main virtual input strip to `A1` and `B1`. Keep browser, game, and Discord playback on the real Windows output unless you intentionally use the advanced full-mixer route.
+If Auto Find Route cannot find a route, Windows does not currently expose a playback-to-recording bridge for Discord. Add a simple audio bridge endpoint or use hardware loopback from an audio interface, then run Auto Find Route again. OpenLaunchDeck does not install audio drivers.
 
 See [Discord Voice Chat Routing](discord_voice_routing.md) for the full step-by-step setup.
 
@@ -65,11 +56,11 @@ See [Discord Voice Chat Routing](discord_voice_routing.md) for the full step-by-
 
 If friends say routed soundboard clips are muffled, crunchy, or underwater, Discord is usually processing the clip like microphone noise. In `User Settings > Voice & Video`, try turning off noise suppression, echo cancellation, noise reduction, and automatic gain control. Use `.wav` or high-quality `.mp3` files where possible.
 
-If friends can barely hear clips, raise the per-button volume in OpenLaunchDeck first. Start around `60` to `80`. Also check that the VoiceMeeter strip carrying soundboard audio is near `0 dB`.
+If friends can barely hear clips, raise the per-button volume in OpenLaunchDeck first. Start around `60` to `80`. Also check Discord input sensitivity and the Windows volume mixer for the route.
 
 ## Browser Shows Audio Renderer Error
 
-Keep Windows output set to a real hardware device, not a virtual mixer input. Then restart the browser. If the error remains, restart VoiceMeeter and the Windows Audio service. In OpenLaunchDeck, use `System default` for the normal sound output device and reserve `Voicemeeter Input` for the voice-chat output route.
+Keep Windows output set to a real hardware device, then restart the browser. In OpenLaunchDeck, use `System default` for the normal sound output device and reserve the voice route output only for buttons that enable `Route To Voice Chat`.
 
 ## Command Action Not Working
 

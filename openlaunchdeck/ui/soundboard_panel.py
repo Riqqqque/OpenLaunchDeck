@@ -6,9 +6,22 @@ import sys
 from pathlib import Path
 
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import QCheckBox, QComboBox, QDialog, QFormLayout, QLabel, QListWidget, QPushButton, QSpinBox, QVBoxLayout
+from PySide6.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QComboBox,
+    QDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QListWidget,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+)
 
 from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
+from ..audio.voice_routing import find_best_voice_route
 
 
 class SoundboardPanel(QDialog):
@@ -43,10 +56,27 @@ class SoundboardPanel(QDialog):
         self.volume_spin.setRange(0, 100)
         self.volume_spin.setValue(audio_engine.global_volume)
         form.addRow("Default Output", self.output_combo)
-        form.addRow("Voice Chat Output", self.voice_output_combo)
+        form.addRow("Voice Route Output", self.voice_output_combo)
         form.addRow("Monitor Voice Routes", self.monitor_voice_check)
         form.addRow("Global Volume", self.volume_spin)
         layout.addLayout(form)
+        self.route_status = QLabel()
+        self.route_status.setWordWrap(True)
+        self.route_status.setObjectName("MutedText")
+        layout.addWidget(self.route_status)
+        discord_row = QHBoxLayout()
+        discord_row.setSpacing(8)
+        self.discord_input = QLabel("Discord input: not configured")
+        self.discord_input.setWordWrap(True)
+        self.discord_input.setObjectName("MutedText")
+        self.auto_route_button = QPushButton("Auto Find Route")
+        self.auto_route_button.setObjectName("SecondaryButton")
+        self.copy_discord_input_button = QPushButton("Copy Discord Input")
+        self.copy_discord_input_button.setObjectName("SecondaryButton")
+        discord_row.addWidget(self.discord_input, 1)
+        discord_row.addWidget(self.auto_route_button)
+        discord_row.addWidget(self.copy_discord_input_button)
+        layout.addLayout(discord_row)
         hidden_duplicates = hidden_duplicate_count(devices)
         hidden_advanced = hidden_advanced_output_count()
         self.device_note = QLabel()
@@ -56,7 +86,7 @@ class SoundboardPanel(QDialog):
         if hidden_duplicates:
             note_parts.append(f"{hidden_duplicates} duplicate Windows output names")
         if hidden_advanced:
-            note_parts.append(f"{hidden_advanced} advanced VoiceMeeter buses")
+            note_parts.append(f"{hidden_advanced} advanced mixer buses")
         if note_parts:
             self.device_note.setText(
                 "Hidden " + " and ".join(note_parts) + ". "
@@ -81,6 +111,8 @@ class SoundboardPanel(QDialog):
         self.stop_all_button.clicked.connect(self._stop_all)
         self.refresh_button.clicked.connect(self.refresh)
         self.docs_button.clicked.connect(self.open_docs)
+        self.auto_route_button.clicked.connect(self.auto_find_route)
+        self.copy_discord_input_button.clicked.connect(self.copy_discord_input)
         self.output_combo.currentIndexChanged.connect(lambda _index: self._set_output_device())
         self.voice_output_combo.currentIndexChanged.connect(lambda _index: self._set_voice_output_device())
         self.monitor_voice_check.stateChanged.connect(lambda _state: self._set_monitor_voice_routes())
@@ -92,6 +124,7 @@ class SoundboardPanel(QDialog):
         self.refresh()
 
     def refresh(self) -> None:
+        self.refresh_route_status()
         self.list_widget.clear()
         for instance in self.audio_engine.currently_playing():
             name = instance.display_name or Path(instance.file_path).name
@@ -114,6 +147,7 @@ class SoundboardPanel(QDialog):
         self.audio_engine.set_voice_chat_output_device(device_id)
         if self.settings_service is not None:
             self.settings_service.update(soundboard_voice_chat_output_device=device_id)
+        self.refresh_route_status()
 
     def _set_monitor_voice_routes(self) -> None:
         enabled = self.monitor_voice_check.isChecked()
@@ -135,6 +169,33 @@ class SoundboardPanel(QDialog):
                 os.startfile(str(docs_path))  # type: ignore[attr-defined]
             else:
                 subprocess.Popen(["xdg-open", str(docs_path)])
+
+    def refresh_route_status(self) -> None:
+        status = self.audio_engine.voice_route_status()
+        self.route_status.setText(status.message)
+        if status.ready:
+            self.discord_input.setText(f"Discord input: {status.discord_input_name}")
+            self.copy_discord_input_button.setEnabled(True)
+        else:
+            self.discord_input.setText("Discord input: not ready")
+            self.copy_discord_input_button.setEnabled(False)
+
+    def copy_discord_input(self) -> None:
+        status = self.audio_engine.voice_route_status()
+        if status.discord_input_name:
+            QApplication.clipboard().setText(status.discord_input_name)
+
+    def auto_find_route(self) -> None:
+        route = find_best_voice_route()
+        if route is None:
+            self.route_status.setText("No voice route is ready. Windows needs a playback output with a matching recording input for Discord.")
+            return
+        index = self.voice_output_combo.findData(route.output_id)
+        if index < 0:
+            self.voice_output_combo.addItem(route.output_name, route.output_id)
+            index = self.voice_output_combo.findData(route.output_id)
+        self.voice_output_combo.setCurrentIndex(max(0, index))
+        self._set_voice_output_device()
 
     def _add_device_items(self, combo: QComboBox, devices: list[dict[str, str | int]]) -> None:
         for device in devices:

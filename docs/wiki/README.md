@@ -17,7 +17,7 @@ If you are new, start with Quick Start. If something goes wrong, jump to Trouble
 - [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md) - USB MIDI connection, Programmer Mode, mapping checks, lighting, and calibration.
 - [Profiles, Pages, And Macros](Profiles-Pages-And-Macros.md) - how profiles, pages, buttons, and actions fit together.
 - [OBS WebSocket Setup](OBS-WebSocket-Setup.md) - replay buffer clips, screenshots, scene switching, and source toggles.
-- [Soundboard And Discord Routing](Soundboard-and-Discord-Routing.md) - local sounds, VoiceMeeter routing, duplicate output names, and quality fixes.
+- [Soundboard And Discord Routing](Soundboard-and-Discord-Routing.md) - local sounds, simple voice routing, duplicate output names, and quality fixes.
 - [Performance And Gaming](Performance-And-Gaming.md) - keep the app light while gaming or streaming.
 - [Troubleshooting](Troubleshooting.md) - common fixes for device, OBS, hotkey, update, and soundboard issues.
 - [Release And Update Flow](Release-and-Update-Flow.md) - install, update, checksums, and preserved user data.
@@ -42,14 +42,14 @@ Install the setup EXE for normal use. The portable ZIP is useful for testing wit
 - RGB lighting structure with page refresh and feedback states.
 - Profiles and pages stored in AppData.
 - Soundboard playback for local `.wav` and `.mp3` files.
-- Voice-chat soundboard routing through external virtual audio software.
+- Voice-chat soundboard routing with OpenLaunchDeck's simple route controls.
 - OBS WebSocket actions for recording, streaming, replay buffer clips, screenshots, scene switching, and input mute toggles.
 - Hotkey actions, including extended function keys such as `F13` through `F24`.
 - Manual update checks with checksum verification.
 
 ## Known Limits
 
-- OpenLaunchDeck does not install audio drivers. Voice-chat routing needs software such as VoiceMeeter or another virtual audio cable setup.
+- OpenLaunchDeck does not install audio drivers. Voice-chat routing needs a Windows recording endpoint that receives the routed soundboard playback.
 - The Launchpad Mini MK3 8x8 grid is the supported macro surface. Extra hardware navigation buttons can be inspected in MIDI Debug, but they are not bound to previous/next app pages by default.
 - OBS actions need OBS running with WebSocket enabled.
 - Some games block normal keyboard automation. Use OBS WebSocket for clips/screenshots when possible.

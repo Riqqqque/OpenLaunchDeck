@@ -10,6 +10,7 @@ from ..actions.base import ActionResult
 from ..services.performance_monitor import PerformanceMonitor
 from .output_devices import device_id_from_qt
 from .sound_instance import SoundInstance, SoundMetadata
+from .voice_routing import VoiceRouteStatus, current_voice_route_status
 
 
 SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".ogg"}
@@ -108,7 +109,7 @@ class AudioEngine:
                     for instance_id in started_instance_ids:
                         self._stop_instance(instance_id)
                     if route_name == "voice_chat":
-                        return ActionResult.fail("Voice chat output device is not available.")
+                        return ActionResult.fail("Voice route output device is not available.")
                     return ActionResult.fail("Selected soundboard output device is not available.")
                 audio_output.setVolume(effective_volume)
                 player = QMediaPlayer()
@@ -226,6 +227,12 @@ class AudioEngine:
     def set_monitor_voice_chat_routes(self, enabled: bool) -> None:
         self.monitor_voice_chat_routes = bool(enabled)
 
+    def voice_route_status(self) -> VoiceRouteStatus:
+        return current_voice_route_status(self.voice_chat_output_device_id)
+
+    def voice_route_ready(self) -> bool:
+        return self.voice_route_status().ready
+
     def currently_playing(self) -> list[SoundInstance]:
         with self._lock:
             return list(self._instances.values())
@@ -259,7 +266,7 @@ class AudioEngine:
             return [("default", str(config.get("output_device_id") or ""), False)]
         voice_device_id = str(config.get("voice_chat_output_device_id") or self.voice_chat_output_device_id or "")
         if not voice_device_id:
-            return ActionResult.fail("Choose a voice chat output device in the Soundboard panel.")
+            return ActionResult.fail("Choose a voice route output device in the Soundboard panel.")
         routes: list[tuple[str, str, bool]] = [("voice_chat", voice_device_id, True)]
         if self.monitor_voice_chat_routes:
             monitor_device_id = str(config.get("output_device_id") or self.default_output_device_id or "")

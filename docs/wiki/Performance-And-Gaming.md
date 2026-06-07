@@ -1,6 +1,6 @@
 # Performance And Gaming
 
-OpenLaunchDeck is designed to stay light while games, OBS, Discord, and VoiceMeeter are running.
+OpenLaunchDeck is designed to stay light while games, OBS, Discord, and audio routing software are running.
 
 ## What The App Does To Stay Responsive
 

@@ -69,24 +69,24 @@ For OBS camera, mic, stream, replay, screenshot, and scene controls, prefer the 
 
 ## Too Many Audio Outputs In The Soundboard Panel
 
-Windows can report duplicate output endpoints with the same visible name, especially after installing virtual audio software. VoiceMeeter can also expose advanced buses such as `Voicemeeter In 1` through `Voicemeeter In 5`.
+Windows can report duplicate output endpoints with the same visible name, especially after installing audio routing software. Some drivers can also expose advanced buses that normal users do not need.
 
-OpenLaunchDeck hides duplicate names and advanced VoiceMeeter buses in the Soundboard and Settings selectors. If a hidden device was already saved, the app keeps that saved device ID instead of silently erasing it.
+OpenLaunchDeck hides duplicate names and advanced mixer buses in the Soundboard and Settings selectors. If a hidden device was already saved, the app keeps that saved device ID instead of silently erasing it.
 
 If Windows itself shows many duplicate outputs:
 
-1. Reboot after installing VoiceMeeter or other virtual audio software.
+1. Reboot after installing or removing audio routing software.
 2. Open Windows Sound Settings.
 3. Disable unused duplicate endpoints if Windows exposes them separately.
 4. Keep browser, game, and Discord playback on your real hardware output for the simple route.
-5. Use one virtual route for soundboard voice routing.
+5. Use one voice route for soundboard voice routing.
 
 ## Friends Cannot Hear Soundboard Clips
 
 1. Confirm the button has `Route To Voice Chat` enabled.
-2. Confirm OpenLaunchDeck Voice Chat Output points to the virtual cable playback device.
-3. Confirm Discord Input points to the matching virtual cable recording device.
-4. In VoiceMeeter, make sure the soundboard strip routes to the bus Discord uses.
+2. Open the Soundboard panel and click `Auto Find Route`.
+3. Confirm OpenLaunchDeck shows `Discord input: ...`.
+4. Confirm Discord input points to that device.
 5. In Discord, use Mic Test while playing a clip.
 
 ## Soundboard Audio Sounds Bad
@@ -94,7 +94,6 @@ If Windows itself shows many duplicate outputs:
 Try this:
 
 - Lower OpenLaunchDeck button volume to `60` to `80`.
-- Lower the VoiceMeeter strip by `3 dB` to `6 dB`.
 - Disable Discord noise suppression, echo cancellation, noise reduction, and automatic gain control.
 - Use clean `.wav` or high-quality `.mp3` clips.
 - Avoid stacking multiple loud clips with `overlap`.
@@ -103,16 +102,15 @@ Try this:
 
 1. Set Discord output to `Default` or your real headphones, speakers, or audio interface.
 2. Make sure Windows output is still your real hardware output.
-3. Restart VoiceMeeter if Discord input is routed through it.
-4. Do not route Discord output back into the Discord input bus.
+3. Do not route Discord output back into the Discord input route.
 
 ## Browser Shows Audio Renderer Error
 
 1. Set Windows output to your real headphones, speakers, or audio interface.
 2. In OpenLaunchDeck, set Default Output to `System default`.
-3. Keep Voice Chat Output pointed at the virtual mixer input.
+3. Keep Voice Route Output separate from normal browser and Discord playback.
 4. Restart the browser after changing audio routes.
-5. If it still fails, restart VoiceMeeter and the Windows Audio service.
+5. If it still fails, restart the Windows Audio service.
 
 ## Launch At Startup Does Not Work
 

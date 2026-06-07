@@ -35,40 +35,47 @@ The Soundboard panel also has a Stop All Sounds button.
 
 ## Output Devices
 
-The Soundboard panel lists QtMultimedia output devices when Windows exposes them. If a selected device cannot be used, playback fails with a clear message instead of silently playing through the wrong output.
+Use `System default` for normal monitoring unless you have a specific reason to pin a hardware output. OpenLaunchDeck applies the same gain to every copy of a sound: local monitor playback and voice-routed playback stay matched.
 
-Use `System default` for normal soundboard monitoring unless you have a specific reason to pin a hardware device. Use the voice-chat output selector for virtual mixer routes such as `Voicemeeter Input`.
-
-Windows and virtual audio software can expose multiple outputs with the exact same visible name. VoiceMeeter can also expose advanced virtual buses such as `Voicemeeter In 1` through `Voicemeeter In 5`.
-
-OpenLaunchDeck hides duplicate names and those advanced VoiceMeeter buses in the Soundboard and Settings selectors so normal setups stay readable. The useful routes, such as `Voicemeeter Input`, `Voicemeeter AUX Input`, real headphones, and audio interfaces remain visible. If a hidden device ID was already saved, the app keeps the saved ID instead of silently changing it.
+Windows can expose duplicate output names. OpenLaunchDeck hides duplicates and advanced mixer buses in the normal selectors so the list stays readable. If a hidden device ID was already saved, the app keeps that saved ID instead of silently changing it.
 
 Global soundboard volume is combined with each button's per-sound volume, then applied with a quieter curve so low values stay low. For example, 50% global volume and 80% button volume combine to a 40% raw setting and play at about 16% output gain. A button set to 0% stays silent.
 
-When `Route To Voice Chat` is enabled, OpenLaunchDeck applies the same effective gain to the voice-chat output and the local monitor output. If Discord is louder or quieter than your local monitor after that, check the virtual mixer strip level, Discord input processing, and the Windows volume mixer.
+## Simple Voice Route
 
-## Soundboard Panel
+OpenLaunchDeck has its own lightweight voice-route behavior:
 
-Open `Soundboard > Open Soundboard Panel` to view currently playing sounds, stop all sounds, select the default output device, select the voice chat output device, choose whether routed sounds are monitored locally, adjust global volume, refresh the list, or open this setup document.
+1. A routed sound plays to the selected **Voice Route Output**.
+2. If **Monitor Voice Routes** is enabled, the same sound also plays to your normal output so you hear it.
+3. The routed and monitored copies use the same effective volume.
+4. The Soundboard panel checks whether Windows exposes a matching recording input for Discord.
 
-## Discord And Game Chat
+Discord and most games can only receive microphone audio from a Windows recording device. OpenLaunchDeck can mix and play the soundboard route itself, but Windows still needs a playback-to-recording bridge endpoint for Discord to select. The app does not install audio drivers.
 
-To let Discord or a game hear soundboard playback, use external virtual audio cable software. OpenLaunchDeck does not install or bundle audio drivers.
+Open `Soundboard > Open Soundboard Panel`:
 
-Typical setup:
+1. Leave **Default Output** on `System default`.
+2. Click **Auto Find Route**.
+3. If a route is ready, OpenLaunchDeck shows `Discord input: ...`.
+4. Click **Copy Discord Input**.
+5. In Discord, open `User Settings > Voice & Video`.
+6. Set **Input Device** to the copied device name.
+7. Keep **Output Device** on your real headphones, speakers, or audio interface.
+8. On each sound button Discord should hear, enable `Route To Voice Chat`.
 
-1. Install a virtual audio cable app.
-2. Keep Windows output on your real headphones, speakers, or audio interface.
-3. In OpenLaunchDeck, open the Soundboard panel and leave `Default Output` on `System default`.
-4. Set `Voice Chat Output` to the virtual cable playback device.
-5. Leave `Monitor Voice Routes` enabled if you still want to hear routed sounds through your normal output.
-6. In Discord or the game, set the microphone/input device to the matching virtual cable recording device.
-7. On each sound button that should be heard in voice chat, enable `Route To Voice Chat`.
+If Auto Find Route says no route is ready, Windows does not currently expose a recording input that can receive OpenLaunchDeck's routed playback. Add a lightweight audio bridge endpoint or use hardware loopback from an audio interface, then reopen the Soundboard panel and run Auto Find Route again.
 
-If no virtual cable output is selected, routed sound buttons show a clear error and do not play to the wrong device.
+## Discord Quality
 
-For a complete VoiceMeeter Banana setup that routes OpenLaunchDeck soundboard clips into Discord while still letting you hear your friends, see [Discord Voice Chat Routing](discord_voice_routing.md).
+For better soundboard quality in Discord, try turning off:
+
+- Noise suppression
+- Echo cancellation
+- Noise reduction
+- Automatic gain control
+
+Use `.wav` or high-quality `.mp3` files where possible. Start button volume around `60` to `80` and adjust from there.
 
 ## Troubleshooting
 
-If sound does not play, confirm the file exists, try a `.wav` or `.mp3`, check Windows volume mixer, check the selected output device, and open the logs folder from the Help menu.
+If sound does not play, confirm the file exists, try `.wav` or `.mp3`, check Windows volume mixer, check the selected output device, and open the logs folder from the Help menu.

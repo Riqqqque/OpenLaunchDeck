@@ -222,7 +222,7 @@ def test_voice_chat_route_requires_output_device(tmp_path):
     result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
 
     assert result.success is False
-    assert "voice chat output" in result.message.lower()
+    assert "voice route output" in result.message.lower()
 
 
 def test_selected_default_output_must_be_available(tmp_path):
