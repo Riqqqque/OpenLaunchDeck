@@ -8,6 +8,7 @@ from typing import Callable
 
 from ..actions.base import ActionResult
 from ..services.performance_monitor import PerformanceMonitor
+from .mic_bridge import MicBridge, MicBridgeState
 from .output_devices import device_id_from_qt
 from .sound_instance import SoundInstance, SoundMetadata
 from .voice_routing import VoiceRouteStatus, current_voice_route_status
@@ -43,6 +44,9 @@ class AudioEngine:
         default_output_device_id: str = "",
         voice_chat_output_device_id: str = "",
         monitor_voice_chat_routes: bool = True,
+        voice_route_microphone_enabled: bool = False,
+        voice_route_microphone_device_id: str = "",
+        voice_route_microphone_volume: int = 100,
         performance_logging_enabled: bool = False,
         performance_monitor: PerformanceMonitor | None = None,
     ) -> None:
@@ -51,8 +55,12 @@ class AudioEngine:
         self.default_output_device_id = default_output_device_id
         self.voice_chat_output_device_id = voice_chat_output_device_id
         self.monitor_voice_chat_routes = bool(monitor_voice_chat_routes)
+        self.voice_route_microphone_enabled = bool(voice_route_microphone_enabled)
+        self.voice_route_microphone_device_id = voice_route_microphone_device_id
+        self.voice_route_microphone_volume = clamp_percent(voice_route_microphone_volume)
         self.performance_logging_enabled = performance_logging_enabled
         self.performance_monitor = performance_monitor or PerformanceMonitor(logger, performance_logging_enabled)
+        self.mic_bridge = MicBridge(logger)
         self.state_changed_callback: Callable[[], None] | None = None
         self._instances: dict[str, SoundInstance] = {}
         self._metadata_cache: dict[str, SoundMetadata] = {}
@@ -210,6 +218,10 @@ class AudioEngine:
         for instance_id in instance_ids:
             self._stop_instance(instance_id)
 
+    def shutdown(self) -> None:
+        self.stop_all()
+        self.mic_bridge.stop()
+
     def set_global_volume(self, volume: int) -> None:
         self.global_volume = clamp_percent(volume)
         with self._lock:
@@ -223,9 +235,40 @@ class AudioEngine:
 
     def set_voice_chat_output_device(self, device_id: str) -> None:
         self.voice_chat_output_device_id = device_id
+        if self.voice_route_microphone_enabled:
+            self.refresh_voice_route_microphone()
 
     def set_monitor_voice_chat_routes(self, enabled: bool) -> None:
         self.monitor_voice_chat_routes = bool(enabled)
+
+    def set_voice_route_microphone_device(self, device_id: str) -> None:
+        self.voice_route_microphone_device_id = device_id
+        if self.voice_route_microphone_enabled:
+            self.refresh_voice_route_microphone()
+
+    def set_voice_route_microphone_enabled(self, enabled: bool) -> ActionResult:
+        self.voice_route_microphone_enabled = bool(enabled)
+        if not self.voice_route_microphone_enabled:
+            self.mic_bridge.stop()
+            return ActionResult.ok("Microphone route is off.")
+        return self.refresh_voice_route_microphone()
+
+    def set_voice_route_microphone_volume(self, volume: int) -> None:
+        self.voice_route_microphone_volume = clamp_percent(volume)
+        self.mic_bridge.set_volume(self.voice_route_microphone_volume)
+
+    def refresh_voice_route_microphone(self) -> ActionResult:
+        if not self.voice_route_microphone_enabled:
+            self.mic_bridge.stop()
+            return ActionResult.ok("Microphone route is off.")
+        return self.mic_bridge.start(
+            self.voice_route_microphone_device_id,
+            self.voice_chat_output_device_id,
+            self.voice_route_microphone_volume,
+        )
+
+    def voice_route_microphone_state(self) -> MicBridgeState:
+        return self.mic_bridge.state
 
     def voice_route_status(self) -> VoiceRouteStatus:
         return current_voice_route_status(self.voice_chat_output_device_id)

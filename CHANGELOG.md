@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.40
+
+- Added microphone routing into the selected soundboard voice route.
+- Added microphone route controls to the Soundboard panel and Settings.
+- Cleaned legacy mixer detection so route warnings stay generic.
+
 ## 0.1.39
 
 - Added OpenLaunchDeck voice-route detection for soundboard audio.
@@ -50,7 +56,7 @@
 - Kept normal soundboard monitoring on the Windows system default route by default.
 - Made stale selected soundboard outputs fail clearly instead of falling back to the wrong output.
 - Allowed settings and profile JSON files with a UTF-8 BOM so Windows-edited files do not crash startup.
-- Updated Discord/Voicemeeter docs to use the safer split route for browser, game, and Discord playback.
+- Updated Discord routing docs to use the safer split route for browser, game, and Discord playback.
 
 ## 0.1.30
 
@@ -88,7 +94,7 @@
 ## 0.1.23
 
 - Added hotkey autocomplete with common shortcuts and F1-F24 options, including extended streaming keys like F15.
-- Added step-by-step Discord and VoiceMeeter soundboard routing docs.
+- Added step-by-step Discord soundboard routing docs.
 
 ## 0.1.22
 

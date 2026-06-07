@@ -66,9 +66,14 @@ def build_services() -> AppServices:
         default_output_device_id=settings_service.settings.soundboard_default_output_device,
         voice_chat_output_device_id=settings_service.settings.soundboard_voice_chat_output_device,
         monitor_voice_chat_routes=settings_service.settings.soundboard_monitor_voice_chat,
+        voice_route_microphone_enabled=settings_service.settings.soundboard_voice_route_microphone_enabled,
+        voice_route_microphone_device_id=settings_service.settings.soundboard_voice_route_microphone_device,
+        voice_route_microphone_volume=settings_service.settings.soundboard_voice_route_microphone_volume,
         performance_logging_enabled=settings_service.settings.enable_performance_logging,
         performance_monitor=performance_monitor,
     )
+    if settings_service.settings.soundboard_voice_route_microphone_enabled:
+        audio_engine.refresh_voice_route_microphone()
     device = LaunchpadMiniMk3(logger=logger, performance_monitor=performance_monitor)
     lighting_service = LightingService(
         device=device,
@@ -126,7 +131,7 @@ def run() -> int:
         services.logger.exception("Fatal application error.")
         return 1
     finally:
-        services.audio_engine.stop_all()
+        services.audio_engine.shutdown()
         services.lighting_service.shutdown()
         services.action_runner.shutdown()
         services.device.close()

@@ -2,7 +2,7 @@
 
 OpenLaunchDeck handles the soundboard split itself. You do not need a separate mixer app for normal use: routed sounds can play to a voice route and to your headphones at the same time.
 
-There is one Windows requirement: Discord must be able to select a recording device that receives the routed soundboard playback. OpenLaunchDeck can detect that route, but it cannot create a Windows recording endpoint without an audio driver.
+OpenLaunchDeck can also route your selected microphone into that same voice route. There is one Windows requirement: Discord must be able to select a recording device that receives the routed playback. OpenLaunchDeck can detect that route, but it cannot create a Windows recording endpoint without an audio driver.
 
 ## Goal
 
@@ -19,7 +19,10 @@ Open `Soundboard > Open Soundboard Panel`.
 2. Leave **Monitor Voice Routes** enabled.
 3. Click **Auto Find Route**.
 4. If the panel shows `Discord input: ...`, click **Copy Discord Input**.
-5. For each soundboard button Discord should hear:
+5. Set **Microphone Input** to your mic, or leave it on `System default microphone`.
+6. Enable **Route Microphone**.
+7. Start **Microphone Volume** at `100`, then lower it if Discord clips or distorts.
+8. For each soundboard button Discord should hear:
    - Select the button.
    - Set action type to `Play Sound`.
    - Choose the local audio file.
@@ -39,6 +42,8 @@ Set:
 - **Audio Subsystem:** Standard
 
 Keep Discord output on your real listening device. Do not route Discord output back into the same input Discord is using, or your friends may hear themselves.
+
+If **Route Microphone** is enabled in OpenLaunchDeck, do not set Discord input to your real microphone. Discord should listen to the route input shown by OpenLaunchDeck, because that input contains both your mic and routed clips.
 
 For better soundboard quality, turn off:
 
@@ -67,6 +72,13 @@ If friends cannot hear clips:
 - Confirm OpenLaunchDeck says the voice route is ready.
 - Confirm Discord input matches the input name shown in the Soundboard panel.
 - Confirm Discord input sensitivity opens when the clip plays.
+
+If friends can hear clips but not your voice:
+
+- Confirm **Route Microphone** is enabled in OpenLaunchDeck.
+- Confirm **Microphone Input** points to your real mic or system default mic.
+- Confirm **Microphone Volume** is not set to `0`.
+- Confirm Discord input is the route input shown by OpenLaunchDeck, not your real mic.
 
 If clips sound muffled, crunchy, or underwater:
 

@@ -44,10 +44,11 @@ OpenLaunchDeck handles the routing split itself:
 
 1. Routed soundboard buttons play to **Voice Route Output**.
 2. If **Monitor Voice Routes** is enabled, the same clip also plays to your normal output.
-3. The routed and monitored copies use the same OpenLaunchDeck volume.
-4. The Soundboard panel checks whether Discord has a matching recording input to use.
+3. If **Route Microphone** is enabled, your selected mic also plays into the voice route.
+4. The routed and monitored copies use the same OpenLaunchDeck volume.
+5. The Soundboard panel checks whether Discord has a matching recording input to use.
 
-Discord can only receive audio through a Windows recording device. OpenLaunchDeck can mix and play routed clips, but Windows still needs a playback-to-recording bridge endpoint or hardware loopback.
+Discord can only receive audio through a Windows recording device. OpenLaunchDeck can mix and play your mic and routed clips, but Windows still needs a playback-to-recording bridge endpoint or hardware loopback.
 
 ## Set Up Discord
 
@@ -57,9 +58,12 @@ Open `Soundboard > Open Soundboard Panel`.
 2. Leave **Monitor Voice Routes** enabled.
 3. Click **Auto Find Route**.
 4. If the panel shows `Discord input: ...`, click **Copy Discord Input**.
-5. Open Discord `User Settings > Voice & Video`.
-6. Set **Input Device** to the copied device.
-7. Keep **Output Device** on your real headphones, speakers, or audio interface.
+5. Set **Microphone Input** to your real mic, or leave it on `System default microphone`.
+6. Enable **Route Microphone**.
+7. Start **Microphone Volume** around `100`, then lower it if Discord clips.
+8. Open Discord `User Settings > Voice & Video`.
+9. Set **Input Device** to the copied device.
+10. Keep **Output Device** on your real headphones, speakers, or audio interface.
 
 For each soundboard button Discord should hear:
 
@@ -89,6 +93,7 @@ If the clip is distorted, lower the OpenLaunchDeck button volume and use a clean
 
 - The button does not have `Route To Voice Chat` enabled.
 - Discord input does not match the input shown by OpenLaunchDeck.
+- **Route Microphone** is off while Discord is listening to the route input.
 - Discord output is routed back into the same input Discord is using.
 - Discord input sensitivity is too high, so the clip does not open voice activity.
 - Windows does not currently expose a matching recording endpoint for the selected voice route.
