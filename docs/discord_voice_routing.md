@@ -81,7 +81,9 @@ For each soundboard button that Discord should hear:
 5. Start with volume around `60` to `80`.
 6. Use `toggle_stop` if you want a second press to stop the sound.
 
-Avoid setting every clip to `100` unless the file is naturally quiet. Very loud files can clip before Discord receives them.
+Avoid setting every clip to `100` unless the file is naturally quiet. OpenLaunchDeck uses a quieter soundboard gain curve, so `50` is intentionally much quieter than full volume and `0` is silent.
+
+The routed Discord copy and the local monitor copy use the same OpenLaunchDeck gain. If one side sounds much louder than the other, adjust the VoiceMeeter strip, Discord input processing, or Windows volume mixer for that route.
 
 ## Discord Voice Settings
 
@@ -127,6 +129,7 @@ If the clip sounds muffled, crunchy, or underwater:
 - Turn off Discord noise suppression and automatic gain control.
 - Use `.wav` or high-quality `.mp3` files.
 - Lower the button volume slightly if the clip is clipping.
+- Check that the VoiceMeeter strip is not clipping before it reaches Discord.
 
 If you cannot hear your friends:
 
