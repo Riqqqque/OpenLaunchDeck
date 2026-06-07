@@ -170,6 +170,53 @@ def test_simulation_tooltip_and_grid_focus_mode():
     services.device.close()
 
 
+def test_button_editor_remains_accessible_in_narrow_window():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    page = services.profile_service.current_page
+    page.buttons["A1"] = ButtonConfig(
+        id="A1",
+        label="Long Sound",
+        color="purple",
+        action=ActionConfig(
+            "play_sound",
+            {
+                "file_path": r"C:\Users\Example\Music\soundboard\very-long-folder-name\very-long-file-name.mp3",
+                "volume": 80,
+            },
+        ),
+    )
+    window.resize(980, 640)
+    window.refresh_all()
+    window.show()
+    app.processEvents()
+
+    window.select_button("A1")
+    app.processEvents()
+
+    for width in (980, 1180):
+        window.resize(width, 640)
+        app.processEvents()
+
+        assert window.editor_scroll.isVisible()
+        assert window.workspace_splitter.orientation() == Qt.Orientation.Vertical
+        assert window.editor_scroll.viewport().width() > 0
+        assert window.editor_scroll.height() >= 240
+        assert window.editor_scroll.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        assert window.editor_scroll.geometry().right() <= window.workspace_splitter.contentsRect().right()
+        assert window.editor.action_editor.width() <= window.editor_scroll.viewport().width() + 2
+        file_widget = window.editor.action_editor.field_widgets["file_path"]
+        assert file_widget.width() <= window.editor.action_editor.width()
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
 def test_restore_from_tray_shows_hidden_window():
     app = QApplication.instance() or QApplication([])
     services = build_services()

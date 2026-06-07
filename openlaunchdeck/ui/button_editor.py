@@ -5,11 +5,12 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
     QFormLayout,
-    QHBoxLayout,
+    QGridLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QPlainTextEdit,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
 )
@@ -29,6 +30,8 @@ class ButtonEditor(QWidget):
 
     def __init__(self, registry) -> None:
         super().__init__()
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.button: ButtonConfig | None = None
         self._loading = False
         self._notes_timer = QTimer(self)
@@ -51,6 +54,8 @@ class ButtonEditor(QWidget):
         layout.addWidget(identity_title)
         form = QFormLayout()
         form.setSpacing(10)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.label_edit = QLineEdit()
         self.color_combo = QComboBox()
         for color in NAMED_COLORS:
@@ -72,14 +77,17 @@ class ButtonEditor(QWidget):
         self.action_editor = ActionEditor(registry)
         layout.addWidget(self.action_editor)
 
-        buttons = QHBoxLayout()
+        buttons = QGridLayout()
+        buttons.setHorizontalSpacing(8)
+        buttons.setVerticalSpacing(8)
         self.test_button = QPushButton("Test")
         self.clear_button = QPushButton("Clear")
         self.copy_button = QPushButton("Copy")
         self.paste_button = QPushButton("Paste")
-        for button in (self.test_button, self.clear_button, self.copy_button, self.paste_button):
+        for index, button in enumerate((self.test_button, self.clear_button, self.copy_button, self.paste_button)):
             button.setObjectName("SecondaryButton")
-            buttons.addWidget(button)
+            button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            buttons.addWidget(button, index // 2, index % 2)
         self.test_button.setObjectName("PrimaryButton")
         layout.addLayout(buttons)
         layout.addStretch(1)

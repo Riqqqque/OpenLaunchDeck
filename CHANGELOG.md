@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.38
+
+- Made compact windows stack the button editor under the Launchpad grid so controls stay visible.
+- Made the button editor wrap fields and controls correctly in narrow windows.
+
 ## 0.1.37
 
 - Made the whole Launchpad grid cell respond when selecting buttons in the editor.
