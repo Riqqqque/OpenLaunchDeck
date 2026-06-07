@@ -37,7 +37,7 @@ class ButtonConfig:
         if not isinstance(data, dict):
             return cls.blank(button_id)
         return cls(
-            id=str(data.get("id") or button_id),
+            id=button_id,
             label=str(data.get("label") or ""),
             color=str(data.get("color") or DEFAULT_BUTTON_COLOR),
             enabled=bool(data.get("enabled", True)),

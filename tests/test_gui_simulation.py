@@ -2,6 +2,8 @@
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from PySide6.QtCore import QPoint, Qt
+from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from openlaunchdeck.app import build_services
@@ -36,6 +38,44 @@ def test_grid_click_selects_without_running_action():
     assert window.grid.selected_button_id == "B2"
     assert calls.count(("B2", "simulation")) == 1
     assert ("B2", "midi") in calls
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_entire_grid_cell_is_clickable_for_editing():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    page = services.profile_service.current_page
+    page.buttons["B2"] = ButtonConfig(
+        id="B2",
+        label="Vol Up",
+        color="yellow",
+        action=ActionConfig("volume_control", {"mode": "volume_up"}),
+    )
+    window.refresh_all()
+    window.show()
+    app.processEvents()
+
+    cell = window.grid.cells["B2"]
+    points = [
+        QPoint(cell.width() // 2, 5),
+        QPoint(cell.width() // 2, cell.height() // 2),
+        QPoint(cell.width() // 2, cell.height() - 6),
+        QPoint(6, cell.height() // 2),
+        QPoint(cell.width() - 7, cell.height() // 2),
+    ]
+    for point in points:
+        window.grid.select("A1")
+        window.grid.update_buttons(page, {"A1", "B2"}, services.action_runner.dangerous_service, services.audio_engine)
+        QTest.mouseClick(cell, Qt.MouseButton.LeftButton, Qt.KeyboardModifier.NoModifier, point)
+        app.processEvents()
+        assert window.grid.selected_button_id == "B2"
 
     window._force_quit = True
     window.close()

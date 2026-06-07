@@ -1,2 +1,2 @@
 APP_NAME = "OpenLaunchDeck"
-__version__ = "0.1.36"
+__version__ = "0.1.37"
