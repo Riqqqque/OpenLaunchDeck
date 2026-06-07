@@ -33,18 +33,18 @@ def test_output_devices_hide_duplicate_descriptions(monkeypatch):
     install_qt_test_double(monkeypatch)
     MediaDevicesTestDouble.devices = [
         DeviceTestDouble(b"realtek", "Speakers (Realtek USB2.0 Audio)"),
-        DeviceTestDouble(b"voicemeeter-1", "Speakers (VB-Audio Voicemeeter VAIO)"),
-        DeviceTestDouble(b"voicemeeter-2", "Speakers (VB-Audio Voicemeeter VAIO)"),
-        DeviceTestDouble(b"voicemeeter-3", "  Speakers (VB-Audio Voicemeeter VAIO)  "),
+        DeviceTestDouble(b"mixer-1", "Speakers (Studio Virtual Mixer VAIO)"),
+        DeviceTestDouble(b"mixer-2", "Speakers (Studio Virtual Mixer VAIO)"),
+        DeviceTestDouble(b"mixer-3", "  Speakers (Studio Virtual Mixer VAIO)  "),
     ]
 
     devices = list_output_devices()
 
     assert [device["description"] for device in devices] == [
         "Speakers (Realtek USB2.0 Audio)",
-        "Speakers (VB-Audio Voicemeeter VAIO)",
+        "Speakers (Studio Virtual Mixer VAIO)",
     ]
-    assert devices[1]["id"] == "voicemeeter-1"
+    assert devices[1]["id"] == "mixer-1"
     assert devices[1]["duplicate_count"] == 3
     assert devices[1]["hidden_duplicate_count"] == 2
     assert hidden_duplicate_count(devices) == 2
@@ -53,8 +53,8 @@ def test_output_devices_hide_duplicate_descriptions(monkeypatch):
 def test_output_devices_can_include_raw_duplicates(monkeypatch):
     install_qt_test_double(monkeypatch)
     MediaDevicesTestDouble.devices = [
-        DeviceTestDouble("a", "Speakers (VB-Audio Voicemeeter VAIO)"),
-        DeviceTestDouble("b", "Speakers (VB-Audio Voicemeeter VAIO)"),
+        DeviceTestDouble("a", "Speakers (Studio Virtual Mixer VAIO)"),
+        DeviceTestDouble("b", "Speakers (Studio Virtual Mixer VAIO)"),
     ]
 
     devices = list_output_devices(include_duplicates=True)
@@ -63,13 +63,13 @@ def test_output_devices_can_include_raw_duplicates(monkeypatch):
     assert hidden_duplicate_count(devices) == 0
 
 
-def test_output_devices_hide_advanced_voicemeeter_buses(monkeypatch):
+def test_output_devices_hide_advanced_mixer_buses(monkeypatch):
     install_qt_test_double(monkeypatch)
     MediaDevicesTestDouble.devices = [
-        DeviceTestDouble("aux", "Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)"),
-        DeviceTestDouble("in-1", "Voicemeeter In 1 (VB-Audio Voicemeeter VAIO)"),
-        DeviceTestDouble("in-2", "Voicemeeter In 2 (VB-Audio Voicemeeter VAIO)"),
-        DeviceTestDouble("main", "Voicemeeter Input (VB-Audio Voicemeeter VAIO)"),
+        DeviceTestDouble("aux", "Studio Mixer AUX Input (Studio Virtual Mixer VAIO)"),
+        DeviceTestDouble("in-1", "Studio Mixer In 1 (Studio Virtual Mixer VAIO)"),
+        DeviceTestDouble("in-2", "Studio Mixer In 2 (Studio Virtual Mixer VAIO)"),
+        DeviceTestDouble("main", "Studio Mixer Input (Studio Virtual Mixer VAIO)"),
     ]
 
     devices = list_output_devices()
@@ -78,10 +78,10 @@ def test_output_devices_hide_advanced_voicemeeter_buses(monkeypatch):
     assert hidden_advanced_output_count() == 2
 
 
-def test_output_devices_can_include_advanced_voicemeeter_buses(monkeypatch):
+def test_output_devices_can_include_advanced_mixer_buses(monkeypatch):
     install_qt_test_double(monkeypatch)
     MediaDevicesTestDouble.devices = [
-        DeviceTestDouble("in-1", "Voicemeeter In 1 (VB-Audio Voicemeeter VAIO)"),
+        DeviceTestDouble("in-1", "Studio Mixer In 1 (Studio Virtual Mixer VAIO)"),
     ]
 
     devices = list_output_devices(include_advanced=True)

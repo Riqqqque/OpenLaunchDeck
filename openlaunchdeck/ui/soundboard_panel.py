@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from ..audio.input_devices import list_input_devices
 from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
 from ..audio.voice_routing import find_best_voice_route
 
@@ -40,6 +41,7 @@ class SoundboardPanel(QDialog):
         self.output_combo = QComboBox()
         self.output_combo.addItem("System default (recommended)", "")
         devices = list_output_devices()
+        input_devices = list_input_devices()
         self._add_device_items(self.output_combo, devices)
         current_device = audio_engine.default_output_device_id
         if current_device:
@@ -50,6 +52,17 @@ class SoundboardPanel(QDialog):
         current_voice_device = audio_engine.voice_chat_output_device_id
         if current_voice_device:
             self._select_saved_device(self.voice_output_combo, current_voice_device)
+        self.mic_input_combo = QComboBox()
+        self.mic_input_combo.addItem("System default microphone", "")
+        self._add_device_items(self.mic_input_combo, input_devices, "Audio input")
+        current_mic_device = audio_engine.voice_route_microphone_device_id
+        if current_mic_device:
+            self._select_saved_device(self.mic_input_combo, current_mic_device)
+        self.mic_route_check = QCheckBox()
+        self.mic_route_check.setChecked(audio_engine.voice_route_microphone_enabled)
+        self.mic_volume_spin = QSpinBox()
+        self.mic_volume_spin.setRange(0, 100)
+        self.mic_volume_spin.setValue(audio_engine.voice_route_microphone_volume)
         self.monitor_voice_check = QCheckBox()
         self.monitor_voice_check.setChecked(audio_engine.monitor_voice_chat_routes)
         self.volume_spin = QSpinBox()
@@ -57,6 +70,9 @@ class SoundboardPanel(QDialog):
         self.volume_spin.setValue(audio_engine.global_volume)
         form.addRow("Default Output", self.output_combo)
         form.addRow("Voice Route Output", self.voice_output_combo)
+        form.addRow("Microphone Input", self.mic_input_combo)
+        form.addRow("Route Microphone", self.mic_route_check)
+        form.addRow("Microphone Volume", self.mic_volume_spin)
         form.addRow("Monitor Voice Routes", self.monitor_voice_check)
         form.addRow("Global Volume", self.volume_spin)
         layout.addLayout(form)
@@ -115,6 +131,9 @@ class SoundboardPanel(QDialog):
         self.copy_discord_input_button.clicked.connect(self.copy_discord_input)
         self.output_combo.currentIndexChanged.connect(lambda _index: self._set_output_device())
         self.voice_output_combo.currentIndexChanged.connect(lambda _index: self._set_voice_output_device())
+        self.mic_input_combo.currentIndexChanged.connect(lambda _index: self._set_mic_input_device())
+        self.mic_route_check.stateChanged.connect(lambda _state: self._set_mic_route_enabled())
+        self.mic_volume_spin.valueChanged.connect(self._set_mic_route_volume)
         self.monitor_voice_check.stateChanged.connect(lambda _state: self._set_monitor_voice_routes())
         self.volume_spin.valueChanged.connect(self._set_global_volume)
         self.timer = QTimer(self)
@@ -149,6 +168,25 @@ class SoundboardPanel(QDialog):
             self.settings_service.update(soundboard_voice_chat_output_device=device_id)
         self.refresh_route_status()
 
+    def _set_mic_input_device(self) -> None:
+        device_id = str(self.mic_input_combo.currentData() or "")
+        self.audio_engine.set_voice_route_microphone_device(device_id)
+        if self.settings_service is not None:
+            self.settings_service.update(soundboard_voice_route_microphone_device=device_id)
+        self.refresh_route_status()
+
+    def _set_mic_route_enabled(self) -> None:
+        enabled = self.mic_route_check.isChecked()
+        self.audio_engine.set_voice_route_microphone_enabled(enabled)
+        if self.settings_service is not None:
+            self.settings_service.update(soundboard_voice_route_microphone_enabled=enabled)
+        self.refresh_route_status()
+
+    def _set_mic_route_volume(self, volume: int) -> None:
+        self.audio_engine.set_voice_route_microphone_volume(volume)
+        if self.settings_service is not None:
+            self.settings_service.update(soundboard_voice_route_microphone_volume=volume)
+
     def _set_monitor_voice_routes(self) -> None:
         enabled = self.monitor_voice_check.isChecked()
         self.audio_engine.set_monitor_voice_chat_routes(enabled)
@@ -172,7 +210,11 @@ class SoundboardPanel(QDialog):
 
     def refresh_route_status(self) -> None:
         status = self.audio_engine.voice_route_status()
-        self.route_status.setText(status.message)
+        messages = [status.message]
+        mic_state = self.audio_engine.voice_route_microphone_state()
+        if self.audio_engine.voice_route_microphone_enabled or mic_state.running:
+            messages.append(mic_state.message)
+        self.route_status.setText("\n".join(messages))
         if status.ready:
             self.discord_input.setText(f"Discord input: {status.discord_input_name}")
             self.copy_discord_input_button.setEnabled(True)
@@ -197,10 +239,10 @@ class SoundboardPanel(QDialog):
         self.voice_output_combo.setCurrentIndex(max(0, index))
         self._set_voice_output_device()
 
-    def _add_device_items(self, combo: QComboBox, devices: list[dict[str, str | int]]) -> None:
+    def _add_device_items(self, combo: QComboBox, devices: list[dict[str, str | int]], fallback_name: str = "Audio output") -> None:
         for device in devices:
             duplicate_count = int(device.get("duplicate_count", 1))
-            label = str(device.get("display_name") or device.get("description") or "Audio output")
+            label = str(device.get("display_name") or device.get("description") or fallback_name)
             combo.addItem(label, str(device.get("id") or ""))
             if duplicate_count > 1:
                 index = combo.count() - 1

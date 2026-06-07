@@ -72,6 +72,8 @@ Sound action start latency is logged at debug level, or at info level when perfo
 
 Per-sound volume and global soundboard volume are combined, clamped to 0-100, and converted to a quieter playback gain before playback starts. Existing playback instances are tracked by button and page so Stop Sound can stop one button, one page, or all sounds without scanning profile files. Voice-chat routing starts a second playback instance only for sounds that explicitly enable `Route To Voice Chat`, and both routed outputs receive the same gain.
 
+The optional microphone route uses QtMultimedia input/output streams instead of loading microphone samples into Python memory. It is started only when enabled, restarts when the selected microphone or voice route output changes, and is stopped during app shutdown so audio handles are released cleanly.
+
 ## Native Acceleration
 
 The app runs without Rust. The `native/` folder contains an optional PyO3/maturin helper for small CPU-bound utilities:

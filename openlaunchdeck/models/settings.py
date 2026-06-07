@@ -21,6 +21,9 @@ class Settings:
     soundboard_default_output_device: str = ""
     soundboard_voice_chat_output_device: str = ""
     soundboard_monitor_voice_chat: bool = True
+    soundboard_voice_route_microphone_enabled: bool = False
+    soundboard_voice_route_microphone_device: str = ""
+    soundboard_voice_route_microphone_volume: int = 100
     soundboard_global_volume: int = 100
     soundboard_stop_sounds_on_exit: bool = True
     check_updates_on_startup: bool = False
@@ -38,6 +41,10 @@ class Settings:
         values = {key: value for key, value in data.items() if key in allowed}
         settings = cls(**values)
         settings.soundboard_global_volume = max(0, min(100, int(settings.soundboard_global_volume)))
+        settings.soundboard_voice_route_microphone_volume = max(
+            0,
+            min(100, int(settings.soundboard_voice_route_microphone_volume)),
+        )
         if settings.grid_density not in {"compact", "comfortable", "large"}:
             settings.grid_density = "comfortable"
         if settings.update_channel not in {"stable", "beta"}:

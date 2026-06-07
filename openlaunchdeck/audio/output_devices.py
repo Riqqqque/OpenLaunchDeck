@@ -21,7 +21,7 @@ def normalize_device_description(description: str) -> str:
 
 def is_advanced_virtual_output(description: str) -> bool:
     normalized = normalize_device_description(description)
-    return bool(re.match(r"^voicemeeter in \d+ \(vb-audio voicemeeter vaio\)$", normalized))
+    return bool(re.match(r"^.+\bin \d+\b.*\bvaio\b.*$", normalized))
 
 
 def list_output_devices(include_duplicates: bool = False, include_advanced: bool = False) -> list[dict[str, str | int]]:

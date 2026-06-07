@@ -14,6 +14,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
+from ..audio.input_devices import list_input_devices
 from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
 from ..paths import APP_DATA_DIR
 
@@ -75,6 +76,16 @@ class SettingsDialog(QDialog):
         self.voice_output_device.addItem("Not configured", "")
         self._add_device_items(self.voice_output_device, devices)
         self._select_saved_device(self.voice_output_device, settings.soundboard_voice_chat_output_device)
+        input_devices = list_input_devices()
+        self.voice_mic_device = QComboBox()
+        self.voice_mic_device.addItem("System default microphone", "")
+        self._add_device_items(self.voice_mic_device, input_devices, "Audio input")
+        self._select_saved_device(self.voice_mic_device, settings.soundboard_voice_route_microphone_device)
+        self.voice_mic_enabled = QCheckBox()
+        self.voice_mic_enabled.setChecked(settings.soundboard_voice_route_microphone_enabled)
+        self.voice_mic_volume = QSpinBox()
+        self.voice_mic_volume.setRange(0, 100)
+        self.voice_mic_volume.setValue(settings.soundboard_voice_route_microphone_volume)
         self.monitor_voice_routes = QCheckBox()
         self.monitor_voice_routes.setChecked(settings.soundboard_monitor_voice_chat)
         self.global_volume = QSpinBox()
@@ -111,6 +122,9 @@ class SettingsDialog(QDialog):
         form.addRow("Automatic backups", self.backups)
         form.addRow("Sound output device", self.output_device)
         form.addRow("Voice route output device", self.voice_output_device)
+        form.addRow("Voice route microphone", self.voice_mic_device)
+        form.addRow("Route microphone to voice", self.voice_mic_enabled)
+        form.addRow("Voice microphone volume", self.voice_mic_volume)
         audio_note = QLabel(
             "Use system default for normal monitoring. Voice-routed buttons play to this output and, "
             "when monitoring is enabled, to your normal output too."
@@ -170,6 +184,9 @@ class SettingsDialog(QDialog):
             backup_profiles_automatically=self.backups.isChecked(),
             soundboard_default_output_device=str(self.output_device.currentData() or ""),
             soundboard_voice_chat_output_device=str(self.voice_output_device.currentData() or ""),
+            soundboard_voice_route_microphone_device=str(self.voice_mic_device.currentData() or ""),
+            soundboard_voice_route_microphone_enabled=self.voice_mic_enabled.isChecked(),
+            soundboard_voice_route_microphone_volume=self.voice_mic_volume.value(),
             soundboard_monitor_voice_chat=self.monitor_voice_routes.isChecked(),
             soundboard_global_volume=self.global_volume.value(),
             soundboard_stop_sounds_on_exit=self.stop_on_exit.isChecked(),
@@ -181,9 +198,9 @@ class SettingsDialog(QDialog):
         )
         super().accept()
 
-    def _add_device_items(self, combo: QComboBox, devices: list[dict[str, str | int]]) -> None:
+    def _add_device_items(self, combo: QComboBox, devices: list[dict[str, str | int]], fallback_name: str = "Audio output") -> None:
         for device in devices:
-            combo.addItem(str(device.get("display_name") or device.get("description") or "Audio output"), str(device.get("id") or ""))
+            combo.addItem(str(device.get("display_name") or device.get("description") or fallback_name), str(device.get("id") or ""))
 
     def _select_saved_device(self, combo: QComboBox, device_id: str) -> None:
         if not device_id:

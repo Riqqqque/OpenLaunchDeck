@@ -58,12 +58,26 @@ Open `Soundboard > Open Soundboard Panel`:
 2. Click **Auto Find Route**.
 3. If a route is ready, OpenLaunchDeck shows `Discord input: ...`.
 4. Click **Copy Discord Input**.
-5. In Discord, open `User Settings > Voice & Video`.
-6. Set **Input Device** to the copied device name.
-7. Keep **Output Device** on your real headphones, speakers, or audio interface.
-8. On each sound button Discord should hear, enable `Route To Voice Chat`.
+5. Set **Microphone Input** to your mic, or leave it on `System default microphone`.
+6. Enable **Route Microphone**.
+7. Set **Microphone Volume** so your voice is clear without clipping.
+8. In Discord, open `User Settings > Voice & Video`.
+9. Set **Input Device** to the copied device name.
+10. Keep **Output Device** on your real headphones, speakers, or audio interface.
+11. On each sound button Discord should hear, enable `Route To Voice Chat`.
 
 If Auto Find Route says no route is ready, Windows does not currently expose a recording input that can receive OpenLaunchDeck's routed playback. Add a lightweight audio bridge endpoint or use hardware loopback from an audio interface, then reopen the Soundboard panel and run Auto Find Route again.
+
+## Microphone Route
+
+The microphone route sends your selected mic into the same voice route output used by routed soundboard clips. This lets OpenLaunchDeck handle the voice mix directly:
+
+- Your mic goes to the voice route.
+- Routed clips go to the same voice route.
+- Discord listens to the matching recording input.
+- Discord output stays on your real headphones or speakers.
+
+Only enable the microphone route when Discord is using the matching input shown by the Soundboard panel. If you leave Discord on your real microphone while also routing the mic through OpenLaunchDeck, Discord can receive the wrong source or duplicate audio.
 
 ## Discord Quality
 

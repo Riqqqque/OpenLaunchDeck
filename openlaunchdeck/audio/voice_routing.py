@@ -6,7 +6,7 @@ from .input_devices import list_input_devices
 from .output_devices import list_output_devices, normalize_device_description
 
 
-LEGACY_MIXER_MARKERS = ("voicemeeter", "vb-audio voicemeeter")
+LEGACY_MIXER_MARKERS = ("virtual mixer vaio",)
 
 
 @dataclass(frozen=True, slots=True)
@@ -95,7 +95,9 @@ def analyze_voice_route(
 
     output_name = _device_name(output)
     input_device, route_kind = find_matching_voice_input(output_name, input_devices)
-    uses_legacy = _is_legacy_mixer(output_name) or (input_device is not None and _is_legacy_mixer(_device_name(input_device)))
+    uses_legacy = route_kind == "legacy_mixer" or _is_legacy_mixer(output_name) or (
+        input_device is not None and _is_legacy_mixer(_device_name(input_device))
+    )
     if input_device is None:
         return VoiceRouteStatus(
             configured=True,
@@ -173,7 +175,7 @@ def _route_key(description: str) -> str:
         word
         for word in normalized.split()
         if word
-        and word not in {"audio", "device", "virtual", "cable", "driver", "wdm"}
+        and word not in {"audio", "device", "virtual", "driver", "wdm"}
     ]
     return " ".join(words)
 
@@ -184,10 +186,12 @@ def _is_legacy_mixer(description: str) -> bool:
 
 
 def _is_legacy_pair(output_name: str, input_name: str) -> bool:
-    if "voicemeeter input" in output_name and "voicemeeter out b1" in input_name:
+    if "vaio" not in output_name or "vaio" not in input_name:
+        return False
+    if "vaio3 input" in output_name and "out b3" in input_name:
         return True
-    if "voicemeeter aux input" in output_name and "voicemeeter out b2" in input_name:
+    if "aux input" in output_name and "out b2" in input_name:
         return True
-    if "voicemeeter vaio3 input" in output_name and "voicemeeter out b3" in input_name:
+    if "aux input" not in output_name and "vaio3 input" not in output_name and "input" in output_name and "out b1" in input_name:
         return True
     return False

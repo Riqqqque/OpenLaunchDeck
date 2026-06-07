@@ -1,4 +1,6 @@
-﻿from openlaunchdeck.audio.audio_engine import AudioEngine
+﻿from openlaunchdeck.actions.base import ActionResult
+from openlaunchdeck.audio.audio_engine import AudioEngine
+from openlaunchdeck.audio.mic_bridge import MicBridgeState
 
 
 class SignalTestDouble:
@@ -79,6 +81,33 @@ class MediaPlayerTestDouble:
     def stop(self):
         self.stopped = True
         self.playing = False
+
+
+class MicBridgeTestDouble:
+    def __init__(self):
+        self.started_with = []
+        self.stopped = False
+        self.volume = None
+        self.state = MicBridgeState()
+
+    def start(self, input_device_id, output_device_id, volume):
+        self.started_with.append((input_device_id, output_device_id, volume))
+        self.state = MicBridgeState(
+            running=True,
+            input_id=input_device_id,
+            input_name="Mic",
+            output_id=output_device_id,
+            output_name="Route",
+            message="Microphone route is on.",
+        )
+        return ActionResult.ok("Microphone route is on.")
+
+    def stop(self):
+        self.stopped = True
+        self.state = MicBridgeState()
+
+    def set_volume(self, volume):
+        self.volume = volume
 
 
 def install_qt_test_double(engine):
@@ -299,4 +328,29 @@ def test_voice_chat_route_cleans_up_when_monitor_output_is_missing(tmp_path):
     assert result.success is False
     assert "selected soundboard output" in result.message.lower()
     assert not engine.currently_playing()
+
+
+def test_audio_engine_microphone_route_starts_stops_and_restarts():
+    engine = AudioEngine(
+        voice_chat_output_device_id="voice-route",
+        voice_route_microphone_enabled=False,
+        voice_route_microphone_device_id="mic-1",
+        voice_route_microphone_volume=65,
+    )
+    bridge = MicBridgeTestDouble()
+    engine.mic_bridge = bridge
+
+    result = engine.set_voice_route_microphone_enabled(True)
+    engine.set_voice_route_microphone_volume(45)
+    engine.set_voice_route_microphone_device("mic-2")
+    engine.set_voice_chat_output_device("voice-route-2")
+    off_result = engine.set_voice_route_microphone_enabled(False)
+
+    assert result.success is True
+    assert bridge.started_with[0] == ("mic-1", "voice-route", 65)
+    assert ("mic-2", "voice-route", 45) in bridge.started_with
+    assert bridge.started_with[-1] == ("mic-2", "voice-route-2", 45)
+    assert bridge.volume == 45
+    assert off_result.success is True
+    assert bridge.stopped is True
 

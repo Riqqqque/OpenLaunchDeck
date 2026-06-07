@@ -22,15 +22,15 @@ def test_voice_route_reports_missing_saved_output():
 
 
 def test_voice_route_matches_simple_cable_pair():
-    outputs = [device("out", "CABLE Input (VB-Audio Virtual Cable)")]
-    inputs = [device("in", "CABLE Output (VB-Audio Virtual Cable)")]
+    outputs = [device("out", "CABLE Input (Virtual Cable)")]
+    inputs = [device("in", "CABLE Output (Virtual Cable)")]
 
     status = analyze_voice_route("out", outputs, inputs)
 
     assert status.ready is True
     assert status.uses_legacy_mixer is False
     assert status.can_remove_legacy_mixer is True
-    assert status.discord_input_name == "CABLE Output (VB-Audio Virtual Cable)"
+    assert status.discord_input_name == "CABLE Output (Virtual Cable)"
 
 
 def test_voice_route_matches_virtual_audio_cable_line():
@@ -45,8 +45,8 @@ def test_voice_route_matches_virtual_audio_cable_line():
 
 
 def test_voice_route_detects_legacy_mixer_pair():
-    outputs = [device("out", "Voicemeeter Input (VB-Audio Voicemeeter VAIO)")]
-    inputs = [device("in", "Voicemeeter Out B1 (VB-Audio Voicemeeter VAIO)")]
+    outputs = [device("out", "Studio Mixer Input (Studio Virtual Mixer VAIO)")]
+    inputs = [device("in", "Studio Mixer Out B1 (Studio Virtual Mixer VAIO)")]
 
     status = analyze_voice_route("out", outputs, inputs)
 
@@ -55,8 +55,22 @@ def test_voice_route_detects_legacy_mixer_pair():
     assert status.can_remove_legacy_mixer is False
 
 
+def test_voice_route_matches_legacy_aux_pair_before_main_pair():
+    outputs = [device("out", "Studio Mixer AUX Input (Studio Virtual Mixer VAIO)")]
+    inputs = [
+        device("main", "Studio Mixer Out B1 (Studio Virtual Mixer VAIO)"),
+        device("aux", "Studio Mixer Out B2 (Studio Virtual Mixer VAIO)"),
+    ]
+
+    status = analyze_voice_route("out", outputs, inputs)
+
+    assert status.ready is True
+    assert status.input_id == "aux"
+    assert status.uses_legacy_mixer is True
+
+
 def test_voice_route_requires_matching_input():
-    outputs = [device("out", "CABLE Input (VB-Audio Virtual Cable)")]
+    outputs = [device("out", "CABLE Input (Virtual Cable)")]
     inputs = [device("mic", "Analogue 1 + 2 (Focusrite USB Audio)")]
 
     status = analyze_voice_route("out", outputs, inputs)
@@ -68,12 +82,12 @@ def test_voice_route_requires_matching_input():
 
 def test_find_best_voice_route_prefers_non_legacy_route():
     outputs = [
-        device("legacy-out", "Voicemeeter Input (VB-Audio Voicemeeter VAIO)"),
-        device("cable-out", "CABLE Input (VB-Audio Virtual Cable)"),
+        device("legacy-out", "Studio Mixer Input (Studio Virtual Mixer VAIO)"),
+        device("cable-out", "CABLE Input (Virtual Cable)"),
     ]
     inputs = [
-        device("legacy-in", "Voicemeeter Out B1 (VB-Audio Voicemeeter VAIO)"),
-        device("cable-in", "CABLE Output (VB-Audio Virtual Cable)"),
+        device("legacy-in", "Studio Mixer Out B1 (Studio Virtual Mixer VAIO)"),
+        device("cable-in", "CABLE Output (Virtual Cable)"),
     ]
 
     status = find_best_voice_route(outputs, inputs)
@@ -85,7 +99,7 @@ def test_find_best_voice_route_prefers_non_legacy_route():
 
 def test_find_best_voice_route_returns_none_without_ready_route():
     status = find_best_voice_route(
-        [device("out", "CABLE Input (VB-Audio Virtual Cable)")],
+        [device("out", "CABLE Input (Virtual Cable)")],
         [device("mic", "Analogue 1 + 2 (Focusrite USB Audio)")],
     )
 
@@ -94,8 +108,8 @@ def test_find_best_voice_route_returns_none_without_ready_route():
 
 def test_find_best_voice_route_does_not_fallback_to_legacy_by_default():
     status = find_best_voice_route(
-        [device("legacy-out", "Voicemeeter Input (VB-Audio Voicemeeter VAIO)")],
-        [device("legacy-in", "Voicemeeter Out B1 (VB-Audio Voicemeeter VAIO)")],
+        [device("legacy-out", "Studio Mixer Input (Studio Virtual Mixer VAIO)")],
+        [device("legacy-in", "Studio Mixer Out B1 (Studio Virtual Mixer VAIO)")],
     )
 
     assert status is None
@@ -103,8 +117,8 @@ def test_find_best_voice_route_does_not_fallback_to_legacy_by_default():
 
 def test_find_best_voice_route_can_return_legacy_when_allowed():
     status = find_best_voice_route(
-        [device("legacy-out", "Voicemeeter Input (VB-Audio Voicemeeter VAIO)")],
-        [device("legacy-in", "Voicemeeter Out B1 (VB-Audio Voicemeeter VAIO)")],
+        [device("legacy-out", "Studio Mixer Input (Studio Virtual Mixer VAIO)")],
+        [device("legacy-in", "Studio Mixer Out B1 (Studio Virtual Mixer VAIO)")],
         allow_legacy_fallback=True,
     )
 
