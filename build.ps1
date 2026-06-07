@@ -6,7 +6,8 @@ param(
     [switch]$SkipPipUpgrade,
     [switch]$SkipDependencyInstall,
     [switch]$SkipTests,
-    [switch]$FastPackage
+    [switch]$FastPackage,
+    [switch]$BuildAudioBridge
 )
 
 $ErrorActionPreference = "Stop"
@@ -103,6 +104,10 @@ if ($BuildNative) {
     } else {
         throw "Rust toolchain not found. Install Rust or run build.ps1 without -BuildNative."
     }
+}
+
+if ($BuildAudioBridge) {
+    Invoke-Checked { powershell -ExecutionPolicy Bypass -File audio_bridge\build_audio_bridge.ps1 } "Build audio bridge driver package"
 }
 
 if (!$SkipTests) {

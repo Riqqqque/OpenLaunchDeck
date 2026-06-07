@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from .bridge_driver import detect_openlaunchdeck_bridge
 from .input_devices import list_input_devices
 from .output_devices import list_output_devices, normalize_device_description
 
@@ -46,6 +47,18 @@ def find_best_voice_route(
 ) -> VoiceRouteStatus | None:
     output_devices = output_devices if output_devices is not None else list_output_devices(include_duplicates=True, include_advanced=True)
     input_devices = input_devices if input_devices is not None else list_input_devices(include_duplicates=True)
+    bridge = detect_openlaunchdeck_bridge(output_devices, input_devices)
+    if bridge.ready:
+        return VoiceRouteStatus(
+            configured=True,
+            ready=True,
+            output_id=bridge.output_id,
+            output_name=bridge.output_name,
+            input_id=bridge.input_id,
+            input_name=bridge.input_name,
+            route_kind="openlaunchdeck_bridge",
+            message=bridge.message,
+        )
     ready_routes = [
         analyze_voice_route(str(output.get("id") or ""), output_devices, input_devices)
         for output in output_devices

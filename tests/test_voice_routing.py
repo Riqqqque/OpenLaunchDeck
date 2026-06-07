@@ -1,3 +1,4 @@
+from openlaunchdeck.audio.bridge_driver import BRIDGE_INPUT_NAME, BRIDGE_OUTPUT_NAME
 from openlaunchdeck.audio.voice_routing import analyze_voice_route, find_best_voice_route
 
 
@@ -95,6 +96,24 @@ def test_find_best_voice_route_prefers_non_legacy_route():
     assert status is not None
     assert status.output_id == "cable-out"
     assert status.input_id == "cable-in"
+
+
+def test_find_best_voice_route_prefers_openlaunchdeck_bridge():
+    outputs = [
+        device("cable-out", "CABLE Input (Virtual Cable)"),
+        device("bridge-out", BRIDGE_OUTPUT_NAME),
+    ]
+    inputs = [
+        device("cable-in", "CABLE Output (Virtual Cable)"),
+        device("bridge-in", BRIDGE_INPUT_NAME),
+    ]
+
+    status = find_best_voice_route(outputs, inputs)
+
+    assert status is not None
+    assert status.output_id == "bridge-out"
+    assert status.input_id == "bridge-in"
+    assert status.route_kind == "openlaunchdeck_bridge"
 
 
 def test_find_best_voice_route_returns_none_without_ready_route():

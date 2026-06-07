@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..audio.input_devices import list_input_devices
+from ..audio.bridge_driver import detect_openlaunchdeck_bridge
 from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
 from ..audio.voice_routing import find_best_voice_route
 
@@ -80,6 +81,10 @@ class SoundboardPanel(QDialog):
         self.route_status.setWordWrap(True)
         self.route_status.setObjectName("MutedText")
         layout.addWidget(self.route_status)
+        self.bridge_status = QLabel()
+        self.bridge_status.setWordWrap(True)
+        self.bridge_status.setObjectName("MutedText")
+        layout.addWidget(self.bridge_status)
         discord_row = QHBoxLayout()
         discord_row.setSpacing(8)
         self.discord_input = QLabel("Discord input: not configured")
@@ -215,6 +220,8 @@ class SoundboardPanel(QDialog):
         if self.audio_engine.voice_route_microphone_enabled or mic_state.running:
             messages.append(mic_state.message)
         self.route_status.setText("\n".join(messages))
+        bridge = detect_openlaunchdeck_bridge()
+        self.bridge_status.setText(f"Audio Bridge: {bridge.message}")
         if status.ready:
             self.discord_input.setText(f"Discord input: {status.discord_input_name}")
             self.copy_discord_input_button.setEnabled(True)

@@ -1,0 +1,7 @@
+{
+  "name": "OpenLaunchDeck Audio Bridge",
+  "hardware_id": "ROOT\\OPENLAUNCHDECK_AUDIO_BRIDGE",
+  "playback_endpoint": "OpenLaunchDeck Voice Output",
+  "recording_endpoint": "OpenLaunchDeck Voice Input",
+  "purpose": "Provide a Windows playback-to-recording bridge for routed soundboard audio and microphone mix."
+}
