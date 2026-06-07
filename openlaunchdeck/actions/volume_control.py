@@ -14,7 +14,7 @@ class VolumeControlAction(BaseAction):
     description = "Adjust the default Windows playback volume."
     config_fields = [
         {"name": "mode", "label": "Mode", "type": "choice", "choices": VOLUME_MODES},
-        {"name": "target_volume", "label": "Target Volume", "type": "number"},
+        {"name": "target_volume", "label": "Target Volume", "type": "number", "min": 0, "max": 100, "default": 50},
     ]
     blocking = True
 

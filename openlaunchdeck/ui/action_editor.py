@@ -99,8 +99,16 @@ class ActionEditor(QWidget):
             return widget
         if field_type == "number":
             widget = QSpinBox()
-            widget.setRange(0, 999999)
-            widget.setValue(int(value or 0))
+            minimum = int(field.get("min", 0))
+            maximum = int(field.get("max", 999999))
+            default = int(field.get("default", minimum))
+            raw_value = default if value in (None, "") else value
+            try:
+                number = int(raw_value)
+            except (TypeError, ValueError):
+                number = default
+            widget.setRange(minimum, maximum)
+            widget.setValue(max(minimum, min(maximum, number)))
             return widget
         if field_type == "choice":
             widget = QComboBox()

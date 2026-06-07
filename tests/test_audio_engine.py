@@ -87,6 +87,15 @@ def install_qt_test_double(engine):
     engine._qt = (QUrlTestDouble, AudioOutputTestDouble, MediaDevicesTestDouble, MediaPlayerTestDouble)
 
 
+def test_soundboard_gain_uses_quiet_curve_and_preserves_zero():
+    from openlaunchdeck.audio.audio_engine import soundboard_gain
+
+    assert abs(soundboard_gain(100, 100) - 1.0) < 0.000001
+    assert abs(soundboard_gain(50, 100) - 0.25) < 0.000001
+    assert abs(soundboard_gain(40, 50) - 0.04) < 0.000001
+    assert abs(soundboard_gain(0, 100) - 0.0) < 0.000001
+
+
 def test_audio_engine_reports_missing_file():
     engine = AudioEngine()
     result = engine.play_button_sound("A1", {"file_path": "missing-file.wav"})
@@ -129,9 +138,36 @@ def test_audio_engine_plays_local_file_with_volume_and_loop(tmp_path):
     instance = engine.currently_playing()[0]
     assert instance.button_id == "A1"
     assert instance.page_id == "main"
-    assert instance.audio_output.volume == 0.2
+    assert abs(instance.audio_output.volume - 0.04) < 0.000001
     assert instance.player.loops == -1
     assert changed
+
+
+def test_audio_engine_zero_button_volume_stays_silent(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"minimal wav bytes")
+    engine = AudioEngine(global_volume=100)
+    install_qt_test_double(engine)
+
+    result = engine.play_button_sound("A1", {"file_path": str(path), "volume": 0})
+
+    assert result.success is True
+    assert abs(engine.currently_playing()[0].audio_output.volume - 0.0) < 0.000001
+
+
+def test_global_volume_updates_existing_instances_with_same_curve(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"minimal wav bytes")
+    engine = AudioEngine(global_volume=100)
+    install_qt_test_double(engine)
+
+    assert engine.play_button_sound("A1", {"file_path": str(path), "volume": 100}).success is True
+    instance = engine.currently_playing()[0]
+    assert abs(instance.audio_output.volume - 1.0) < 0.000001
+
+    engine.set_global_volume(50)
+
+    assert abs(instance.audio_output.volume - 0.25) < 0.000001
 
 
 def test_audio_engine_already_playing_behaviors(tmp_path):
@@ -230,6 +266,7 @@ def test_voice_chat_route_plays_to_voice_output_and_monitor(tmp_path):
     assert sum(1 for instance in instances if instance.routed_to_voice_chat) == 1
     assert any(instance.audio_output.device is None for instance in instances)
     assert any(getattr(instance.audio_output.device, "_device_id", "") == "voice-cable" for instance in instances)
+    assert {round(instance.audio_output.volume, 6) for instance in instances} == {0.0625}
 
 
 def test_voice_chat_route_can_disable_monitor(tmp_path):

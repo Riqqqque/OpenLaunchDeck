@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.36
+
+- Fixed soundboard volume handling so 0% stays silent and low values do not play like full volume.
+- Matched routed voice-chat playback and local monitor playback to the same effective soundboard gain.
+- Added 0-100 editor bounds for soundboard and Windows volume controls.
+
 ## 0.1.35
 
 - Made left-click and double-click on the system tray icon restore the main window.

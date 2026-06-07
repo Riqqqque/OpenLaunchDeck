@@ -25,8 +25,10 @@ Use `Stop Sound` to stop one button, the current page, or all sounds.
 For short stream sounds:
 
 - Format: `.wav` or high-quality `.mp3`
-- Button volume: `60` to `80`
-- Global volume: `80` to `100`
+- Button volume: start around `60` to `80`
+- Global volume: start around `80` to `100`
+
+OpenLaunchDeck uses the same effective gain for the Discord route and your local monitor route. If friends hear a different level than you do, check the virtual mixer strip, Discord input processing, and Windows volume mixer for that route.
 - Already playing: `restart`
 - Loop: off
 

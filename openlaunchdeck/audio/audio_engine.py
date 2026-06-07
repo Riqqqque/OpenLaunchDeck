@@ -15,6 +15,25 @@ from .sound_instance import SoundInstance, SoundMetadata
 SUPPORTED_AUDIO_EXTENSIONS = {".wav", ".mp3", ".ogg"}
 
 
+def clamp_percent(value, default: int = 100) -> int:
+    if value in (None, ""):
+        value = default
+    try:
+        number = int(value)
+    except (TypeError, ValueError):
+        number = default
+    return max(0, min(100, number))
+
+
+def percent_from_config(config: dict, key: str, default: int) -> int:
+    return clamp_percent(config.get(key, default), default)
+
+
+def soundboard_gain(volume: int, global_volume: int) -> float:
+    combined = (clamp_percent(volume) / 100.0) * (clamp_percent(global_volume) / 100.0)
+    return combined * combined
+
+
 class AudioEngine:
     def __init__(
         self,
@@ -27,7 +46,7 @@ class AudioEngine:
         performance_monitor: PerformanceMonitor | None = None,
     ) -> None:
         self.logger = logger
-        self.global_volume = max(0, min(100, int(global_volume)))
+        self.global_volume = clamp_percent(global_volume)
         self.default_output_device_id = default_output_device_id
         self.voice_chat_output_device_id = voice_chat_output_device_id
         self.monitor_voice_chat_routes = bool(monitor_voice_chat_routes)
@@ -68,8 +87,8 @@ class AudioEngine:
             self.stop_button(button_id)
 
         QUrl, QAudioOutput, QMediaDevices, QMediaPlayer = self._qt
-        volume = max(0, min(100, int(config.get("volume", 100) or 100)))
-        effective_volume = (volume / 100.0) * (self.global_volume / 100.0)
+        volume = percent_from_config(config, "volume", 100)
+        effective_volume = soundboard_gain(volume, self.global_volume)
         loop = bool(config.get("loop", False))
         route_to_voice_chat = bool(config.get("route_to_voice_chat", False))
         output_routes = self._build_output_routes(config, route_to_voice_chat)
@@ -191,12 +210,12 @@ class AudioEngine:
             self._stop_instance(instance_id)
 
     def set_global_volume(self, volume: int) -> None:
-        self.global_volume = max(0, min(100, int(volume)))
+        self.global_volume = clamp_percent(volume)
         with self._lock:
             instances = list(self._instances.values())
         for instance in instances:
             if instance.audio_output is not None:
-                instance.audio_output.setVolume((instance.volume / 100.0) * (self.global_volume / 100.0))
+                instance.audio_output.setVolume(soundboard_gain(instance.volume, self.global_volume))
 
     def set_default_output_device(self, device_id: str) -> None:
         self.default_output_device_id = device_id
