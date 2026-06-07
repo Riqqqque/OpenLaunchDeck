@@ -29,7 +29,14 @@ Open `Soundboard > Open Soundboard Panel`.
    - Enable `Route To Voice Chat`.
    - Start with volume around `60` to `80`.
 
-If Auto Find Route cannot find a route, Windows does not currently expose a matching playback-to-recording bridge. Install a signed OpenLaunchDeck Audio Bridge package or use hardware loopback from an audio interface, then run Auto Find Route again.
+If Auto Find Route cannot find a route, Windows does not currently expose a matching playback-to-recording bridge. Use one signed cable endpoint pair, a hardware loopback input from an audio interface, or a signed OpenLaunchDeck Audio Bridge package when that package is available. Then run Auto Find Route again.
+
+A common lightweight cable setup appears as:
+
+- Playback: `Speakers (VB-Audio Virtual Cable)`
+- Recording: `CABLE Output (VB-Audio Virtual Cable)`
+
+OpenLaunchDeck sends routed clips and the selected microphone to the playback side. Discord uses the recording side as its input.
 
 ## OpenLaunchDeck Audio Bridge
 

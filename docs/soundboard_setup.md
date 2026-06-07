@@ -66,7 +66,9 @@ Open `Soundboard > Open Soundboard Panel`:
 10. Keep **Output Device** on your real headphones, speakers, or audio interface.
 11. On each sound button Discord should hear, enable `Route To Voice Chat`.
 
-If Auto Find Route says no route is ready, Windows does not currently expose a recording input that can receive OpenLaunchDeck's routed playback. Install a signed OpenLaunchDeck Audio Bridge package or use hardware loopback from an audio interface, then reopen the Soundboard panel and run Auto Find Route again.
+If Auto Find Route says no route is ready, Windows does not currently expose a recording input that can receive OpenLaunchDeck's routed playback. Use one signed playback-to-recording cable endpoint pair, a hardware loopback input from an audio interface, or a signed OpenLaunchDeck Audio Bridge package when that package is available. After Windows shows the endpoint pair, reopen the Soundboard panel and run Auto Find Route again.
+
+For a simple cable endpoint pair, the playback side may appear in Windows as `Speakers (VB-Audio Virtual Cable)` and the recording side as `CABLE Output (VB-Audio Virtual Cable)`. In that setup, OpenLaunchDeck plays routed clips and the selected microphone to the playback side, and Discord uses `CABLE Output (VB-Audio Virtual Cable)` as its input.
 
 ## Microphone Route
 

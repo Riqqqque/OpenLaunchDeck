@@ -149,6 +149,8 @@ def find_matching_voice_input(
     normalized_output = normalize_device_description(output_name)
     for input_device in input_devices:
         input_name = _device_name(input_device)
+        if _is_vb_cable_pair(normalized_output, normalize_device_description(input_name)):
+            return input_device, "paired_bridge"
         if _route_key(input_name) == output_key and output_key:
             return input_device, "paired_bridge"
         if _is_legacy_pair(normalized_output, normalize_device_description(input_name)):
@@ -196,6 +198,18 @@ def _route_key(description: str) -> str:
 def _is_legacy_mixer(description: str) -> bool:
     normalized = normalize_device_description(description)
     return any(marker in normalized for marker in LEGACY_MIXER_MARKERS)
+
+
+def _is_vb_cable_pair(output_name: str, input_name: str) -> bool:
+    output_is_cable = _is_vb_audio_virtual_cable(output_name) and (
+        "cable input" in output_name or "speakers" in output_name
+    )
+    input_is_cable = _is_vb_audio_virtual_cable(input_name) and "cable output" in input_name
+    return output_is_cable and input_is_cable
+
+
+def _is_vb_audio_virtual_cable(description: str) -> bool:
+    return "vb-audio virtual cable" in description or "vb audio virtual cable" in description
 
 
 def _is_legacy_pair(output_name: str, input_name: str) -> bool:
