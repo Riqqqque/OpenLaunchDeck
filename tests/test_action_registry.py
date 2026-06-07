@@ -1,7 +1,7 @@
 from openlaunchdeck.actions.registry import create_default_registry
 
 
-def test_default_registry_contains_mvp_actions():
+def test_default_registry_contains_default_actions():
     registry = create_default_registry()
     for action_type in [
         "noop",
@@ -9,11 +9,18 @@ def test_default_registry_contains_mvp_actions():
         "open_url",
         "open_path",
         "run_command",
+        "powershell",
         "hotkey",
+        "type_text",
+        "media_control",
+        "volume_control",
+        "http_request",
         "play_sound",
         "stop_sound",
         "multi_action",
         "delay",
+        "ssh_command",
+        "obs_websocket",
     ]:
         assert registry.get(action_type).type_name == action_type
 

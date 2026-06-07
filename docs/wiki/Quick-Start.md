@@ -22,7 +22,7 @@ If you see Simulation mode, it usually means the Launchpad is not connected yet,
 
 ## 3. Pick A Starter Profile
 
-Starter profiles are examples. They are safe placeholders, not personal setups.
+Starter profiles are ready-made starting points. They avoid private paths, server details, and account-specific secrets.
 
 Good first choices:
 

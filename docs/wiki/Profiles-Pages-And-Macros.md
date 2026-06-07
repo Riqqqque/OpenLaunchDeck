@@ -4,7 +4,7 @@ OpenLaunchDeck is organized like a physical macro deck.
 
 ## Main Terms
 
-- **Profile:** a full deck setup, such as Basic PC, Streaming, or Minecraft Server.
+- **Profile:** a full deck setup, such as Basic PC, OBS Streaming, or Soundboard.
 - **Page:** one 8x8 grid inside a profile.
 - **Button:** one pad on the grid, such as `A1` or `H8`.
 - **Action:** what a button does when pressed.

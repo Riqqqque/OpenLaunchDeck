@@ -50,7 +50,7 @@ Short setup guides are tracked in [docs/wiki](docs/wiki) for GitHub Wiki-style p
 - Launch at startup using the current Windows user startup entry
 - Optional startup update checks
 - Logs, diagnostics, settings, backups, profiles, MIDI mappings, and update downloads in AppData
-- Starter profiles for PC shortcuts, streaming, Discord audio, soundboard, server admin, and Minecraft server workflows
+- Starter profiles for PC shortcuts, streaming, Discord audio, and soundboard workflows
 - Optional native helper for focused mapping/hash/checksum utilities
 
 ## Installation
@@ -279,7 +279,7 @@ Return clear `ActionResult` values so the GUI, logs, and Launchpad feedback can 
 
 - OBS WebSocket actions require the OBS WebSocket server to be enabled. If authentication is enabled in OBS, set the button password field to the OBS WebSocket password.
 - SSH command support depends on Paramiko and key-based authentication setup.
-- Endpoint-specific Windows volume control is not implemented; current volume actions use media keys.
+- Volume actions control the default Windows playback endpoint. App-specific mixer sliders are handled by Windows and virtual audio tools.
 - Launchpad mappings should be verified in MIDI Debug before relying on them live.
 - The default lighting palette is a Programmer Mode preset and needs hardware verification for each target mode.
 - Startup update checks are intentionally quiet; manual checks show full detail.

@@ -1,11 +1,11 @@
-import os
+﻿import os
 import time
 
 from openlaunchdeck.actions.base import ActionResult
 from openlaunchdeck.actions.obs_websocket import ObsRequestResult, build_obs_auth_response, run_obs_operation
 
 
-class FakeObsClient:
+class ObsClientTestDouble:
     def __init__(self, responses, write_screenshots: bool = False):
         self.responses = list(responses)
         self.requests = []
@@ -28,7 +28,7 @@ def test_obs_auth_response_is_stable():
 
 
 def test_save_replay_buffer_starts_when_stopped():
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"outputActive": False}),
             ObsRequestResult(True, {}),
@@ -46,7 +46,7 @@ def test_save_replay_buffer_starts_when_stopped():
 def test_save_replay_buffer_requests_save_when_running(tmp_path):
     replay_path = tmp_path / "Replay Test.mp4"
     replay_path.write_bytes(b"mp4")
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"outputActive": True}),
             ObsRequestResult(True, {"savedReplayPath": str(tmp_path / "old.mp4")}),
@@ -70,7 +70,7 @@ def test_save_replay_buffer_requests_save_when_running(tmp_path):
 
 def test_save_replay_buffer_fails_when_no_file_appears(tmp_path):
     missing_path = tmp_path / "missing.mp4"
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"outputActive": True}),
             ObsRequestResult(True, {"savedReplayPath": ""}),
@@ -92,7 +92,7 @@ def test_save_replay_buffer_waits_past_same_path_with_different_slashes(tmp_path
     os.utime(old_path, (old_time, old_time))
     replay_path = tmp_path / "new.mp4"
     replay_path.write_bytes(b"new")
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"outputActive": True}),
             ObsRequestResult(True, {"savedReplayPath": old_path.as_posix()}),
@@ -109,7 +109,7 @@ def test_save_replay_buffer_waits_past_same_path_with_different_slashes(tmp_path
 
 
 def test_save_screenshot_uses_current_scene(tmp_path):
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"currentProgramSceneName": "Scene"}),
             ObsRequestResult(True, {}),
@@ -134,7 +134,7 @@ def test_save_screenshot_uses_current_scene(tmp_path):
 
 
 def test_save_screenshot_defaults_to_obs_record_directory(tmp_path):
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"currentProgramSceneName": "Scene"}),
             ObsRequestResult(True, {"recordDirectory": str(tmp_path)}),
@@ -151,7 +151,7 @@ def test_save_screenshot_defaults_to_obs_record_directory(tmp_path):
 
 
 def test_hide_source_sets_and_verifies_scene_item_visibility():
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"sceneItemId": 4}),
             ObsRequestResult(True, {"sceneItemEnabled": True}),
@@ -173,7 +173,7 @@ def test_hide_source_sets_and_verifies_scene_item_visibility():
 
 
 def test_toggle_source_uses_current_scene_when_scene_name_is_blank():
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {"currentProgramSceneName": "Scene"}),
             ObsRequestResult(True, {"sceneItemId": 4}),
@@ -194,7 +194,7 @@ def test_toggle_source_uses_current_scene_when_scene_name_is_blank():
 
 
 def test_set_input_mute_verifies_obs_state():
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {}),
             ObsRequestResult(True, {"inputMuted": True}),
@@ -212,7 +212,7 @@ def test_set_input_mute_verifies_obs_state():
 
 
 def test_set_input_mute_fails_if_verification_disagrees():
-    client = FakeObsClient(
+    client = ObsClientTestDouble(
         [
             ObsRequestResult(True, {}),
             ObsRequestResult(True, {"inputMuted": False}),
@@ -223,3 +223,4 @@ def test_set_input_mute_fails_if_verification_disagrees():
 
     assert result.success is False
     assert "did not verify" in result.message
+

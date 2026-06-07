@@ -118,8 +118,6 @@ class ActionEditor(QWidget):
             suggestions = [str(item) for item in field.get("suggestions", []) if str(item).strip()]
             for suggestion in suggestions:
                 widget.addItem(suggestion, suggestion)
-            if widget.lineEdit():
-                widget.lineEdit().setPlaceholderText(str(field.get("placeholder") or "Choose or type a hotkey"))
             completer = QCompleter(suggestions, widget)
             completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
             completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)

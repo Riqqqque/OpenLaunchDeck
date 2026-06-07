@@ -5,7 +5,7 @@ Release screenshots live here so the README can show the current desktop UI:
 - `main-window-dark.png`
 - `main-window-light.png`
 
-Additional useful screenshots for future releases:
+Additional screenshots to capture:
 
 - `button-editor.png`
 - `midi-debug.png`

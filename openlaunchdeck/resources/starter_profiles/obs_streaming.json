@@ -107,7 +107,7 @@
           "action": {
             "type": "open_url",
             "config": {
-              "url": "https://example.com/stream-dashboard"
+              "url": "https://dashboard.twitch.tv"
             }
           }
         },

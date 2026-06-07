@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-OpenLaunchDeck is early MVP software. Security fixes are prepared against the latest public release.
+Security fixes are prepared against the latest public release.
 
 ## Reporting A Vulnerability
 

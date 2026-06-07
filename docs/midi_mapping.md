@@ -41,7 +41,7 @@ Calibration stores raw message text and MIDI byte data in the debug log so contr
 
 ## Lighting Output
 
-The MVP uses note/control color values from a Programmer Mode palette preset. Exact Launchpad Mini MK3 RGB/SysEx behavior should be verified with hardware before a release claims full RGB certification.
+Lighting uses note/control color values from a Programmer Mode palette preset. Hardware behavior can vary by mode, so use MIDI Debug to verify incoming and outgoing messages before relying on a custom mapping live.
 
 Lighting updates are sent through `LaunchpadMiniMk3.set_many_pad_colors()` so page refreshes can be logged and batched. The lighting service skips refreshes when the computed page colors have not changed.
 

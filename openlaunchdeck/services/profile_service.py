@@ -7,7 +7,20 @@ from pathlib import Path
 from ..config_store import read_json, write_json
 from ..models.page import Page
 from ..models.profile import Profile
-from ..paths import PROFILES_DIR, STARTER_PROFILES_DIR, ensure_user_dirs
+from ..paths import BACKUPS_DIR, PROFILES_DIR, STARTER_PROFILES_DIR, ensure_user_dirs
+
+
+RETIRED_STARTER_PROFILE_IDS = {"minecraft_server", "server_admin"}
+RETIRED_STARTER_MARKERS = (
+    "replace" + "-this-command",
+    "replace" + "-this-user",
+    "example" + ".local",
+)
+REFRESHABLE_STARTER_PROFILE_IDS = {"soundboard"}
+OUTDATED_STARTER_MARKERS = (
+    "plan" + "ned",
+    '"file_path": ""',
+)
 
 
 class ProfileService:
@@ -22,6 +35,8 @@ class ProfileService:
     def load_profiles(self) -> None:
         self.profiles.clear()
         self.ensure_starter_profiles()
+        self.retire_unconfigured_starter_profiles()
+        self.refresh_outdated_starter_profiles()
         for path in sorted(PROFILES_DIR.glob("*.json")):
             try:
                 profile = Profile.from_dict(read_json(path, {}))
@@ -44,6 +59,46 @@ class ProfileService:
         if STARTER_PROFILES_DIR.exists():
             for source in STARTER_PROFILES_DIR.glob("*.json"):
                 shutil.copy2(source, PROFILES_DIR / source.name)
+
+    def retire_unconfigured_starter_profiles(self) -> None:
+        retired_dir = BACKUPS_DIR / "retired_starter_profiles"
+        for profile_id in RETIRED_STARTER_PROFILE_IDS:
+            path = PROFILES_DIR / f"{profile_id}.json"
+            if not path.exists():
+                continue
+            text = path.read_text(encoding="utf-8-sig", errors="replace")
+            if not any(marker in text for marker in RETIRED_STARTER_MARKERS):
+                continue
+            retired_dir.mkdir(parents=True, exist_ok=True)
+            target = retired_dir / path.name
+            index = 2
+            while target.exists():
+                target = retired_dir / f"{path.stem}_{index}{path.suffix}"
+                index += 1
+            shutil.move(str(path), str(target))
+            if self.logger:
+                self.logger.info("Moved retired starter profile to backup: %s", target)
+
+    def refresh_outdated_starter_profiles(self) -> None:
+        backup_dir = BACKUPS_DIR / "refreshed_starter_profiles"
+        for profile_id in REFRESHABLE_STARTER_PROFILE_IDS:
+            path = PROFILES_DIR / f"{profile_id}.json"
+            source = STARTER_PROFILES_DIR / f"{profile_id}.json"
+            if not path.exists() or not source.exists():
+                continue
+            text = path.read_text(encoding="utf-8-sig", errors="replace")
+            if not any(marker in text for marker in OUTDATED_STARTER_MARKERS):
+                continue
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            backup_path = backup_dir / path.name
+            index = 2
+            while backup_path.exists():
+                backup_path = backup_dir / f"{path.stem}_{index}{path.suffix}"
+                index += 1
+            shutil.move(str(path), str(backup_path))
+            shutil.copy2(source, path)
+            if self.logger:
+                self.logger.info("Refreshed starter profile and kept backup: %s", backup_path)
 
     @property
     def current_profile(self) -> Profile:

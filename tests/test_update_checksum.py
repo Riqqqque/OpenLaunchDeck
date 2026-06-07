@@ -1,4 +1,4 @@
-import hashlib
+﻿import hashlib
 import sys
 
 import pytest
@@ -17,7 +17,7 @@ def test_update_checksum_verification_with_local_file(tmp_path):
 
 
 def test_download_deletes_installer_when_checksum_fails(tmp_path, monkeypatch):
-    class FakeResponse:
+    class ResponseTestDouble:
         headers = {"content-length": "12"}
 
         def __enter__(self):
@@ -32,20 +32,20 @@ def test_download_deletes_installer_when_checksum_fails(tmp_path, monkeypatch):
         def iter_content(self, chunk_size):
             yield b"wrong bytes"
 
-    class FakeRequests:
+    class RequestsTestDouble:
         @staticmethod
         def get(*args, **kwargs):
-            return FakeResponse()
+            return ResponseTestDouble()
 
-    monkeypatch.setitem(sys.modules, "requests", FakeRequests)
+    monkeypatch.setitem(sys.modules, "requests", RequestsTestDouble)
     manifest = UpdateManifest.from_dict(
         {
             "latest_version": "0.2.0",
             "minimum_supported_version": "0.1.0",
             "required": False,
-            "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
+            "download_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/download/v0.1.33/OpenLaunchDeckSetup-0.1.33.exe",
             "sha256": hashlib.sha256(b"expected bytes").hexdigest(),
-            "release_notes_url": "https://example.com/releases/tag/v0.2.0",
+            "release_notes_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/tag/v0.1.33",
             "published_at": "2026-01-01T00:00:00Z",
         }
     )
@@ -54,3 +54,4 @@ def test_download_deletes_installer_when_checksum_fails(tmp_path, monkeypatch):
         UpdateService("0.1.0").download(manifest, tmp_path)
 
     assert list(tmp_path.iterdir()) == []
+

@@ -6,9 +6,9 @@ def manifest_data(**overrides):
         "latest_version": "0.2.0",
         "minimum_supported_version": "0.1.0",
         "required": False,
-        "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
+        "download_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/download/v0.1.33/OpenLaunchDeckSetup-0.1.33.exe",
         "sha256": "a" * 64,
-        "release_notes_url": "https://example.com/releases/tag/v0.2.0",
+        "release_notes_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/tag/v0.1.33",
         "published_at": "2026-01-01T00:00:00Z",
     }
     data.update(overrides)

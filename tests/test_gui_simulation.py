@@ -1,4 +1,4 @@
-import os
+﻿import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -19,10 +19,10 @@ def test_grid_click_selects_without_running_action():
     window = MainWindow(services)
     calls = []
 
-    def fake_press(button_id, source="simulation"):
+    def record_press(button_id, source="simulation"):
         calls.append((button_id, source))
 
-    services.action_runner.handle_button_press = fake_press
+    services.action_runner.handle_button_press = record_press
     window.grid.button_clicked.emit("B2")
     app.processEvents()
 
@@ -156,3 +156,4 @@ def test_midi_debug_callbacks_only_run_when_debug_window_is_open():
     window.close()
     services.action_runner.shutdown()
     services.device.close()
+
