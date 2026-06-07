@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.37
+
+- Made the whole Launchpad grid cell respond when selecting buttons in the editor.
+- Repaired pasted button configs so they use the target pad ID instead of keeping the original pad ID.
+
 ## 0.1.36
 
 - Fixed soundboard volume handling so 0% stays silent and low values do not play like full volume.

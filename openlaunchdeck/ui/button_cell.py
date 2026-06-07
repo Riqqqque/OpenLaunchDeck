@@ -46,6 +46,8 @@ class ButtonCell(QWidget):
         self.setMinimumSize(CELL_SIZES[self._density])
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
         self.setToolTip(button_id)
         self._button = ButtonConfig.blank(button_id)
         self._selected = False
@@ -123,7 +125,8 @@ class ButtonCell(QWidget):
             was_pressed = self._pressed
             self._pressed = False
             self.update()
-            if was_pressed and self.rect().contains(event.position().toPoint()):
+            hit_rect = self.rect().adjusted(-8, -8, 8, 8)
+            if was_pressed and hit_rect.contains(event.position().toPoint()):
                 self.clicked.emit()
             event.accept()
             return

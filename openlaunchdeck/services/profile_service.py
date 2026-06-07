@@ -39,8 +39,13 @@ class ProfileService:
         self.refresh_outdated_starter_profiles()
         for path in sorted(PROFILES_DIR.glob("*.json")):
             try:
-                profile = Profile.from_dict(read_json(path, {}))
+                data = read_json(path, {})
+                profile = Profile.from_dict(data)
                 self.profiles[profile.id] = profile
+                if self._has_stale_button_ids(data):
+                    self.save_profile(profile)
+                    if self.logger:
+                        self.logger.info("Repaired stale button IDs in profile: %s", path)
             except Exception:
                 if self.logger:
                     self.logger.exception("Profile failed to load: %s", path)
@@ -188,3 +193,18 @@ class ProfileService:
         while "__" in slug:
             slug = slug.replace("__", "_")
         return slug.strip("_")
+
+    @staticmethod
+    def _has_stale_button_ids(data: object) -> bool:
+        if not isinstance(data, dict):
+            return False
+        for page in data.get("pages", []):
+            if not isinstance(page, dict):
+                continue
+            buttons = page.get("buttons", {})
+            if not isinstance(buttons, dict):
+                continue
+            for button_id, button in buttons.items():
+                if isinstance(button, dict) and button.get("id") not in (None, "", button_id):
+                    return True
+        return False
