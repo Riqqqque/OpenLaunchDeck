@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QPlainTextEdit,
+    QSizePolicy,
     QSpinBox,
     QWidget,
     QFileDialog,
@@ -27,13 +28,19 @@ class ActionEditor(QWidget):
     def __init__(self, registry) -> None:
         super().__init__()
         self.setObjectName("ActionEditor")
+        self.setMinimumWidth(0)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         self.registry = registry
         self.action_type_combo = QComboBox()
+        self.action_type_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.action_type_combo.setMinimumContentsLength(8)
         for action in sorted(registry.all(), key=lambda item: item.display_name):
             self.action_type_combo.addItem(action.display_name, action.type_name)
         self.form = QFormLayout(self)
         self.form.setContentsMargins(0, 0, 0, 0)
         self.form.setSpacing(10)
+        self.form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        self.form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.form.addRow("Action", self.action_type_combo)
         self.field_widgets: dict[str, Any] = {}
         self._config: dict[str, Any] = {}
@@ -112,6 +119,8 @@ class ActionEditor(QWidget):
             return widget
         if field_type == "choice":
             widget = QComboBox()
+            widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            widget.setMinimumContentsLength(8)
             for choice in field.get("choices", []):
                 widget.addItem(str(choice), choice)
             index = widget.findData(value)
@@ -122,6 +131,8 @@ class ActionEditor(QWidget):
             widget = QComboBox()
             widget.setEditable(True)
             widget.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+            widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            widget.setMinimumContentsLength(8)
             widget.addItem("", "")
             suggestions = [str(item) for item in field.get("suggestions", []) if str(item).strip()]
             for suggestion in suggestions:
@@ -143,6 +154,8 @@ class ActionEditor(QWidget):
             return widget
         if field_type == "color":
             widget = QComboBox()
+            widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            widget.setMinimumContentsLength(8)
             for color in NAMED_COLORS:
                 widget.addItem(color, color)
             index = widget.findData(value)
@@ -162,9 +175,12 @@ class ActionEditor(QWidget):
             layout = QHBoxLayout(container)
             layout.setContentsMargins(0, 0, 0, 0)
             edit = QLineEdit(str(value or ""))
+            edit.setMinimumWidth(0)
+            edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             browse = QPushButton("Browse")
             browse.setObjectName("SecondaryButton")
-            layout.addWidget(edit)
+            browse.setMinimumWidth(64)
+            layout.addWidget(edit, 1)
             layout.addWidget(browse)
             browse.clicked.connect(lambda: self._browse(edit, field_type))
             container.value_widget = edit
