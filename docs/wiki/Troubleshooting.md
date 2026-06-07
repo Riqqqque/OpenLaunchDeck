@@ -114,6 +114,17 @@ Try this:
 4. Restart the browser after changing audio routes.
 5. If it still fails, restart VoiceMeeter and the Windows Audio service.
 
+## Launch At Startup Does Not Work
+
+1. Open `Settings`.
+2. Enable `Launch at startup`.
+3. Save the dialog.
+4. Confirm OpenLaunchDeck starts the next time you sign in to Windows.
+
+The setting uses the current Windows user startup entry and does not require administrator rights. If you update or move the installed app, open it once after the update so it can repair the startup path.
+
+If `Start minimized` is enabled while tray mode is off, OpenLaunchDeck starts minimized to the taskbar.
+
 ## Logs
 
 Open logs from:

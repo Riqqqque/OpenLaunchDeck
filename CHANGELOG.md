@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.33
+
+- Made Launch at startup write the Windows user startup entry instead of only saving the setting.
+- Repaired stale startup commands automatically in the packaged app after updates.
+- Made Start minimized fall back to the taskbar when tray mode is off.
+
 ## 0.1.32
 
 - Cleaned up partially started soundboard routes when a second output device is unavailable.

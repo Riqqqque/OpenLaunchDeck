@@ -614,7 +614,7 @@ class MainWindow(QMainWindow):
         self.refresh_lighting()
 
     def show_settings(self) -> None:
-        dialog = SettingsDialog(self.services.settings_service, self)
+        dialog = SettingsDialog(self.services.settings_service, self, self.services.startup_service)
         if dialog.exec():
             self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
             self._apply_responsive_layout()
