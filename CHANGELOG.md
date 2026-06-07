@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.39
+
+- Added OpenLaunchDeck voice-route detection for soundboard audio.
+- Added Soundboard panel controls to auto-find a clean voice route and copy the matching Discord input name.
+- Updated soundboard and Discord routing docs around the new simple route.
+
 ## 0.1.38
 
 - Made compact windows stack the button editor under the Launchpad grid so controls stay visible.

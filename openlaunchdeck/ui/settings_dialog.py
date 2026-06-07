@@ -110,8 +110,11 @@ class SettingsDialog(QDialog):
         form.addRow("Profile autosave", self.autosave)
         form.addRow("Automatic backups", self.backups)
         form.addRow("Sound output device", self.output_device)
-        form.addRow("Voice chat output device", self.voice_output_device)
-        audio_note = QLabel("Use system default for normal monitoring. Use a virtual mixer only for the voice chat output route.")
+        form.addRow("Voice route output device", self.voice_output_device)
+        audio_note = QLabel(
+            "Use system default for normal monitoring. Voice-routed buttons play to this output and, "
+            "when monitoring is enabled, to your normal output too."
+        )
         audio_note.setWordWrap(True)
         audio_note.setObjectName("MutedText")
         form.addRow("Audio routing", audio_note)
@@ -121,7 +124,7 @@ class SettingsDialog(QDialog):
         if hidden_duplicates:
             note_parts.append(f"{hidden_duplicates} duplicate Windows outputs")
         if hidden_advanced:
-            note_parts.append(f"{hidden_advanced} advanced VoiceMeeter buses")
+            note_parts.append(f"{hidden_advanced} advanced mixer buses")
         if note_parts:
             note = QLabel("Hidden " + " and ".join(note_parts))
             note.setWordWrap(True)

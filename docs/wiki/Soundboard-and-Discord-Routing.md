@@ -1,6 +1,6 @@
 # Soundboard and Discord Routing
 
-OpenLaunchDeck can play local sound files from macro buttons.
+OpenLaunchDeck can play local sound files from macro buttons and route selected clips toward Discord or a game voice chat.
 
 Supported formats depend on Windows and QtMultimedia, but `.wav` and `.mp3` are the safest choices.
 
@@ -27,8 +27,6 @@ For short stream sounds:
 - Format: `.wav` or high-quality `.mp3`
 - Button volume: start around `60` to `80`
 - Global volume: start around `80` to `100`
-
-OpenLaunchDeck uses the same effective gain for the Discord route and your local monitor route. If friends hear a different level than you do, check the virtual mixer strip, Discord input processing, and Windows volume mixer for that route.
 - Already playing: `restart`
 - Loop: off
 
@@ -38,51 +36,39 @@ For long sounds:
 - Add a Stop Sound button nearby
 - Avoid `overlap` unless you want multiple copies at once
 
-## Output Device List
+OpenLaunchDeck uses the same effective gain for the Discord route and your local monitor route.
 
-Windows and virtual audio software can expose the same visible output name many times. VoiceMeeter can also expose advanced buses such as `Voicemeeter In 1` through `Voicemeeter In 5`.
+## Simple Voice Route
 
-OpenLaunchDeck hides duplicate names and those advanced VoiceMeeter buses in the Soundboard and Settings selectors so the list stays usable. The useful routes, such as `Voicemeeter Input`, `Voicemeeter AUX Input`, real headphones, and audio interfaces remain visible.
+OpenLaunchDeck handles the routing split itself:
 
-If a duplicate device ID was already saved, OpenLaunchDeck keeps that saved device instead of silently erasing it.
+1. Routed soundboard buttons play to **Voice Route Output**.
+2. If **Monitor Voice Routes** is enabled, the same clip also plays to your normal output.
+3. The routed and monitored copies use the same OpenLaunchDeck volume.
+4. The Soundboard panel checks whether Discord has a matching recording input to use.
 
-If Windows itself still shows many duplicate outputs, reboot after installing VoiceMeeter, then disable unused endpoints in Windows Sound Settings if Windows exposes them separately.
+Discord can only receive audio through a Windows recording device. OpenLaunchDeck can mix and play routed clips, but Windows still needs a playback-to-recording bridge endpoint or hardware loopback.
 
-## Discord Routing
+## Set Up Discord
 
-OpenLaunchDeck does not install virtual audio drivers. To let people in Discord hear soundboard clips while you still hear them, use external routing software such as Voicemeeter or another virtual audio cable setup.
+Open `Soundboard > Open Soundboard Panel`.
 
-Typical routing idea:
+1. Keep **Default Output** on `System default`.
+2. Leave **Monitor Voice Routes** enabled.
+3. Click **Auto Find Route**.
+4. If the panel shows `Discord input: ...`, click **Copy Discord Input**.
+5. Open Discord `User Settings > Voice & Video`.
+6. Set **Input Device** to the copied device.
+7. Keep **Output Device** on your real headphones, speakers, or audio interface.
 
-1. Send OpenLaunchDeck soundboard output to a virtual input.
-2. Route that virtual input to your headphones so you can hear it.
-3. Route that virtual input into Discord's microphone/input path so friends can hear it.
-4. Keep your real microphone routed into Discord too.
+For each soundboard button Discord should hear:
 
-## VoiceMeeter Banana Example
-
-One practical setup:
-
-- Windows output: your real headphones, speakers, or audio interface
-- Windows input: `Voicemeeter Out B1`
-- Discord output: `Default` or your real headphones, speakers, or audio interface
-- Discord input: `Voicemeeter Out B1`
-- OpenLaunchDeck default output: `System default`
-- OpenLaunchDeck voice-chat output: `Voicemeeter Input`
-- OpenLaunchDeck monitor voice routes: on
-
-In VoiceMeeter:
-
-- Set Hardware Out `A1` to your real headphones or audio interface.
-- Route your microphone to `B1`.
-- Route `Voicemeeter Input` to `A1` and `B1`.
-- Leave `Voicemeeter AUX` unused unless you choose the advanced full-mixer route.
-
-This lets friends hear routed soundboard clips while preventing Discord from hearing itself.
-
-If friends cannot hear clips, check Discord input device, Voicemeeter routing buttons, Windows app volume routing, and the soundboard output device in OpenLaunchDeck settings.
-
-If the audio sounds bad, lower clip volume, avoid clipping in Voicemeeter, and make sure Discord noise suppression is not crushing the soundboard audio.
+1. Select the button.
+2. Set action type to `Play Sound`.
+3. Choose the local audio file.
+4. Enable `Route To Voice Chat`.
+5. Start with volume around `60` to `80`.
+6. Use `toggle_stop` if you want a second press to stop the sound.
 
 ## Discord Quality Checklist
 
@@ -93,21 +79,22 @@ In Discord `Voice & Video`, try turning off:
 - Noise reduction
 - Automatic gain control
 
-Then use Mic Test while playing a soundboard clip.
+Then use Mic Test while playing a routed soundboard clip.
 
-If the clip is quiet, raise the OpenLaunchDeck button volume or the VoiceMeeter strip a little.
+If the clip is quiet, raise the OpenLaunchDeck button volume or lower Discord input sensitivity.
 
-If the clip is distorted, lower the OpenLaunchDeck button volume or the VoiceMeeter strip.
+If the clip is distorted, lower the OpenLaunchDeck button volume and use a cleaner `.wav` or high-quality `.mp3` file.
 
 ## Common Mistakes
 
-- The soundboard route goes to headphones only, not the Discord input bus.
+- The button does not have `Route To Voice Chat` enabled.
+- Discord input does not match the input shown by OpenLaunchDeck.
+- Discord output is routed back into the same input Discord is using.
 - Discord input sensitivity is too high, so the clip does not open voice activity.
-- VoiceMeeter is not running after reboot.
-- The advanced full-mixer route is half-configured, so browser or Discord audio depends on a broken virtual output.
+- Windows does not currently expose a matching recording endpoint for the selected voice route.
 
-## Advanced Full-Mixer Route
+## Output Device List
 
-If you want VoiceMeeter to manage all Windows audio, set Windows output and Discord output to `Voicemeeter AUX Input`, set OpenLaunchDeck default output to `Voicemeeter AUX Input`, and turn `Monitor Voice Routes` off. Route `Voicemeeter AUX` to `A1` only, and route `Voicemeeter Input` to `A1` and `B1`.
+Windows and audio drivers can expose duplicate output names. OpenLaunchDeck hides duplicate names and advanced mixer buses in the Soundboard and Settings selectors so the list stays usable.
 
-Use the simple route first. If YouTube shows `Audio renderer error` or Discord audio disappears, keep Windows output on the real hardware device and use VoiceMeeter only for the soundboard voice-chat route.
+If a duplicate device ID was already saved, OpenLaunchDeck keeps that saved device instead of silently erasing it.
