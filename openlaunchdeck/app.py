@@ -19,6 +19,7 @@ from .services.lighting_service import LightingService
 from .services.performance_monitor import PerformanceMonitor
 from .services.profile_service import ProfileService
 from .services.settings_service import SettingsService
+from .services.startup_service import StartupService
 from .ui.icons import app_icon
 from .ui.main_window import MainWindow
 from .version import APP_NAME
@@ -44,6 +45,7 @@ class AppServices:
     action_registry: object
     logger: object
     performance_monitor: PerformanceMonitor
+    startup_service: StartupService
 
 
 def build_services() -> AppServices:
@@ -52,6 +54,9 @@ def build_services() -> AppServices:
     settings_service = SettingsService()
     logger = configure_logging(settings_service.settings.midi_debug_logging)
     logger.info("Starting %s", APP_NAME)
+    startup_service = StartupService(logger=logger)
+    if getattr(sys, "frozen", False):
+        startup_service.sync(settings_service.settings.launch_at_startup)
     native_acceleration.configure(settings_service.settings.use_native_acceleration, logger)
     performance_monitor = PerformanceMonitor(logger, settings_service.settings.enable_performance_logging)
     profile_service = ProfileService(logger=logger)
@@ -94,6 +99,7 @@ def build_services() -> AppServices:
         action_registry=registry,
         logger=logger,
         performance_monitor=performance_monitor,
+        startup_service=startup_service,
     )
 
 
@@ -111,7 +117,10 @@ def run() -> int:
         window.show()
         services.performance_monitor.record_since("app_startup_to_window_shown", start)
         if services.settings_service.settings.start_minimized:
-            window.hide()
+            if services.settings_service.settings.minimize_to_tray and window.tray.tray.isVisible():
+                window.hide()
+            else:
+                window.showMinimized()
         result = app.exec()
     except Exception:
         services.logger.exception("Fatal application error.")

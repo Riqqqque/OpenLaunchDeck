@@ -85,6 +85,17 @@ python -m openlaunchdeck.main
 
 Then check `%APPDATA%\OpenLaunchDeck\logs`.
 
+## Launch At Startup Does Not Work
+
+Open `Settings` and enable `Launch at startup`, then save the dialog. OpenLaunchDeck writes a current-user Windows startup entry named `OpenLaunchDeck`.
+
+If the app still does not start after signing in, check these items:
+
+- Confirm the installed app still exists at the path shown in the Windows startup entry.
+- Open OpenLaunchDeck once after an app update; the packaged app repairs stale startup paths.
+- Keep `Start minimized` on only if you want the app to start in the background. If tray mode is off, it starts minimized to the taskbar.
+- Check `%APPDATA%\OpenLaunchDeck\logs` for startup registration errors.
+
 ## Update Check Fails
 
 Confirm the update manifest URL is configured and reachable. The manifest must include a valid 64-character SHA256 checksum.

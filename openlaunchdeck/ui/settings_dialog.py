@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
@@ -18,12 +19,13 @@ from ..paths import APP_DATA_DIR
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, settings_service, parent=None) -> None:
+    def __init__(self, settings_service, parent=None, startup_service=None) -> None:
         super().__init__(parent)
         self.setWindowTitle("Settings")
         self.setObjectName("SettingsDialog")
         self.resize(620, 680)
         self.settings_service = settings_service
+        self.startup_service = startup_service
         settings = settings_service.settings
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
@@ -50,6 +52,12 @@ class SettingsDialog(QDialog):
         self.minimize_to_tray.setChecked(settings.minimize_to_tray)
         self.launch_at_startup = QCheckBox()
         self.launch_at_startup.setChecked(settings.launch_at_startup)
+        if self.startup_service is None or not self.startup_service.is_available():
+            self.launch_at_startup.setChecked(False)
+            self.launch_at_startup.setEnabled(False)
+            self.launch_at_startup.setToolTip("Launch at startup is available in the Windows desktop app.")
+        else:
+            self.launch_at_startup.setToolTip("Start OpenLaunchDeck when you sign in to Windows.")
         self.midi_input = QLineEdit(settings.midi_input_port)
         self.midi_output = QLineEdit(settings.midi_output_port)
         self.midi_debug = QCheckBox()
@@ -135,13 +143,23 @@ class SettingsDialog(QDialog):
         layout.addWidget(buttons)
 
     def accept(self) -> None:
+        launch_at_startup = self.launch_at_startup.isChecked()
+        if self.startup_service is not None:
+            if not self.startup_service.set_enabled(launch_at_startup):
+                QMessageBox.warning(
+                    self,
+                    "Startup setting not changed",
+                    "OpenLaunchDeck could not update the Windows startup entry. Check the log for details.",
+                )
+                return
+
         self.settings_service.update(
             theme=self.theme.currentData(),
             grid_density=self.grid_density.currentData(),
             auto_connect=self.auto_connect.isChecked(),
             start_minimized=self.start_minimized.isChecked(),
             minimize_to_tray=self.minimize_to_tray.isChecked(),
-            launch_at_startup=self.launch_at_startup.isChecked(),
+            launch_at_startup=launch_at_startup,
             midi_input_port=self.midi_input.text(),
             midi_output_port=self.midi_output.text(),
             midi_debug_logging=self.midi_debug.isChecked(),

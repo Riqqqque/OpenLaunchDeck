@@ -47,6 +47,7 @@ Short setup guides are tracked in [docs/wiki](docs/wiki) for GitHub Wiki-style p
 - Soundboard output selectors that hide duplicate Windows device names
 - Background action execution
 - Manual update checks with SHA256 verification
+- Launch at startup using the current Windows user startup entry
 - Optional startup update checks
 - Logs, diagnostics, settings, backups, profiles, MIDI mappings, and update downloads in AppData
 - Starter profiles for PC shortcuts, streaming, Discord audio, soundboard, server admin, and Minecraft server workflows
@@ -81,6 +82,10 @@ The updater can:
 OpenLaunchDeck does not install updates silently. Portable/source runs may need a manual update after the verified installer is downloaded.
 
 See [docs/updating.md](docs/updating.md) for the manifest format and local update testing.
+
+## Launch At Startup
+
+Enable `Settings > Launch at startup` to start OpenLaunchDeck when you sign in to Windows. The setting writes a current-user startup entry, so it does not require administrator rights. `Start minimized` can be used with it; when tray mode is off, the app starts minimized to the taskbar instead of hiding completely.
 
 ## Running From Source
 
