@@ -4,6 +4,22 @@ OpenLaunchDeck can control OBS directly through OBS WebSocket. This is the recom
 
 Use OBS WebSocket for actions that must work while a game is focused.
 
+## What OBS WebSocket Does
+
+OBS WebSocket lets OpenLaunchDeck talk to OBS directly. It is not a keyboard shortcut.
+
+That means OpenLaunchDeck can ask OBS to:
+
+- Start or stop recording.
+- Start or stop streaming.
+- Start or save the replay buffer.
+- Save a screenshot.
+- Switch scenes.
+- Show, hide, or toggle a source.
+- Mute, unmute, or toggle an OBS audio input.
+
+For streaming actions, prefer OBS WebSocket over Hotkey.
+
 ## Enable OBS WebSocket
 
 1. Open OBS.
@@ -19,6 +35,31 @@ In OpenLaunchDeck, set the OBS WebSocket action fields:
 - `Password`: your OBS WebSocket password, if OBS requires one
 
 Keep the password private. It only needs to be stored in your local OpenLaunchDeck profile/settings.
+
+## Find Your Exact OBS Names
+
+OBS action fields must match OBS exactly.
+
+For scenes:
+
+1. Look at the Scenes box in OBS.
+2. Copy the scene name exactly.
+3. Put that value in `Scene Name`.
+
+For sources:
+
+1. Click the scene in OBS.
+2. Look at the Sources box.
+3. Copy the source name exactly.
+4. Put that value in `Source Name`.
+
+For audio inputs:
+
+1. Look at the OBS Audio Mixer.
+2. Copy the input name exactly.
+3. Put that value in `Input Name`.
+
+If OBS calls your camera `Video Capture Device`, OpenLaunchDeck needs `Video Capture Device`. `camera`, `webcam`, or `cam` will not match unless that is the real OBS source name.
 
 ## Replay Buffer Clips
 
@@ -55,6 +96,23 @@ For a simple gaming setup:
 
 This is safer than binding the pad to an OBS hotkey because it talks to OBS directly.
 
+## Full Replay Buffer Checklist
+
+If replay clips are not saving, check every item:
+
+1. OBS is open.
+2. OBS WebSocket is enabled.
+3. OpenLaunchDeck host is `127.0.0.1`.
+4. OpenLaunchDeck port is `4455`.
+5. Password matches OBS if authentication is enabled.
+6. OBS Replay Buffer is enabled in OBS settings.
+7. OBS has a valid recording/replay folder.
+8. Press the button once to start replay buffer.
+9. Wait a few seconds.
+10. Press the button again to save a replay.
+
+OpenLaunchDeck verifies that a replay file appears. If OBS accepts the command but no file appears, OpenLaunchDeck reports failure.
+
 ## Screenshots
 
 Use action type `OBS WebSocket` with operation `save_screenshot`.
@@ -86,6 +144,19 @@ For a simple gaming setup:
 - Screenshot format: `png`
 
 OpenLaunchDeck reports failure if OBS does not create the image file.
+
+## Full Screenshot Checklist
+
+1. OBS is open.
+2. OBS WebSocket is enabled.
+3. Action type is `OBS WebSocket`.
+4. Operation is `save_screenshot`.
+5. Screenshot format is `png`.
+6. Screenshot folder is blank or a real folder.
+7. Screenshot source is blank unless you need a specific source.
+8. Click **Test Action**.
+
+If a screenshot fails, leave Screenshot Source blank and try again. Blank means "capture the current OBS program scene."
 
 ## Scene and Source Controls
 
@@ -122,6 +193,31 @@ To toggle a camera source:
 5. Enter the exact OBS scene and source names.
 
 Names must match OBS. Copy them from OBS if needed.
+
+## Common Camera Setup
+
+To create separate camera buttons:
+
+**Hide camera**
+
+- Action type: `OBS WebSocket`
+- Operation: `hide_source`
+- Scene Name: your active scene name
+- Source Name: your camera source name
+
+**Show camera**
+
+- Action type: `OBS WebSocket`
+- Operation: `show_source`
+- Scene Name: your active scene name
+- Source Name: your camera source name
+
+**Toggle camera**
+
+- Action type: `OBS WebSocket`
+- Operation: `toggle_source`
+- Scene Name: your active scene name
+- Source Name: your camera source name
 
 ## Troubleshooting
 

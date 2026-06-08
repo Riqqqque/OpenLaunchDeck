@@ -2,6 +2,18 @@
 
 This page starts with the fastest checks first.
 
+## First Three Checks
+
+Before going deep, check these:
+
+1. Is OpenLaunchDeck running the profile you think it is?
+2. Is the selected button enabled?
+3. Does **Test Action** work from the editor?
+
+If Test Action works but the physical Launchpad does not, troubleshoot MIDI.
+
+If Test Action fails too, troubleshoot the action settings.
+
 ## App Opens In Simulation Mode
 
 Simulation mode means no active Launchpad MIDI connection is available.
@@ -16,6 +28,21 @@ Try this:
 6. If multiple Launchpad ports exist, choose the `LPMiniMK3 MIDI` style port rather than the DAW/session port.
 
 Simulation mode is not an error. It lets you configure profiles without hardware.
+
+## The App Says Connected But Nothing Happens
+
+Check the exact pad path:
+
+1. Open `Device > MIDI Debug`.
+2. Press the physical pad.
+3. Confirm a raw MIDI message appears.
+4. Confirm the parsed button ID matches the pad, such as `A8`.
+5. Open the active profile and page in the main window.
+6. Select that same button ID.
+7. Confirm the action is not `No Action`.
+8. Confirm the button is enabled.
+
+If raw MIDI appears but the wrong button ID appears, run calibration.
 
 ## Connected But Pads Do Nothing
 
@@ -83,18 +110,33 @@ If Windows itself shows many duplicate outputs:
 
 ## Friends Cannot Hear Soundboard Clips
 
-1. Confirm the button has `Route To Voice Chat` enabled.
-2. Open the Soundboard panel and click `Auto Find Route`.
-3. Confirm OpenLaunchDeck shows `Discord input: ...`.
-4. Confirm Discord input points to that device.
-5. In Discord, use Mic Test while playing a clip.
+Use this exact checklist:
+
+1. Confirm the sound plays locally first.
+2. Confirm the button has `Route To Voice Chat` enabled.
+3. Open `Soundboard > Open Soundboard Panel`.
+4. Confirm Default Output is your real headphones, speakers, or audio interface.
+5. Confirm Voice Route Output is the route playback side.
+6. Confirm Route Microphone is on.
+7. Confirm Microphone Input is your real mic.
+8. In Discord `Voice & Video`, set Input Device to the route recording side, such as `CABLE Output (VB-Audio Virtual Cable)`.
+9. Keep Discord Output Device on your real headphones, speakers, or audio interface.
+10. Set Discord Noise Suppression to `None`.
+11. Turn Echo Cancellation off.
+12. Use Discord Mic Test while playing a routed clip.
+
+If Discord's input meter moves during the clip, Discord is receiving the soundboard route.
+
+If the meter does not move, Discord is listening to the wrong input or the route is not receiving audio.
 
 ## Soundboard Audio Sounds Bad
 
 Try this:
 
 - Lower OpenLaunchDeck button volume to `60` to `80`.
-- Disable Discord noise suppression, echo cancellation, noise reduction, and automatic gain control.
+- Set Discord noise suppression to `None`.
+- Disable Discord echo cancellation.
+- Disable Discord automatic gain control if the clip volume pumps up and down.
 - Use clean `.wav` or high-quality `.mp3` clips.
 - Avoid stacking multiple loud clips with `overlap`.
 
@@ -103,6 +145,7 @@ Try this:
 1. Set Discord output to `Default` or your real headphones, speakers, or audio interface.
 2. Make sure Windows output is still your real hardware output.
 3. Do not route Discord output back into the Discord input route.
+4. Restart Discord after changing Windows audio defaults.
 
 ## Browser Shows Audio Renderer Error
 
@@ -132,3 +175,16 @@ Open logs from:
 The main log is stored under:
 
 `%APPDATA%\OpenLaunchDeck\logs`
+
+## What To Send With A Bug Report
+
+Include:
+
+- OpenLaunchDeck version.
+- Windows version.
+- Whether the Launchpad is connected or Simulation mode is active.
+- The action type that failed.
+- The exact button ID, such as `A8`.
+- The last few lines from the OpenLaunchDeck log.
+- For OBS issues, the OBS WebSocket operation and OBS log.
+- For soundboard issues, the selected output/input devices and whether Discord Mic Test moves.

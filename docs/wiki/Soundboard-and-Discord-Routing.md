@@ -1,119 +1,181 @@
-# Soundboard and Discord Routing
+# Soundboard And Discord Routing
 
-OpenLaunchDeck can play local sound files from macro buttons and route selected clips toward Discord or a game voice chat.
+This page explains how to make a soundboard clip play for you and for people in Discord.
 
-Supported formats depend on Windows and QtMultimedia, but `.wav` and `.mp3` are the safest choices.
+Start with local playback. Do not touch Discord routing until the sound plays through your own headphones first.
 
-Start with local playback first. After local playback works, add Discord routing.
+## What Has To Happen
 
-## Add a Sound Button
+Discord can only hear a Windows recording device. A normal speaker output is not enough.
+
+The working route looks like this:
+
+```text
+OpenLaunchDeck soundboard clip
+  -> your headphones or audio interface so you can hear it
+  -> voice route playback device
+  -> matching Windows recording device
+  -> Discord input device
+  -> your call
+```
+
+Your microphone also needs to go into that same route if Discord is listening to the route instead of directly listening to your mic.
+
+## Supported File Types
+
+Use these first:
+
+- `.wav`
+- `.mp3`
+
+Other formats may work depending on Windows and QtMultimedia, but `.wav` and `.mp3` are the safest choices.
+
+## Step 1: Make Local Playback Work
 
 1. Select a pad.
 2. Set action type to `Play Sound`.
 3. Choose a local `.wav` or `.mp3` file.
-4. Set volume.
-5. Choose behavior for repeated presses:
-   - `restart`
-   - `overlap`
-   - `ignore`
-   - `toggle_stop`
+4. Set volume to `60`.
+5. Set Already Playing to `restart`.
+6. Leave `Route To Voice Chat` off for the first test.
+7. Click **Test Action**.
 
-Use `Stop Sound` to stop one button, the current page, or all sounds.
+If you do not hear it locally:
 
-## Recommended Sound Settings
+- Confirm the file exists.
+- Try a different `.wav` or `.mp3`.
+- Check Windows volume mixer.
+- Check OpenLaunchDeck global soundboard volume.
+- Confirm Default Output points to your real headphones, speakers, or audio interface.
 
-For short stream sounds:
+## Step 2: Add A Stop Button
 
-- Format: `.wav` or high-quality `.mp3`
-- Button volume: start around `60` to `80`
-- Global volume: start around `80` to `100`
-- Already playing: `restart`
-- Loop: off
+Before routing to Discord, create a stop button:
 
-For long sounds:
+1. Select a nearby pad.
+2. Set label to `Stop`.
+3. Set color to `red`.
+4. Set action type to `Stop Sound`.
+5. Set scope to `all`.
 
-- Already playing: `toggle_stop`
-- Add a Stop Sound button nearby
-- Avoid `overlap` unless you want multiple copies at once
+This makes testing safer if a clip loops or gets loud.
 
-OpenLaunchDeck uses the same effective gain for the Discord route and your local monitor route.
+## Step 3: Pick The Voice Route
 
-## Simple Voice Route
+Open `Soundboard > Open Soundboard Panel`.
 
-OpenLaunchDeck handles the routing split itself:
+Recommended settings:
 
-1. Routed soundboard buttons play to **Voice Route Output**.
-2. If **Monitor Voice Routes** is enabled, the same clip also plays to your normal output.
-3. If **Route Microphone** is enabled, your selected mic also plays into the voice route.
-4. The routed and monitored copies use the same OpenLaunchDeck volume.
-5. The Soundboard panel checks whether Discord has a matching recording input to use.
+- **Default Output:** your real headphones, speakers, or audio interface.
+- **Monitor Voice Routes:** on.
+- **Voice Route Output:** the playback side of the route.
+- **Microphone Input:** your real microphone.
+- **Route Microphone:** on.
+- **Microphone Volume:** start at `100`.
+- **Global Volume:** start at `100`.
 
-Discord can only receive audio through a Windows recording device. OpenLaunchDeck can mix and play your mic and routed clips, but Windows still needs a playback-to-recording bridge endpoint or hardware loopback.
+For a common cable-style route, Windows may show:
 
-For a simple signed cable endpoint pair, Windows may show:
+- Playback side: `Speakers (VB-Audio Virtual Cable)`
+- Recording side: `CABLE Output (VB-Audio Virtual Cable)`
 
-- Playback: `Speakers (VB-Audio Virtual Cable)`
-- Recording: `CABLE Output (VB-Audio Virtual Cable)`
+OpenLaunchDeck sends routed clips and the selected microphone to the playback side. Discord listens to the recording side.
 
-In that setup, OpenLaunchDeck sends routed clips and the selected microphone to the playback side. Discord uses the recording side as its input.
-
-OpenLaunchDeck now looks for a dedicated bridge pair:
+If a dedicated OpenLaunchDeck route endpoint exists, Auto Find Route prefers:
 
 - `OpenLaunchDeck Voice Output`
 - `OpenLaunchDeck Voice Input`
 
-When both endpoints exist, Auto Find Route prefers them.
+## Step 4: Enable Routing On The Button
 
-## Set Up Discord
+For each clip Discord should hear:
 
-Open `Soundboard > Open Soundboard Panel`.
+1. Select the soundboard pad.
+2. Confirm action type is `Play Sound`.
+3. Enable `Route To Voice Chat`.
+4. Keep `Monitor Voice Routes` enabled in the Soundboard panel if you also want to hear it.
+5. Start button volume around `50` to `70`.
+6. Test again.
 
-1. Keep **Default Output** on `System default`.
-2. Leave **Monitor Voice Routes** enabled.
-3. Click **Auto Find Route**.
-4. If the panel shows `Discord input: ...`, click **Copy Discord Input**.
-5. Set **Microphone Input** to your real mic, or leave it on `System default microphone`.
-6. Enable **Route Microphone**.
-7. Start **Microphone Volume** around `100`, then lower it if Discord clips.
-8. Open Discord `User Settings > Voice & Video`.
-9. Set **Input Device** to the copied device.
-10. Keep **Output Device** on your real headphones, speakers, or audio interface.
+OpenLaunchDeck uses the same effective gain for the voice route and monitor route. If it is loud for your friends, it should be loud for you too.
 
-For each soundboard button Discord should hear:
+## Step 5: Set Discord Correctly
 
-1. Select the button.
-2. Set action type to `Play Sound`.
-3. Choose the local audio file.
-4. Enable `Route To Voice Chat`.
-5. Start with volume around `60` to `80`.
-6. Use `toggle_stop` if you want a second press to stop the sound.
+Open Discord `User Settings > Voice & Video`.
 
-## Discord Quality Checklist
+Set:
 
-In Discord `Voice & Video`, try turning off:
+- **Input Device:** the route recording side, such as `CABLE Output (VB-Audio Virtual Cable)`.
+- **Output Device:** your real headphones, speakers, or audio interface.
+- **Input Profile:** `Custom` or `Studio`.
+- **Noise Suppression:** `None`.
+- **Echo Cancellation:** off.
+- **Automatic Gain Control:** off if clips pump, get quiet, or sound crushed.
+- **Bypass System Audio Input Processing:** on if available.
 
-- Noise suppression
-- Echo cancellation
-- Noise reduction
-- Automatic gain control
+Do not set Discord output to the same route input. That can create feedback or make other app audio unstable.
 
-Then use Mic Test while playing a routed soundboard clip.
+## Step 6: Use Discord Mic Test
 
-If the clip is quiet, raise the OpenLaunchDeck button volume or lower Discord input sensitivity.
+1. Stay in Discord `Voice & Video`.
+2. Start Mic Test.
+3. Play a routed soundboard clip from OpenLaunchDeck.
+4. Watch Discord's input meter.
+5. Speak into your mic.
+6. Confirm the meter moves for both your voice and the clip.
 
-If the clip is distorted, lower the OpenLaunchDeck button volume and use a cleaner `.wav` or high-quality `.mp3` file.
+If the meter moves, Discord is receiving the route.
+
+If your friends still do not hear it, check whether you are muted, server-muted, push-to-talk is enabled, or the call is using a different Discord input device.
+
+## Good Starting Volumes
+
+Use this as a starting point:
+
+- OpenLaunchDeck global soundboard volume: `100`
+- Sound button volume: `50` to `70`
+- Microphone route volume: `100`
+- Windows route endpoint volume: `100`
+- Discord input volume: `100`
+
+If clips distort, lower the button volume first.
+
+If clips are too quiet, raise the button volume before raising Windows endpoint volume.
+
+## Repeated Press Behavior
+
+Choose based on the sound:
+
+- `restart`: best for short clips and memes.
+- `toggle_stop`: best for music beds, loops, or long sounds.
+- `ignore`: prevents spam when a clip is already playing.
+- `overlap`: allows multiple copies at once. Use carefully.
+
+## Sound Quality Fixes
+
+If friends say the clip is bad, crushed, or barely audible:
+
+1. Set Discord input to the route recording device, not your mic.
+2. Set Noise Suppression to `None`.
+3. Turn Echo Cancellation off.
+4. Turn Automatic Gain Control off if volume pumps up and down.
+5. Use a clean `.wav` or high-quality `.mp3`.
+6. Keep button volume below clipping.
+7. Avoid using `overlap` with loud clips.
 
 ## Common Mistakes
 
 - The button does not have `Route To Voice Chat` enabled.
-- Discord input does not match the input shown by OpenLaunchDeck.
-- **Route Microphone** is off while Discord is listening to the route input.
-- Discord output is routed back into the same input Discord is using.
-- Discord input sensitivity is too high, so the clip does not open voice activity.
-- Windows does not currently expose a matching recording endpoint for the selected voice route.
+- Discord is still using the real microphone directly.
+- OpenLaunchDeck Route Microphone is off.
+- Discord output is accidentally routed into the input route.
+- Noise suppression is set to Krisp or another aggressive mode.
+- Push-to-talk is enabled and no push-to-talk key is being held.
+- The wrong duplicate audio device was selected.
+- The route playback endpoint exists, but the matching recording endpoint does not.
 
-## Output Device List
+## Duplicate Audio Devices
 
 Windows and audio drivers can expose duplicate output names. OpenLaunchDeck hides duplicate names and advanced mixer buses in the Soundboard and Settings selectors so the list stays usable.
 
-If a duplicate device ID was already saved, OpenLaunchDeck keeps that saved device instead of silently erasing it.
+If a saved device was already selected, OpenLaunchDeck keeps it instead of silently erasing it.
