@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.43
+
+- Added mandatory confirmation for OBS start-stream actions.
+- Added a short confirmation delay so duplicate hardware events cannot confirm a dangerous action instantly.
+- Restored normal action completion logging so button results are easier to audit.
+
 ## 0.1.42
 
 - Detected the Windows names used by the lightweight virtual cable route.

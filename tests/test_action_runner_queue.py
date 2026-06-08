@@ -25,10 +25,17 @@ class SlowAction(BaseAction):
         return ActionResult.ok("Slow action finished.")
 
 
+class FakeObsAction(BaseAction):
+    type_name = "obs_websocket"
+
+    def execute(self, context, config):
+        return ActionResult.ok(f"OBS operation {config.get('operation')} ran.")
+
+
 class FakeProfileService:
-    def __init__(self) -> None:
+    def __init__(self, button: ButtonConfig | None = None) -> None:
         page = Page.blank()
-        page.buttons["A1"] = ButtonConfig(id="A1", action=ActionConfig("slow", {}))
+        page.buttons["A1"] = button or ButtonConfig(id="A1", action=ActionConfig("slow", {}))
         self.current_page = page
         self.current_profile = Profile("Test", "test", [page], page.id)
 
@@ -58,6 +65,33 @@ def test_action_runner_rejects_when_background_queue_is_full():
         assert "busy" in second.message.lower()
     finally:
         release.set()
+        runner.shutdown()
+
+
+def test_obs_start_streaming_requires_confirmation_without_dangerous_flag():
+    button = ButtonConfig(
+        id="A1",
+        dangerous=False,
+        action=ActionConfig("obs_websocket", {"operation": "start_streaming"}),
+    )
+    registry = ActionRegistry()
+    registry.register(NoopAction())
+    registry.register(FakeObsAction())
+    runner = ActionRunner(
+        registry=registry,
+        profile_service=FakeProfileService(button),
+        dangerous_service=DangerousConfirmService(confirm_delay_seconds=0),
+    )
+
+    try:
+        first = runner.handle_button_press("A1")
+        second = runner.handle_button_press("A1")
+
+        assert not first.success
+        assert "press again" in first.message.lower()
+        assert second.success
+        assert second.message == "OBS operation start_streaming ran."
+    finally:
         runner.shutdown()
 
 
