@@ -176,6 +176,8 @@ Supported OBS WebSocket operations include:
 - `save_replay_buffer`
 - `save_screenshot`
 
+`start_streaming` always requires confirmation in OpenLaunchDeck. The first press arms the button and the second deliberate press starts the stream. This protects against accidental clicks, pad bumps, and duplicate hardware events.
+
 For `switch_scene`, set `Scene Name` to the exact OBS scene name.
 
 For source visibility, set `Scene Name` and `Source Name` to the exact OBS names. A common camera source name is `Video Capture Device`.

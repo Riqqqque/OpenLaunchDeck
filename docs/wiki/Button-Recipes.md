@@ -34,6 +34,23 @@ Test:
 5. Click **Test Action** again.
 6. Confirm a replay file appears in the OBS replay folder.
 
+## OBS Start Stream
+
+Only make this button if you really want stream start control on the deck.
+
+- Label: `Start`
+- Color: `yellow`
+- Dangerous: on
+- Action type: `OBS WebSocket`
+- Operation: `start_streaming`
+- Host: `127.0.0.1`
+- Port: `4455`
+- Password: your OBS WebSocket password if OBS requires one
+
+OpenLaunchDeck requires confirmation for this operation even if the Dangerous checkbox is off. The first press arms the button. The second deliberate press starts streaming.
+
+For most setups, keep stream start inside OBS and use the Launchpad for replay clips, screenshots, camera, mute, and scene controls.
+
 ## OBS Screenshot
 
 Use this for screenshots that still work while a game is focused.

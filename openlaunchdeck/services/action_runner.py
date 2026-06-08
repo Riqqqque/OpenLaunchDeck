@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import threading
 from concurrent.futures import Future, ThreadPoolExecutor
 from collections.abc import Callable
@@ -52,7 +51,7 @@ class ActionRunner:
             result = ActionResult.fail("Button is disabled.")
             self._complete(button_id, result)
             return result
-        if button.dangerous:
+        if self._requires_confirmation(button):
             confirmed = self.dangerous_service.arm_or_confirm(button_id)
             if not confirmed:
                 result = ActionResult(False, "Press again within 5 seconds to run this action.", should_update_lighting=True)
@@ -104,6 +103,17 @@ class ActionRunner:
         result = self._run_action(button_id, action, context, config)
         return result
 
+    @staticmethod
+    def _requires_confirmation(button: ButtonConfig) -> bool:
+        if button.dangerous:
+            return True
+        action_config = button.action
+        if not action_config:
+            return False
+        action_type = str(action_config.type or "").strip()
+        operation = str(action_config.config.get("operation") or "").strip()
+        return action_type == "obs_websocket" and operation == "start_streaming"
+
     def _run_action(self, button_id: str, action, context: ActionContext, config: dict) -> ActionResult:
         with self.performance_monitor.measure(f"action:{action.type_name}"):
             try:
@@ -118,8 +128,7 @@ class ActionRunner:
     def _complete(self, button_id: str, result: ActionResult) -> None:
         if self.logger:
             if result.success:
-                if self.logger.isEnabledFor(logging.DEBUG):
-                    self.logger.debug("Button %s: %s", button_id, result.message)
+                self.logger.info("Button %s: %s", button_id, result.message)
             else:
                 self.logger.warning("Button %s: %s", button_id, result.message)
         if self.completion_callback:
