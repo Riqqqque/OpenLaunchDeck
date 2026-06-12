@@ -4,6 +4,8 @@ This folder is the source for the public GitHub wiki.
 
 Use [Home](Home.md) as the wiki landing page. The pages are written so a new user can set up the app without already knowing MIDI, OBS WebSocket, or Windows audio routing.
 
+The source files in this folder use normal `.md` links so they render correctly in the main repository. The live GitHub Wiki should use extensionless page links, otherwise wiki navigation can open raw Markdown files instead of rendered pages. Use `scripts\sync-wiki.ps1` to copy the pages into the wiki repository and rewrite those links safely.
+
 ## Pages
 
 - [Home](Home.md)
@@ -27,3 +29,9 @@ https://github.com/Riqqqque/OpenLaunchDeck.wiki.git
 ```
 
 Copy the Markdown files from this folder into that wiki repository and push the wiki repo after editing.
+
+Recommended sync command:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\sync-wiki.ps1 -WikiPath "$env:LOCALAPPDATA\Temp\OpenLaunchDeck.wiki"
+```

@@ -1,10 +1,36 @@
-# OpenLaunchDeck
+<p align="center">
+  <img src="openlaunchdeck/resources/icons/openlaunchdeck_256.png" alt="OpenLaunchDeck app icon" width="128">
+</p>
 
-![OpenLaunchDeck logo](openlaunchdeck/resources/icons/openlaunchdeck_wordmark.svg)
+<h1 align="center">OpenLaunchDeck</h1>
 
-OpenLaunchDeck turns a Novation Launchpad Mini MK3 into a Windows desktop macro deck with profiles, pages, actions, soundboard buttons, MIDI debug tools, update checks, and installer support.
+<p align="center">
+  <strong>Turn a Novation Launchpad Mini MK3 into a 64-pad Windows macro deck for OBS, soundboard clips, voice chat, hotkeys, games, and everyday automation.</strong>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Riqqqque/OpenLaunchDeck/releases/latest">Download latest release</a>
+  |
+  <a href="https://github.com/Riqqqque/OpenLaunchDeck/wiki">User wiki</a>
+  |
+  <a href="docs/wiki/Quick-Start.md">Quick start</a>
+  |
+  <a href="docs/wiki/Button-Recipes.md">Button recipes</a>
+</p>
+
+OpenLaunchDeck turns the 8x8 RGB pad grid on a Novation Launchpad Mini MK3 into a Stream Deck-style control surface for Windows. It is built for streamers, gamers, and desk setups that need lots of buttons without buying a separate dedicated macro deck.
 
 It is a normal desktop app: install it, launch it, assign actions, keep it running in the background, and store user data in AppData so upgrades do not overwrite profiles or settings.
+
+## Why It Exists
+
+The Launchpad Mini MK3 is compact, widely available, and already has 64 RGB pads. OpenLaunchDeck makes that hardware useful outside music software:
+
+- Trigger OBS replay buffer clips, screenshots, source visibility, scene changes, and mute controls
+- Play soundboard clips locally and route selected clips into Discord or in-game voice chat
+- Use F13-F24 and normal hotkeys for game-safe shortcuts
+- Build pages of macros with colors, labels, dangerous-action confirmation, and profile backups
+- Configure everything without hardware connected, then plug in the Launchpad when it arrives
 
 ## Supported Hardware
 
@@ -25,13 +51,14 @@ More screenshots are tracked in [docs/screenshots](docs/screenshots).
 
 ## Setup Guides
 
-Short setup guides are tracked in [docs/wiki](docs/wiki) for GitHub Wiki-style pages:
+The beginner-friendly [GitHub Wiki](https://github.com/Riqqqque/OpenLaunchDeck/wiki) is the best place to start. It covers the full setup path without assuming you already know MIDI, OBS WebSocket, or Windows audio routing.
 
-- [OBS WebSocket setup](docs/wiki/OBS-WebSocket-Setup.md)
-- [Streaming safety](docs/wiki/Streaming-Safety.md)
-- [Launchpad Mini MK3 setup](docs/wiki/Launchpad-Mini-MK3-Setup.md)
-- [Soundboard and voice chat routing](docs/wiki/Soundboard-and-Discord-Routing.md)
-- [Release and update flow](docs/wiki/Release-and-Update-Flow.md)
+- [Quick Start](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Quick-Start)
+- [Launchpad Mini MK3 Setup](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Launchpad-Mini-MK3-Setup)
+- [Button Recipes](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Button-Recipes)
+- [OBS WebSocket Setup](https://github.com/Riqqqque/OpenLaunchDeck/wiki/OBS-WebSocket-Setup)
+- [Soundboard and Voice Chat Routing](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Soundboard-and-Discord-Routing)
+- [Performance and Gaming](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Performance-And-Gaming)
 
 ## Features
 

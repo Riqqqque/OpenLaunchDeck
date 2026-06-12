@@ -1,8 +1,20 @@
 # OpenLaunchDeck Wiki
 
-OpenLaunchDeck turns a Novation Launchpad Mini MK3 into a Windows macro deck for streaming, gaming, OBS control, soundboard playback, and everyday shortcuts.
+OpenLaunchDeck turns a Novation Launchpad Mini MK3 into a 64-pad Windows macro deck for streaming, gaming, OBS control, soundboard playback, voice chat routing, and everyday shortcuts.
+
+The goal is simple: use an affordable 8x8 RGB MIDI controller as a practical Stream Deck-style control surface. You can assign macros, colors, pages, soundboard clips, OBS controls, hotkeys, and safety confirmations from a normal Windows desktop app.
 
 This wiki is written for people who want a working setup first and technical details second. Start at the top, follow the checklists, and only jump deeper when something needs tuning.
+
+## Why People Use It
+
+- 64 RGB pads on one compact device.
+- Real Windows desktop app, not a browser dashboard.
+- Simulation mode for editing profiles before the Launchpad is connected.
+- OBS controls for replay buffer clips, screenshots, scenes, source visibility, and audio toggles.
+- Soundboard buttons that can play locally and route into Discord or games when voice chat is configured for it.
+- Profile/page support so one device can handle streaming, gaming, server admin, and everyday shortcuts.
+- MIDI Debug and calibration tools so mappings can be verified instead of guessed.
 
 ## Fast Path
 
