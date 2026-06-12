@@ -123,7 +123,7 @@ If Windows itself shows many duplicate outputs:
 4. Keep browser, game, and Discord playback on your real hardware output for the simple route.
 5. Use one voice route for soundboard voice routing.
 
-## Friends Cannot Hear Soundboard Clips
+## Friends Or Teammates Cannot Hear Soundboard Clips
 
 Use this exact checklist:
 
@@ -134,15 +134,15 @@ Use this exact checklist:
 5. Confirm Voice Route Output is the route playback side.
 6. Confirm Route Microphone is on.
 7. Confirm Microphone Input is your real mic.
-8. In Discord `Voice & Video`, set Input Device to the route recording side, such as `CABLE Output (VB-Audio Virtual Cable)`.
-9. Keep Discord Output Device on your real headphones, speakers, or audio interface.
+8. In Discord, game chat, or another voice app, set Input Device or Microphone to the route recording side, such as `CABLE Output (VB-Audio Virtual Cable)`.
+9. Keep app/game output on your real headphones, speakers, or audio interface.
 10. Set Discord Noise Suppression to `None`.
 11. Turn Echo Cancellation off.
-12. Use Discord Mic Test while playing a routed clip.
+12. Use Discord Mic Test, or hold game push-to-talk, while playing a routed clip.
 
-If Discord's input meter moves during the clip, Discord is receiving the soundboard route.
+If the input meter moves during the clip, the app is receiving the soundboard route.
 
-If the meter does not move, Discord is listening to the wrong input or the route is not receiving audio.
+If the meter does not move, the app/game is listening to the wrong input or the route is not receiving audio.
 
 ## Soundboard Audio Sounds Bad
 
@@ -152,15 +152,16 @@ Try this:
 - Set Discord noise suppression to `None`.
 - Disable Discord echo cancellation.
 - Disable Discord automatic gain control if the clip volume pumps up and down.
+- For games, hold push-to-talk while the clip plays if push-to-talk is enabled.
 - Use clean `.wav` or high-quality `.mp3` clips.
 - Avoid stacking multiple loud clips with `overlap`.
 
-## You Cannot Hear Friends In Discord
+## You Cannot Hear Friends Or Teammates
 
-1. Set Discord output to `Default` or your real headphones, speakers, or audio interface.
+1. Set app/game output to `Default` or your real headphones, speakers, or audio interface.
 2. Make sure Windows output is still your real hardware output.
-3. Do not route Discord output back into the Discord input route.
-4. Restart Discord after changing Windows audio defaults.
+3. Do not route app/game output back into the voice input route.
+4. Restart the app/game after changing Windows audio defaults.
 
 ## Browser Shows Audio Renderer Error
 
@@ -202,4 +203,4 @@ Include:
 - The exact button ID, such as `A8`.
 - The last few lines from the OpenLaunchDeck log.
 - For OBS issues, the OBS WebSocket operation and OBS log.
-- For soundboard issues, the selected output/input devices and whether Discord Mic Test moves.
+- For soundboard issues, the selected output/input devices and whether Discord Mic Test or game push-to-talk receives the routed clip.

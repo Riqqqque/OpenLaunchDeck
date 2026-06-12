@@ -1,17 +1,17 @@
 # OpenLaunchDeck Audio Bridge
 
-OpenLaunchDeck Audio Bridge is the driver-level piece needed for a clean built-in Discord route.
+OpenLaunchDeck Audio Bridge is the driver-level piece needed for a clean built-in voice chat route.
 
 The bridge provides two Windows endpoints:
 
 - `OpenLaunchDeck Voice Output`
 - `OpenLaunchDeck Voice Input`
 
-OpenLaunchDeck plays routed soundboard clips and the selected microphone to `OpenLaunchDeck Voice Output`. Discord or a game voice chat app uses `OpenLaunchDeck Voice Input` as the microphone input.
+OpenLaunchDeck plays routed soundboard clips and the selected microphone to `OpenLaunchDeck Voice Output`. Discord, a game voice chat app, or another voice app uses `OpenLaunchDeck Voice Input` as the microphone input.
 
 ## Why This Is Separate
 
-Windows recording devices are created by audio drivers. A desktop app can play audio, record from a mic, and mix streams, but it cannot register a real system-wide microphone endpoint that Discord can select.
+Windows recording devices are created by audio drivers. A desktop app can play audio, record from a mic, and mix streams, but it cannot register a real system-wide microphone endpoint that Discord or games can select.
 
 For public installs, the bridge driver must be signed through a valid Windows driver signing path before Windows will load it.
 
@@ -61,7 +61,7 @@ Run PowerShell as Administrator:
 powershell -ExecutionPolicy Bypass -File audio_bridge\uninstall_audio_bridge.ps1
 ```
 
-## Discord Setup
+## Voice Chat Setup
 
 After installation:
 
@@ -69,7 +69,9 @@ After installation:
 2. Click **Auto Find Route**.
 3. Confirm the bridge says it is ready.
 4. Enable **Route Microphone**.
-5. In Discord, set **Input Device** to `OpenLaunchDeck Voice Input`.
-6. Keep Discord **Output Device** on your real headphones, speakers, or audio interface.
+5. In Discord, game chat, or another voice app, set **Input Device** or **Microphone** to `OpenLaunchDeck Voice Input`.
+6. Keep app/game **Output Device** on your real headphones, speakers, or audio interface.
 
-Do not uninstall any old working audio route until this bridge pair appears in Windows and Discord can hear both your microphone and routed soundboard clips.
+For games with push-to-talk, hold push-to-talk while playing a routed soundboard clip.
+
+Do not uninstall any old working audio route until this bridge pair appears in Windows and your voice app/game can hear both your microphone and routed soundboard clips.

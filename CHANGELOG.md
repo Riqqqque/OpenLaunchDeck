@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.44
+
+- Renamed soundboard route UI from Discord-specific wording to voice chat wording.
+- Documented routed soundboard support for game voice chat and push-to-talk workflows.
+- Kept Discord setup guidance as a common example instead of the only supported route.
+
 ## 0.1.43
 
 - Added mandatory confirmation for OBS start-stream actions.

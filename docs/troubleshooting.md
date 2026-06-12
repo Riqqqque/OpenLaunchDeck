@@ -44,19 +44,21 @@ For camera visibility and microphone mute buttons, use OBS WebSocket operations 
 
 Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and the logs folder.
 
-## Soundboard Not Heard In Discord
+## Soundboard Not Heard In Voice Chat
 
-Open `Soundboard > Open Soundboard Panel` and click `Auto Find Route`. If OpenLaunchDeck shows `Discord input: ...`, set Discord input to that device and make sure each sound button has `Route To Voice Chat` enabled.
+Open `Soundboard > Open Soundboard Panel` and click `Auto Find Route`. If OpenLaunchDeck shows `Voice chat input: ...`, set Discord, game chat, or another voice app to that input and make sure each sound button has `Route To Voice Chat` enabled.
 
-If Auto Find Route cannot find a route, Windows does not currently expose a playback-to-recording bridge for Discord. Add a simple audio bridge endpoint or use hardware loopback from an audio interface, then run Auto Find Route again. OpenLaunchDeck does not install audio drivers.
+If Auto Find Route cannot find a route, Windows does not currently expose a playback-to-recording bridge for voice chat. Add a simple audio bridge endpoint or use hardware loopback from an audio interface, then run Auto Find Route again. OpenLaunchDeck does not install audio drivers.
 
-See [Discord Voice Chat Routing](discord_voice_routing.md) for the full step-by-step setup.
+For games with push-to-talk, hold push-to-talk while playing the routed soundboard clip. The game transmits the route only while push-to-talk is active.
 
-## Soundboard Sounds Bad In Discord
+See [Voice Chat Routing](discord_voice_routing.md) for the full step-by-step setup.
 
-If friends say routed soundboard clips are muffled, crunchy, or underwater, Discord is usually processing the clip like microphone noise. In `User Settings > Voice & Video`, try turning off noise suppression, echo cancellation, noise reduction, and automatic gain control. Use `.wav` or high-quality `.mp3` files where possible.
+## Soundboard Sounds Bad In Voice Chat
 
-If friends can barely hear clips, raise the per-button volume in OpenLaunchDeck first. Start around `60` to `80`. Also check Discord input sensitivity and the Windows volume mixer for the route.
+If friends or teammates say routed soundboard clips are muffled, crunchy, or underwater, the voice app/game may be processing the clip like microphone noise. In Discord, try turning off noise suppression, echo cancellation, noise reduction, and automatic gain control. Use `.wav` or high-quality `.mp3` files where possible.
+
+If friends can barely hear clips, raise the per-button volume in OpenLaunchDeck first. Start around `60` to `80`. Also check voice app/game input volume, Discord input sensitivity, and the Windows volume mixer for the route.
 
 ## Browser Shows Audio Renderer Error
 

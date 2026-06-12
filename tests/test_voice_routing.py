@@ -31,7 +31,8 @@ def test_voice_route_matches_simple_cable_pair():
     assert status.ready is True
     assert status.uses_legacy_mixer is False
     assert status.can_remove_legacy_mixer is True
-    assert status.discord_input_name == "CABLE Output (Virtual Cable)"
+    assert status.voice_chat_input_name == "CABLE Output (Virtual Cable)"
+    assert "voice chat input" in status.message
 
 
 def test_voice_route_matches_vb_audio_cable_windows_names():
@@ -43,7 +44,7 @@ def test_voice_route_matches_vb_audio_cable_windows_names():
     assert status.ready is True
     assert status.route_kind == "paired_bridge"
     assert status.uses_legacy_mixer is False
-    assert status.discord_input_name == "CABLE Output (VB-Audio Virtual Cable)"
+    assert status.voice_chat_input_name == "CABLE Output (VB-Audio Virtual Cable)"
 
 
 def test_voice_route_matches_virtual_audio_cable_line():
@@ -54,7 +55,7 @@ def test_voice_route_matches_virtual_audio_cable_line():
 
     assert status.ready is True
     assert status.route_kind == "paired_bridge"
-    assert status.discord_input_name == "Line 1 (Virtual Audio Cable)"
+    assert status.voice_chat_input_name == "Line 1 (Virtual Audio Cable)"
 
 
 def test_voice_route_detects_legacy_mixer_pair():
@@ -91,6 +92,7 @@ def test_voice_route_requires_matching_input():
     assert status.ready is False
     assert status.route_kind == "missing_input"
     assert "matching recording device" in status.message
+    assert "voice chat" in status.message
 
 
 def test_find_best_voice_route_prefers_non_legacy_route():

@@ -24,10 +24,10 @@ Clicking a pad in the app only selects it for editing. It does not run the actio
 - [Quick Start](Quick-Start.md) - install, launch, pick a profile, and make the first useful buttons.
 - [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md) - USB MIDI, Programmer Mode, mapping checks, lighting, and calibration.
 - [Profiles, Pages, And Macros](Profiles-Pages-And-Macros.md) - profiles, pages, buttons, colors, dangerous buttons, and page switching.
-- [Button Recipes](Button-Recipes.md) - exact settings for common OBS, Discord, soundboard, and utility buttons.
+- [Button Recipes](Button-Recipes.md) - exact settings for common OBS, voice chat, soundboard, and utility buttons.
 - [OBS WebSocket Setup](OBS-WebSocket-Setup.md) - replay buffer clips, screenshots, scene switching, source visibility, and mute controls.
 - [Streaming Safety](Streaming-Safety.md) - prevent accidental stream starts and audit OBS stream controls.
-- [Soundboard And Discord Routing](Soundboard-and-Discord-Routing.md) - local playback, Discord routing, mic mix, sound quality, and common fixes.
+- [Soundboard And Voice Chat Routing](Soundboard-and-Discord-Routing.md) - local playback, Discord/game chat routing, mic mix, sound quality, and common fixes.
 - [Performance And Gaming](Performance-And-Gaming.md) - keep the app light while gaming, streaming, and recording.
 - [Troubleshooting](Troubleshooting.md) - quick fixes for Launchpad, OBS, soundboard, Discord, hotkeys, startup, and updates.
 - [Release And Update Flow](Release-and-Update-Flow.md) - installs, updates, checksums, and preserved user data.
@@ -43,14 +43,14 @@ Clicking a pad in the app only selects it for editing. It does not run the actio
 - Use OBS WebSocket for clips, screenshots, scenes, source visibility, and mute controls.
 - Require confirmation before OBS start-stream actions run.
 - Play local `.wav` and `.mp3` soundboard clips.
-- Route selected soundboard clips toward Discord through a Windows recording route.
+- Route selected soundboard clips toward Discord or in-game voice chat through a Windows recording route.
 - Use hotkeys, including `F13` through `F24`.
 - Check for updates with checksum verification.
 
 ## What OpenLaunchDeck Does Not Do By Itself
 
 - It does not install audio drivers for you.
-- It does not make Discord hear soundboard audio unless Discord is set to the correct input.
+- It does not make voice chat hear soundboard audio unless that app or game is set to the correct input.
 - It does not bind Launchpad side buttons to page navigation by default.
 - It does not silently update itself.
 - It does not store your user data in the install folder.

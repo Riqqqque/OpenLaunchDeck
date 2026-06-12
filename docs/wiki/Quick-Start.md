@@ -10,6 +10,7 @@ You need:
 - OpenLaunchDeck installed from GitHub Releases.
 - A Novation Launchpad Mini MK3 if you want physical pad control.
 - OBS only if you want streaming, clipping, screenshots, or scene controls.
+- A voice chat route only if you want Discord or game chat to hear soundboard clips.
 - Local `.wav` or `.mp3` files if you want soundboard buttons.
 
 You can still use the app before the Launchpad arrives. That is what Simulation mode is for.
@@ -62,7 +63,7 @@ Important: clicking a pad in the app selects it for editing. It does not run the
 
 ## 5. Make A Harmless First Button
 
-Use a safe test before adding OBS, Discord, or command actions.
+Use a safe test before adding OBS, voice chat, or command actions.
 
 1. Click `A1`.
 2. Set label to `Google`.
@@ -124,7 +125,7 @@ OpenLaunchDeck reports failure if OBS does not create the image file.
 
 If you hear it locally, the file and playback path work.
 
-To make Discord hear it too, see [Soundboard And Discord Routing](Soundboard-and-Discord-Routing.md).
+To make Discord or in-game voice chat hear it too, see [Soundboard And Voice Chat Routing](Soundboard-and-Discord-Routing.md).
 
 For more common button setups, see [Button Recipes](Button-Recipes.md).
 
