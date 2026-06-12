@@ -26,6 +26,7 @@ Clicking a pad in the app only selects it for editing. It does not run the actio
 - [Profiles, Pages, And Macros](Profiles-Pages-And-Macros.md) - profiles, pages, buttons, colors, dangerous buttons, and page switching.
 - [Button Recipes](Button-Recipes.md) - exact settings for common OBS, Discord, soundboard, and utility buttons.
 - [OBS WebSocket Setup](OBS-WebSocket-Setup.md) - replay buffer clips, screenshots, scene switching, source visibility, and mute controls.
+- [Streaming Safety](Streaming-Safety.md) - prevent accidental stream starts and audit OBS stream controls.
 - [Soundboard And Discord Routing](Soundboard-and-Discord-Routing.md) - local playback, Discord routing, mic mix, sound quality, and common fixes.
 - [Performance And Gaming](Performance-And-Gaming.md) - keep the app light while gaming, streaming, and recording.
 - [Troubleshooting](Troubleshooting.md) - quick fixes for Launchpad, OBS, soundboard, Discord, hotkeys, startup, and updates.
@@ -40,6 +41,7 @@ Clicking a pad in the app only selects it for editing. It does not run the actio
 - Light pads with configured colors and feedback states.
 - Create profiles and pages.
 - Use OBS WebSocket for clips, screenshots, scenes, source visibility, and mute controls.
+- Require confirmation before OBS start-stream actions run.
 - Play local `.wav` and `.mp3` soundboard clips.
 - Route selected soundboard clips toward Discord through a Windows recording route.
 - Use hotkeys, including `F13` through `F24`.

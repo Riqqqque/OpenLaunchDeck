@@ -83,6 +83,21 @@ If OpenLaunchDeck reports success, an MP4 should exist in the OBS replay folder.
 
 OpenLaunchDeck verifies the image exists before reporting success.
 
+## Stream Started Unexpectedly
+
+Use the safety checklist in [Streaming Safety](Streaming-Safety.md).
+
+Immediate checks:
+
+1. Open the active profile.
+2. Look for any `OBS WebSocket` button with operation `start_streaming`.
+3. Confirm it is marked Dangerous or relies on the built-in start-stream confirmation guard.
+4. Move the button away from common clip, screenshot, camera, and mute buttons.
+5. Check `%APPDATA%\OpenLaunchDeck\logs` for recent button results.
+6. Check OBS logs from `Help > Log Files > View Current Log`.
+
+OpenLaunchDeck requires confirmation for `start_streaming`, but profile layout still matters. Keep go-live controls separated from routine stream controls.
+
 ## Hotkey Works On Desktop But Not In Game
 
 Try this:
