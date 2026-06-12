@@ -85,19 +85,19 @@ class SoundboardPanel(QDialog):
         self.bridge_status.setWordWrap(True)
         self.bridge_status.setObjectName("MutedText")
         layout.addWidget(self.bridge_status)
-        discord_row = QHBoxLayout()
-        discord_row.setSpacing(8)
-        self.discord_input = QLabel("Discord input: not configured")
-        self.discord_input.setWordWrap(True)
-        self.discord_input.setObjectName("MutedText")
+        voice_route_row = QHBoxLayout()
+        voice_route_row.setSpacing(8)
+        self.voice_chat_input = QLabel("Voice chat input: not configured")
+        self.voice_chat_input.setWordWrap(True)
+        self.voice_chat_input.setObjectName("MutedText")
         self.auto_route_button = QPushButton("Auto Find Route")
         self.auto_route_button.setObjectName("SecondaryButton")
-        self.copy_discord_input_button = QPushButton("Copy Discord Input")
-        self.copy_discord_input_button.setObjectName("SecondaryButton")
-        discord_row.addWidget(self.discord_input, 1)
-        discord_row.addWidget(self.auto_route_button)
-        discord_row.addWidget(self.copy_discord_input_button)
-        layout.addLayout(discord_row)
+        self.copy_voice_chat_input_button = QPushButton("Copy Voice Chat Input")
+        self.copy_voice_chat_input_button.setObjectName("SecondaryButton")
+        voice_route_row.addWidget(self.voice_chat_input, 1)
+        voice_route_row.addWidget(self.auto_route_button)
+        voice_route_row.addWidget(self.copy_voice_chat_input_button)
+        layout.addLayout(voice_route_row)
         hidden_duplicates = hidden_duplicate_count(devices)
         hidden_advanced = hidden_advanced_output_count()
         self.device_note = QLabel()
@@ -133,7 +133,7 @@ class SoundboardPanel(QDialog):
         self.refresh_button.clicked.connect(self.refresh)
         self.docs_button.clicked.connect(self.open_docs)
         self.auto_route_button.clicked.connect(self.auto_find_route)
-        self.copy_discord_input_button.clicked.connect(self.copy_discord_input)
+        self.copy_voice_chat_input_button.clicked.connect(self.copy_voice_chat_input)
         self.output_combo.currentIndexChanged.connect(lambda _index: self._set_output_device())
         self.voice_output_combo.currentIndexChanged.connect(lambda _index: self._set_voice_output_device())
         self.mic_input_combo.currentIndexChanged.connect(lambda _index: self._set_mic_input_device())
@@ -223,21 +223,21 @@ class SoundboardPanel(QDialog):
         bridge = detect_openlaunchdeck_bridge()
         self.bridge_status.setText(f"Audio Bridge: {bridge.message}")
         if status.ready:
-            self.discord_input.setText(f"Discord input: {status.discord_input_name}")
-            self.copy_discord_input_button.setEnabled(True)
+            self.voice_chat_input.setText(f"Voice chat input: {status.voice_chat_input_name}")
+            self.copy_voice_chat_input_button.setEnabled(True)
         else:
-            self.discord_input.setText("Discord input: not ready")
-            self.copy_discord_input_button.setEnabled(False)
+            self.voice_chat_input.setText("Voice chat input: not ready")
+            self.copy_voice_chat_input_button.setEnabled(False)
 
-    def copy_discord_input(self) -> None:
+    def copy_voice_chat_input(self) -> None:
         status = self.audio_engine.voice_route_status()
-        if status.discord_input_name:
-            QApplication.clipboard().setText(status.discord_input_name)
+        if status.voice_chat_input_name:
+            QApplication.clipboard().setText(status.voice_chat_input_name)
 
     def auto_find_route(self) -> None:
         route = find_best_voice_route()
         if route is None:
-            self.route_status.setText("No voice route is ready. Windows needs a playback output with a matching recording input for Discord.")
+            self.route_status.setText("No voice route is ready. Windows needs a playback output with a matching recording input for voice chat.")
             return
         index = self.voice_output_combo.findData(route.output_id)
         if index < 0:

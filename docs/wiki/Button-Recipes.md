@@ -149,9 +149,9 @@ Use a different extended function key than the mute button.
 - Already Playing: `restart`
 - Route To Voice Chat: off
 
-If you do not hear it locally, fix local playback before changing Discord settings.
+If you do not hear it locally, fix local playback before changing voice chat settings.
 
-## Play A Soundboard Clip In Discord
+## Play A Soundboard Clip In Voice Chat
 
 First make local playback work. Then use:
 
@@ -160,7 +160,7 @@ First make local playback work. Then use:
 - Volume: start at `50` to `70`
 - Already Playing: `restart`
 
-Then set Discord input to the route recording device. See [Soundboard And Discord Routing](Soundboard-and-Discord-Routing.md) for the full checklist.
+Then set Discord, your game, or another voice app input to the route recording device. For games with push-to-talk, hold push-to-talk while playing the soundboard clip. See [Soundboard And Voice Chat Routing](Soundboard-and-Discord-Routing.md) for the full checklist.
 
 ## Stop All Sounds
 

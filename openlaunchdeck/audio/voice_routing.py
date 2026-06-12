@@ -23,8 +23,12 @@ class VoiceRouteStatus:
     uses_legacy_mixer: bool = False
 
     @property
-    def discord_input_name(self) -> str:
+    def voice_chat_input_name(self) -> str:
         return self.input_name
+
+    @property
+    def discord_input_name(self) -> str:
+        return self.voice_chat_input_name
 
     @property
     def can_remove_legacy_mixer(self) -> bool:
@@ -120,12 +124,12 @@ def analyze_voice_route(
             input_id="",
             input_name="",
             route_kind="missing_input",
-            message="Windows does not expose a matching recording device for Discord to use.",
+            message="Windows does not expose a matching recording device for voice chat to use.",
             uses_legacy_mixer=uses_legacy,
         )
 
     input_name = _device_name(input_device)
-    message = f"Route ready. Set Discord input to {input_name}."
+    message = f"Route ready. Set your voice chat input to {input_name}."
     if uses_legacy:
         message = "Route works, but it still uses the old mixer driver. Replace it before uninstalling that driver."
     return VoiceRouteStatus(

@@ -20,6 +20,7 @@ def test_detect_openlaunchdeck_bridge_ready_when_both_endpoints_exist():
     assert status.ready is True
     assert status.output_id == "out"
     assert status.input_id == "in"
+    assert "voice chat input" in status.message
 
 
 def test_detect_openlaunchdeck_bridge_reports_missing_input():

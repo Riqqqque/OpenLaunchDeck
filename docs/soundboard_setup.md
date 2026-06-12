@@ -48,27 +48,29 @@ OpenLaunchDeck has its own lightweight voice-route behavior:
 1. A routed sound plays to the selected **Voice Route Output**.
 2. If **Monitor Voice Routes** is enabled, the same sound also plays to your normal output so you hear it.
 3. The routed and monitored copies use the same effective volume.
-4. The Soundboard panel checks whether Windows exposes a matching recording input for Discord.
+4. The Soundboard panel checks whether Windows exposes a matching recording input for voice chat.
 
-Discord and most games can only receive microphone audio from a Windows recording device. OpenLaunchDeck can mix and play the soundboard route itself, but Windows still needs a playback-to-recording bridge endpoint for Discord to select. The app does not install audio drivers.
+Discord and most games can only receive microphone audio from a Windows recording device. OpenLaunchDeck can mix and play the soundboard route itself, but Windows still needs a playback-to-recording bridge endpoint for the voice app or game to select. The app does not install audio drivers.
 
 Open `Soundboard > Open Soundboard Panel`:
 
 1. Leave **Default Output** on `System default`.
 2. Click **Auto Find Route**.
-3. If a route is ready, OpenLaunchDeck shows `Discord input: ...`.
-4. Click **Copy Discord Input**.
+3. If a route is ready, OpenLaunchDeck shows `Voice chat input: ...`.
+4. Click **Copy Voice Chat Input**.
 5. Set **Microphone Input** to your mic, or leave it on `System default microphone`.
 6. Enable **Route Microphone**.
 7. Set **Microphone Volume** so your voice is clear without clipping.
-8. In Discord, open `User Settings > Voice & Video`.
-9. Set **Input Device** to the copied device name.
-10. Keep **Output Device** on your real headphones, speakers, or audio interface.
-11. On each sound button Discord should hear, enable `Route To Voice Chat`.
+8. In Discord, open `User Settings > Voice & Video`, or open the voice settings for your game.
+9. Set **Input Device** or **Microphone** to the copied device name.
+10. Keep app/game output on your real headphones, speakers, or audio interface.
+11. On each sound button voice chat should hear, enable `Route To Voice Chat`.
+
+For games with push-to-talk, hold push-to-talk while playing a routed soundboard clip. The game transmits the route while push-to-talk is active, which includes both your selected mic and the routed clip.
 
 If Auto Find Route says no route is ready, Windows does not currently expose a recording input that can receive OpenLaunchDeck's routed playback. Use one signed playback-to-recording cable endpoint pair, a hardware loopback input from an audio interface, or a signed OpenLaunchDeck Audio Bridge package when that package is available. After Windows shows the endpoint pair, reopen the Soundboard panel and run Auto Find Route again.
 
-For a simple cable endpoint pair, the playback side may appear in Windows as `Speakers (VB-Audio Virtual Cable)` and the recording side as `CABLE Output (VB-Audio Virtual Cable)`. In that setup, OpenLaunchDeck plays routed clips and the selected microphone to the playback side, and Discord uses `CABLE Output (VB-Audio Virtual Cable)` as its input.
+For a simple cable endpoint pair, the playback side may appear in Windows as `Speakers (VB-Audio Virtual Cable)` and the recording side as `CABLE Output (VB-Audio Virtual Cable)`. In that setup, OpenLaunchDeck plays routed clips and the selected microphone to the playback side, and Discord or a game uses `CABLE Output (VB-Audio Virtual Cable)` as its input.
 
 ## Microphone Route
 
@@ -76,10 +78,10 @@ The microphone route sends your selected mic into the same voice route output us
 
 - Your mic goes to the voice route.
 - Routed clips go to the same voice route.
-- Discord listens to the matching recording input.
-- Discord output stays on your real headphones or speakers.
+- The voice app or game listens to the matching recording input.
+- Voice app/game output stays on your real headphones or speakers.
 
-Only enable the microphone route when Discord is using the matching input shown by the Soundboard panel. If you leave Discord on your real microphone while also routing the mic through OpenLaunchDeck, Discord can receive the wrong source or duplicate audio.
+Only enable the microphone route when the voice app or game is using the matching input shown by the Soundboard panel. If you leave the app/game on your real microphone while also routing the mic through OpenLaunchDeck, it can receive the wrong source or duplicate audio.
 
 ## OpenLaunchDeck Audio Bridge
 
@@ -87,9 +89,9 @@ The Soundboard panel checks for `OpenLaunchDeck Voice Output` and `OpenLaunchDec
 
 The bridge is a driver-level component, so it is not installed by the normal app installer until a signed driver package is available. See [audio_bridge.md](audio_bridge.md).
 
-## Discord Quality
+## Voice Chat Quality
 
-For better soundboard quality in Discord, try turning off:
+For better soundboard quality in Discord or games, try turning off:
 
 - Noise suppression
 - Echo cancellation

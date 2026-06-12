@@ -93,7 +93,7 @@
 - Verify Stop Sound for one button, current page, and all sounds.
 - Verify global soundboard volume.
 - If testing OpenLaunchDeck Audio Bridge, verify `OpenLaunchDeck Voice Output` and `OpenLaunchDeck Voice Input` both appear in Windows.
-- Verify Discord can hear both the microphone route and routed clips through `OpenLaunchDeck Voice Input`.
+- Verify Discord and at least one game voice chat path can hear both the microphone route and routed clips through the selected voice input.
 
 ## Documentation And Source Cleanliness
 

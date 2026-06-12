@@ -30,7 +30,7 @@ Short setup guides are tracked in [docs/wiki](docs/wiki) for GitHub Wiki-style p
 - [OBS WebSocket setup](docs/wiki/OBS-WebSocket-Setup.md)
 - [Streaming safety](docs/wiki/Streaming-Safety.md)
 - [Launchpad Mini MK3 setup](docs/wiki/Launchpad-Mini-MK3-Setup.md)
-- [Soundboard and Discord routing](docs/wiki/Soundboard-and-Discord-Routing.md)
+- [Soundboard and voice chat routing](docs/wiki/Soundboard-and-Discord-Routing.md)
 - [Release and update flow](docs/wiki/Release-and-Update-Flow.md)
 
 ## Features
@@ -178,7 +178,7 @@ See [docs/hardware_notes.md](docs/hardware_notes.md) and [docs/midi_mapping.md](
 
 Soundboard buttons can play local `.wav`, `.mp3`, and platform-supported `.ogg` files through QtMultimedia. Each button supports volume, looping, voice-chat routing, already-playing behavior, active color, and stop behavior. Per-button and global soundboard volume use the same effective gain for local monitoring and routed voice-chat playback.
 
-OpenLaunchDeck handles routed sound playback and microphone routing itself: a routed clip can play to the voice route and to your normal output at the same time, and the selected microphone can be mixed into that route. The Soundboard panel can auto-detect a ready route and show the exact Discord input device to select.
+OpenLaunchDeck handles routed sound playback and microphone routing itself: a routed clip can play to the voice route and to your normal output at the same time, and the selected microphone can be mixed into that route. The Soundboard panel can auto-detect a ready route and show the exact voice chat input device to select. Discord, in-game voice chat, and other apps can use that input when they are configured to listen to the route.
 
 The planned OpenLaunchDeck Audio Bridge provides a dedicated Windows endpoint pair named `OpenLaunchDeck Voice Output` and `OpenLaunchDeck Voice Input`. The app already detects and prefers that pair when it exists. The bridge driver must be built and signed separately before Windows will load it.
 

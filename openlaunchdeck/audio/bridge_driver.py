@@ -55,7 +55,7 @@ def detect_openlaunchdeck_bridge(
         output_name=_device_name(output),
         input_id=str(input_device.get("id") or ""),
         input_name=_device_name(input_device),
-        message=f"OpenLaunchDeck Audio Bridge is ready. Set Discord input to {BRIDGE_INPUT_NAME}.",
+        message=f"OpenLaunchDeck Audio Bridge is ready. Set your voice chat input to {BRIDGE_INPUT_NAME}.",
     )
 
 
