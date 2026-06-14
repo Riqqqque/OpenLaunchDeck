@@ -63,6 +63,8 @@ Keep Discord output on your real listening device. Do not route Discord output b
 
 If **Route Microphone** is enabled in OpenLaunchDeck, do not set Discord input to your real microphone. Discord should listen to the route input shown by OpenLaunchDeck, because that input contains both your mic and routed clips.
 
+Keep OpenLaunchDeck running while Discord or a game is using that route. When Route Microphone is enabled, closing the main window keeps OpenLaunchDeck alive in the tray and the app periodically restarts the microphone route if it is not running. Use `File > Quit` or the tray `Quit` action only when you intentionally want to stop the route.
+
 For better soundboard quality, turn off:
 
 - Noise Suppression / Krisp

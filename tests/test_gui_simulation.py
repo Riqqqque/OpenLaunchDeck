@@ -6,11 +6,39 @@ from PySide6.QtCore import QPoint, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
+from openlaunchdeck.actions.base import ActionResult
 from openlaunchdeck.app import build_services
+from openlaunchdeck.audio.mic_bridge import MicBridgeState
 from openlaunchdeck.models.action_config import ActionConfig
 from openlaunchdeck.models.button import ButtonConfig
 from openlaunchdeck.models.page import Page
 from openlaunchdeck.ui.main_window import MainWindow
+
+
+class RouteGuardBridge:
+    def __init__(self) -> None:
+        self.state = MicBridgeState()
+        self.started_with = []
+        self.stopped = False
+
+    def start(self, input_device_id: str, output_device_id: str, volume: int = 100):
+        self.started_with.append((input_device_id, output_device_id, volume))
+        self.state = MicBridgeState(
+            running=True,
+            input_id=input_device_id,
+            input_name="Mic",
+            output_id=output_device_id,
+            output_name="Voice route",
+            message="Microphone route is on.",
+        )
+        return ActionResult.ok("Microphone route is on.")
+
+    def stop(self) -> None:
+        self.stopped = True
+        self.state = MicBridgeState()
+
+    def set_volume(self, volume: int) -> None:
+        pass
 
 
 def test_grid_click_selects_without_running_action():
@@ -236,6 +264,59 @@ def test_restore_from_tray_shows_hidden_window():
 
     assert window.isVisible()
     assert not window.isMinimized()
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_voice_route_close_hides_instead_of_quitting(monkeypatch):
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    services.settings_service.settings.minimize_to_tray = False
+    services.audio_engine.voice_route_microphone_enabled = True
+    window = MainWindow(services)
+    window.show()
+    app.processEvents()
+    monkeypatch.setattr(window, "should_keep_running_in_background", lambda: True)
+    stop_calls = []
+    monkeypatch.setattr(services.audio_engine, "stop_all", lambda: stop_calls.append("stop"))
+
+    closed = window.close()
+    app.processEvents()
+
+    assert closed is False
+    assert not window.isVisible()
+    assert stop_calls == []
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_voice_route_guard_restarts_stopped_route():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    services.audio_engine.voice_chat_output_device_id = "voice-route"
+    services.audio_engine.voice_route_microphone_device_id = "mic-1"
+    services.audio_engine.voice_route_microphone_volume = 70
+    services.audio_engine.voice_route_microphone_enabled = True
+    bridge = RouteGuardBridge()
+    services.audio_engine.mic_bridge = bridge
+    window = MainWindow(services)
+
+    window.update_voice_route_guard()
+    window.ensure_voice_route_running()
+
+    assert window.voice_route_guard_timer.isActive()
+    assert bridge.started_with == [("mic-1", "voice-route", 70)]
+    assert services.audio_engine.voice_route_microphone_state().running is True
 
     window._force_quit = True
     window.close()

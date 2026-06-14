@@ -5,6 +5,7 @@ import os
 import platform
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSplitter,
+    QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
 )
@@ -87,6 +89,8 @@ class MainWindow(QMainWindow):
         self._startup_update_worker: UpdateCheckWorker | None = None
         self._grid_focus_mode = False
         self._midi_debug_callbacks_active = False
+        self._last_voice_route_guard_message = ""
+        self._last_voice_route_guard_log_time = 0.0
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
         self.resize(1480, 920)
@@ -104,6 +108,7 @@ class MainWindow(QMainWindow):
         self._build_main_layout()
         self._build_status_bar()
         self._connect_signals()
+        self._build_voice_route_guard()
         self.refresh_all()
         self.tray = TrayController(self, services)
         self.tray.show()
@@ -633,6 +638,7 @@ class MainWindow(QMainWindow):
             self.services.audio_engine.set_voice_route_microphone_enabled(
                 self.services.settings_service.settings.soundboard_voice_route_microphone_enabled
             )
+            self.update_voice_route_guard()
             self.services.audio_engine.set_monitor_voice_chat_routes(self.services.settings_service.settings.soundboard_monitor_voice_chat)
             self.services.audio_engine.performance_logging_enabled = self.services.settings_service.settings.enable_performance_logging
             self.services.performance_monitor.set_enabled(self.services.settings_service.settings.enable_performance_logging)
@@ -771,6 +777,44 @@ class MainWindow(QMainWindow):
         self._startup_update_thread = None
         self._startup_update_worker = None
 
+    def _build_voice_route_guard(self) -> None:
+        self.voice_route_guard_timer = QTimer(self)
+        self.voice_route_guard_timer.setInterval(10_000)
+        self.voice_route_guard_timer.timeout.connect(self.ensure_voice_route_running)
+        self.update_voice_route_guard()
+
+    def update_voice_route_guard(self) -> None:
+        enabled = self.services.audio_engine.voice_route_microphone_enabled
+        if enabled and not self.voice_route_guard_timer.isActive():
+            self.voice_route_guard_timer.start()
+        elif not enabled and self.voice_route_guard_timer.isActive():
+            self.voice_route_guard_timer.stop()
+            self._last_voice_route_guard_message = ""
+
+    def ensure_voice_route_running(self) -> None:
+        if not self.services.audio_engine.voice_route_microphone_enabled:
+            return
+        state = self.services.audio_engine.voice_route_microphone_state()
+        if state.running:
+            self._last_voice_route_guard_message = ""
+            return
+
+        result = self.services.audio_engine.refresh_voice_route_microphone()
+        if result.success:
+            if self.services.logger:
+                self.services.logger.info("Recovered microphone voice route.")
+            self._last_voice_route_guard_message = ""
+            return
+
+        message = result.message or "Microphone voice route is not running."
+        now = time.monotonic()
+        should_log = message != self._last_voice_route_guard_message or now - self._last_voice_route_guard_log_time > 60
+        if should_log and self.services.logger:
+            self.services.logger.warning("Microphone voice route guard could not recover route: %s", message)
+            self._last_voice_route_guard_message = message
+            self._last_voice_route_guard_log_time = now
+        self.statusBar().showMessage(message, 5000)
+
     def copy_diagnostic_info(self) -> None:
         info = [
             f"App version: {__version__}",
@@ -841,13 +885,27 @@ class MainWindow(QMainWindow):
         self.refresh_lighting()
 
     def closeEvent(self, event) -> None:
-        if not self._force_quit and self.services.settings_service.settings.minimize_to_tray and self.tray.tray.isVisible():
+        if not self._force_quit and self.should_keep_running_in_background():
             self.hide()
+            if self.services.audio_engine.voice_route_microphone_enabled and not self.services.settings_service.settings.minimize_to_tray:
+                self.tray.tray.showMessage(
+                    APP_NAME,
+                    "Still running so the voice chat microphone route stays active. Use File > Quit to exit.",
+                    QSystemTrayIcon.MessageIcon.Information,
+                    5000,
+                )
             event.ignore()
             return
         self.services.audio_engine.stop_all()
         self.services.device.close()
         super().closeEvent(event)
+
+    def should_keep_running_in_background(self) -> bool:
+        if not self.tray.tray.isVisible():
+            return False
+        if self.services.settings_service.settings.minimize_to_tray:
+            return True
+        return self.services.audio_engine.voice_route_microphone_enabled
 
     def restore_from_tray(self) -> None:
         self.showNormal()

@@ -115,6 +115,8 @@ Set:
 
 Do not set Discord output to the same route input. That can create feedback or make other app audio unstable.
 
+Keep OpenLaunchDeck running while Discord or a game is using the route. When Route Microphone is enabled, closing the main window keeps OpenLaunchDeck alive in the tray and the app periodically restarts the microphone route if it is not running. Use `File > Quit` or the tray `Quit` action only when you intentionally want to stop the route.
+
 For games with voice chat, set the game's microphone/input device to the same route recording side. If the game uses push-to-talk, hold push-to-talk while playing the routed soundboard clip. The game transmits whatever is in the route while push-to-talk is active, including your mic and routed soundboard clips.
 
 ## Step 6: Test The Route

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.45
+
+- Kept OpenLaunchDeck running in the tray when the microphone voice route is enabled, even if normal tray mode is off.
+- Added a lightweight microphone route guard that restarts the route if it is not running.
+- Documented that `File > Quit` intentionally stops the voice route.
+
 ## 0.1.44
 
 - Renamed soundboard route UI from Discord-specific wording to voice chat wording.

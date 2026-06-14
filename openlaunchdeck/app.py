@@ -122,7 +122,7 @@ def run() -> int:
         window.show()
         services.performance_monitor.record_since("app_startup_to_window_shown", start)
         if services.settings_service.settings.start_minimized:
-            if services.settings_service.settings.minimize_to_tray and window.tray.tray.isVisible():
+            if window.should_keep_running_in_background():
                 window.hide()
             else:
                 window.showMinimized()
