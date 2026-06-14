@@ -83,6 +83,14 @@ The microphone route sends your selected mic into the same voice route output us
 
 Only enable the microphone route when the voice app or game is using the matching input shown by the Soundboard panel. If you leave the app/game on your real microphone while also routing the mic through OpenLaunchDeck, it can receive the wrong source or duplicate audio.
 
+When the microphone route is enabled, OpenLaunchDeck protects that route:
+
+- Closing the main window keeps the app running in the tray even if normal tray mode is off.
+- The route is checked periodically and restarted if it is not running.
+- `File > Quit` and the tray `Quit` action still exit the app intentionally and stop the route.
+
+If Discord or a game is using the route recording input, keep OpenLaunchDeck running during the call, match, stream, or recording session.
+
 ## OpenLaunchDeck Audio Bridge
 
 The Soundboard panel checks for `OpenLaunchDeck Voice Output` and `OpenLaunchDeck Voice Input`. When both endpoints exist, Auto Find Route prefers them.

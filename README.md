@@ -115,7 +115,9 @@ See [docs/updating.md](docs/updating.md) for the manifest format and local updat
 
 ## Launch At Startup
 
-Enable `Settings > Launch at startup` to start OpenLaunchDeck when you sign in to Windows. The setting writes a current-user startup entry, so it does not require administrator rights. `Start minimized` can be used with it; when tray mode is off, the app starts minimized to the taskbar instead of hiding completely.
+Enable `Settings > Launch at startup` to start OpenLaunchDeck when you sign in to Windows. The setting writes a current-user startup entry, so it does not require administrator rights.
+
+`Start minimized` can be used with it. If the microphone voice route is enabled, OpenLaunchDeck keeps running in the tray when the window is closed so Discord or game chat does not receive silence. Use `File > Quit` or the tray `Quit` action when you intentionally want to stop the route.
 
 ## Running From Source
 
@@ -206,6 +208,8 @@ See [docs/hardware_notes.md](docs/hardware_notes.md) and [docs/midi_mapping.md](
 Soundboard buttons can play local `.wav`, `.mp3`, and platform-supported `.ogg` files through QtMultimedia. Each button supports volume, looping, voice-chat routing, already-playing behavior, active color, and stop behavior. Per-button and global soundboard volume use the same effective gain for local monitoring and routed voice-chat playback.
 
 OpenLaunchDeck handles routed sound playback and microphone routing itself: a routed clip can play to the voice route and to your normal output at the same time, and the selected microphone can be mixed into that route. The Soundboard panel can auto-detect a ready route and show the exact voice chat input device to select. Discord, in-game voice chat, and other apps can use that input when they are configured to listen to the route.
+
+When microphone routing is enabled, OpenLaunchDeck watches the route and restarts it if the bridge is not running. Closing the main window keeps the app alive in the tray so the voice route stays active.
 
 The planned OpenLaunchDeck Audio Bridge provides a dedicated Windows endpoint pair named `OpenLaunchDeck Voice Output` and `OpenLaunchDeck Voice Input`. The app already detects and prefers that pair when it exists. The bridge driver must be built and signed separately before Windows will load it.
 
