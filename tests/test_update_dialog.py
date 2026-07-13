@@ -4,6 +4,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtWidgets import QApplication
 
+from openlaunchdeck.models.update_manifest import UpdateManifest
 from openlaunchdeck.services.update_service import UpdateService
 from openlaunchdeck.app import build_services
 from openlaunchdeck.ui import main_window as main_window_module
@@ -17,6 +18,25 @@ class FailingUpdateService(UpdateService):
 
     def fetch_manifest(self, manifest_url: str):
         raise RuntimeError("manifest unavailable")
+
+
+class GitHubFallbackUpdateService(UpdateService):
+    def __init__(self):
+        super().__init__("0.1.0")
+
+    def fetch_release_manifest(self, channel: str = "stable"):
+        assert channel == "stable"
+        return UpdateManifest.from_dict(
+            {
+                "latest_version": "0.2.0",
+                "minimum_supported_version": "0.1.0",
+                "required": False,
+                "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
+                "sha256": "a" * 64,
+                "release_notes_url": "https://example.com/releases/v0.2.0",
+                "published_at": "2026-01-01T00:00:00Z",
+            }
+        )
 
 
 def test_update_worker_reports_failed_check_without_raising():
@@ -62,17 +82,32 @@ def test_header_updates_button_opens_update_dialog(monkeypatch):
     services.device.close()
 
 
-def test_update_dialog_auto_check_reports_missing_manifest_url():
+def test_update_worker_uses_github_release_when_manifest_url_is_empty():
+    QApplication.instance() or QApplication([])
+    worker = UpdateCheckWorker(GitHubFallbackUpdateService(), "", "stable")
+    results = []
+    worker.finished.connect(results.append)
+
+    worker.run()
+
+    assert len(results) == 1
+    assert results[0].available is True
+    assert results[0].latest_version == "0.2.0"
+
+
+def test_update_dialog_cannot_close_while_worker_is_active():
     app = QApplication.instance() or QApplication([])
     services = build_services()
-    services.settings_service.settings.update_manifest_url = ""
+    dialog = UpdateDialog(services.settings_service)
+    dialog._check_thread = object()
+    dialog.show()
 
-    dialog = UpdateDialog(services.settings_service, auto_check=True)
+    dialog.reject()
     app.processEvents()
 
-    assert dialog.label.text() == "No update manifest URL is configured."
-    assert "Set an update manifest URL" in dialog.output.toPlainText()
-
+    assert dialog.isVisible()
+    assert "Please wait" in dialog.label.text()
+    dialog._check_thread = None
     dialog.close()
     services.action_runner.shutdown()
     services.device.close()

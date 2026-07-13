@@ -8,6 +8,9 @@ from .version import APP_NAME
 
 
 def _base_app_data() -> Path:
+    override = os.environ.get("OPENLAUNCHDECK_DATA_DIR")
+    if override:
+        return Path(override).expanduser()
     if sys.platform == "win32":
         root = os.environ.get("APPDATA")
         if root:

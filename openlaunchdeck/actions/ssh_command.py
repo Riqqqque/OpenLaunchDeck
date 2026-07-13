@@ -28,7 +28,8 @@ class SshCommandAction(BaseAction):
         if not host or not username or not command:
             return ActionResult.fail("SSH host, username, and command are required.")
         client = paramiko.SSHClient()
-        client.set_missing_host_key_policy(paramiko.WarningPolicy())
+        client.load_system_host_keys()
+        client.set_missing_host_key_policy(paramiko.RejectPolicy())
         try:
             client.connect(
                 hostname=host,

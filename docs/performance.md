@@ -9,16 +9,22 @@ Key rules:
 - MIDI connect and reconnect work runs outside the GUI thread.
 - Blocking actions run through the action runner worker pool.
 - The action runner limits queued background work so repeated presses cannot build an unlimited backlog.
+- Windows hotkeys, text entry, and media keys use the native input path without loading a large automation package on first press.
 - GUI updates happen on the Qt thread.
 - Network calls use timeouts.
 - Update checks and verified downloads run on Qt worker threads.
 - Sound playback is started through non-blocking QtMultimedia APIs.
 - Profile JSON stays small and human-readable.
-- Page lighting refreshes are batched through the lighting service and sent through a single background output worker.
+- Page lighting refreshes are coalesced through the lighting service and sent through a single background output worker.
 - Lighting refreshes skip redundant pad updates when the page state has not changed.
+- Pad flashes and blinking states share one waiting scheduler instead of creating timer threads for each pad or cycle.
 - Grid cells skip text and stylesheet updates when their visible state has not changed.
-- Normal successful button presses do not write action logs at the default logging level.
+- File logging is queued so action dispatch and the GUI do not wait for disk writes.
+- Profile autosaves are debounced so editing several fields produces one atomic JSON write.
 - Live MIDI debug UI callbacks stay disabled until the MIDI Debug window is opened.
+- On Windows, the app normalizes itself to Normal process priority during startup and checks it occasionally afterward. RealTime, High, and AboveNormal priority are avoided because they can interfere with game, input, audio, and GPU scheduling if the app spikes.
+- Priority checks and microphone route checks use coarse, low-frequency timers so they do not create frequent GUI-thread wakeups.
+- Hidden or minimized windows skip grid/status repaints for hardware button presses and soundboard state changes.
 - Performance logging can be enabled in Settings when troubleshooting latency.
 
 ## Performance Monitor
@@ -57,6 +63,7 @@ Recommended low-impact defaults:
 - Leave startup update checks off while streaming if you want the quietest launch path.
 - Keep long command, HTTP, SSH, or script actions configured with timeouts.
 - Prefer short macros and avoid stacking many slow actions on one pad.
+- Keep OpenLaunchDeck minimized or in grid focus mode while gaming if you do not need the editor visible.
 
 OpenLaunchDeck should stay idle most of the time: no hardware means simulation mode with no MIDI polling, connected hardware uses MIDI callbacks instead of polling loops, and update checks only run when enabled or requested.
 
@@ -68,7 +75,7 @@ Manual and startup update checks use worker threads so startup and the main wind
 
 Sound playback is started through QtMultimedia and does not load entire sound files into Python memory. The audio engine performs lightweight file checks and caches metadata such as name, extension, size, and modified time when a sound is played.
 
-Sound action start latency is logged at debug level, or at info level when performance logging is enabled. The Soundboard panel refreshes the current playback list on a lightweight timer and can be refreshed manually.
+Sound action start latency is logged at debug level, or at info level when performance logging is enabled. The Soundboard panel refreshes the current playback list on a coarse timer only while the panel is visible, and audio state changes refresh it immediately.
 
 Per-sound volume and global soundboard volume are combined, clamped to 0-100, and converted to a quieter playback gain before playback starts. Existing playback instances are tracked by button and page so Stop Sound can stop one button, one page, or all sounds without scanning profile files. Voice-chat routing starts a second playback instance only for sounds that explicitly enable `Route To Voice Chat`, and both routed outputs receive the same gain.
 

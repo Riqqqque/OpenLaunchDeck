@@ -17,11 +17,16 @@ class MidiAddress:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> "MidiAddress":
-        return cls(
-            message_type=str(data.get("message_type") or "note"),
-            number=int(data.get("number", 0)),
-            channel=int(data.get("channel", 0)),
-        )
+        message_type = str(data.get("message_type") or "note")
+        number = int(data.get("number", 0))
+        channel = int(data.get("channel", 0))
+        if message_type not in {"note", "control"}:
+            raise ValueError("MIDI mapping message type must be note or control.")
+        if not 0 <= number <= 127:
+            raise ValueError("MIDI mapping number must be between 0 and 127.")
+        if not 0 <= channel <= 15:
+            raise ValueError("MIDI mapping channel must be between 0 and 15.")
+        return cls(message_type=message_type, number=number, channel=channel)
 
     def to_dict(self) -> dict[str, Any]:
         return {"message_type": self.message_type, "number": self.number, "channel": self.channel}
@@ -44,21 +49,23 @@ class ParsedPadMessage:
 class MidiMapping:
     name: str = "Launchpad Mini MK3 Programmer Mode"
     button_to_address: dict[str, MidiAddress] = field(default_factory=dict)
+    _address_to_button: dict[tuple[str, int, int], str] = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
         if not self.button_to_address:
             self.button_to_address = build_programmer_mode_mapping()
-            return
-        defaults = build_programmer_mode_mapping()
-        for button_id in BUTTON_IDS:
-            self.button_to_address.setdefault(button_id, defaults[button_id])
-
-    @property
-    def address_to_button(self) -> dict[tuple[str, int, int], str]:
-        return {
+        else:
+            defaults = build_programmer_mode_mapping()
+            for button_id in BUTTON_IDS:
+                self.button_to_address.setdefault(button_id, defaults[button_id])
+        self._address_to_button = {
             address.key(): button_id
             for button_id, address in self.button_to_address.items()
         }
+
+    @property
+    def address_to_button(self) -> dict[tuple[str, int, int], str]:
+        return self._address_to_button
 
     def parse_message(self, message: Any) -> ParsedPadMessage | None:
         message_type = getattr(message, "type", "")
@@ -104,13 +111,21 @@ class MidiMapping:
             for button_id in BUTTON_IDS:
                 if isinstance(raw_buttons.get(button_id), dict):
                     mapping[button_id] = MidiAddress.from_dict(raw_buttons[button_id])
-        return cls(name=str(data.get("name") or "Custom Mapping"), button_to_address=mapping)
+        instance = cls(name=str(data.get("name") or "Custom Mapping"), button_to_address=mapping)
+        keys = [address.key() for address in instance.button_to_address.values()]
+        if len(keys) != len(set(keys)):
+            raise ValueError("MIDI mapping assigns the same message to more than one pad.")
+        return instance
 
     @classmethod
-    def load_user_default(cls) -> "MidiMapping":
+    def load_user_default(cls, logger=None) -> "MidiMapping":
         path = user_mapping_path()
         if path.exists():
-            return cls.from_dict(read_json(path, {}))
+            try:
+                return cls.from_dict(read_json(path, {}))
+            except (OSError, UnicodeError, ValueError, TypeError):
+                if logger:
+                    logger.exception("Custom MIDI mapping could not be loaded; using Programmer Mode defaults.")
         return cls()
 
     def save_user_default(self) -> None:

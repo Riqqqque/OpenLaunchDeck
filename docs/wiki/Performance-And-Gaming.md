@@ -6,9 +6,16 @@ OpenLaunchDeck is designed to stay light while games, OBS, Discord, and audio ro
 
 - MIDI callbacks do minimal work.
 - Actions run through a worker queue when they may block.
+- Hotkeys, text entry, and media keys use the lightweight Windows input path.
 - OBS and network operations use timeouts.
 - Lighting updates skip pads that did not change.
+- Rapid lighting changes are coalesced and flashes share one scheduler.
 - Sound playback uses QtMultimedia instead of loading whole files into memory.
+- File logging runs through a background queue instead of blocking button dispatch.
+- Profile edits are saved in short batches instead of writing JSON for every keystroke.
+- The Windows process stays at Normal priority so games keep scheduler priority.
+- Hidden or minimized windows skip unnecessary grid/status repaints.
+- Background health checks use coarse, low-frequency timers.
 - Performance logs are quiet by default.
 
 ## Best Settings For Gaming
@@ -16,6 +23,7 @@ OpenLaunchDeck is designed to stay light while games, OBS, Discord, and audio ro
 Recommended starting point:
 
 - Keep performance logging off unless troubleshooting.
+- Keep the app minimized or use Focus Grid while playing if you do not need the editor visible.
 - Use OBS WebSocket for clips and screenshots instead of game hotkeys when possible.
 - Use `F13` through `F24` for hotkeys that should not conflict with normal keyboard keys.
 - Avoid huge sound files for short soundboard clips.

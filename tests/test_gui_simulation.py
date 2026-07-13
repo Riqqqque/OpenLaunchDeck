@@ -7,7 +7,7 @@ from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QSystemTrayIcon
 
 from openlaunchdeck.actions.base import ActionResult
-from openlaunchdeck.app import build_services
+from openlaunchdeck.app import build_services, show_initial_window_state
 from openlaunchdeck.audio.mic_bridge import MicBridgeState
 from openlaunchdeck.models.action_config import ActionConfig
 from openlaunchdeck.models.button import ButtonConfig
@@ -41,6 +41,48 @@ class RouteGuardBridge:
         pass
 
 
+class StartupWindowDouble:
+    def __init__(self, keep_running: bool) -> None:
+        self.keep_running = keep_running
+        self.calls: list[str] = []
+
+    def should_keep_running_in_background(self) -> bool:
+        return self.keep_running
+
+    def show(self) -> None:
+        self.calls.append("show")
+
+    def hide(self) -> None:
+        self.calls.append("hide")
+
+    def showMinimized(self) -> None:
+        self.calls.append("showMinimized")
+
+
+def test_initial_window_state_skips_full_show_when_starting_in_background():
+    window = StartupWindowDouble(keep_running=True)
+
+    show_initial_window_state(window, start_minimized=True)
+
+    assert window.calls == ["hide"]
+
+
+def test_initial_window_state_minimizes_when_no_background_route():
+    window = StartupWindowDouble(keep_running=False)
+
+    show_initial_window_state(window, start_minimized=True)
+
+    assert window.calls == ["showMinimized"]
+
+
+def test_initial_window_state_shows_normally_when_not_minimized():
+    window = StartupWindowDouble(keep_running=True)
+
+    show_initial_window_state(window, start_minimized=False)
+
+    assert window.calls == ["show"]
+
+
 def test_grid_click_selects_without_running_action():
     app = QApplication.instance() or QApplication([])
     services = build_services()
@@ -67,6 +109,24 @@ def test_grid_click_selects_without_running_action():
     assert calls.count(("B2", "simulation")) == 1
     assert ("B2", "midi") in calls
 
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_loading_editor_state_does_not_autosave_profile():
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    saves = []
+    services.profile_service.save_current = lambda: saves.append(True)
+
+    window = MainWindow(services)
+    QTest.qWait(900)
+
+    assert saves == []
     window._force_quit = True
     window.close()
     services.action_runner.shutdown()
@@ -144,7 +204,7 @@ def test_switch_page_action_refreshes_grid_and_status():
 
 
 def test_disabled_grid_button_stays_selectable_for_editing():
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     services = build_services()
     services.settings_service.settings.first_run_complete = True
     services.settings_service.settings.auto_connect = False
@@ -230,15 +290,73 @@ def test_button_editor_remains_accessible_in_narrow_window():
         app.processEvents()
 
         assert window.editor_scroll.isVisible()
-        assert window.workspace_splitter.orientation() == Qt.Orientation.Vertical
+        assert window.workspace_splitter.orientation() == Qt.Orientation.Horizontal
         assert window.editor_scroll.viewport().width() > 0
-        assert window.editor_scroll.height() >= 240
+        assert window.editor_scroll.height() >= 400
         assert window.editor_scroll.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAsNeeded
         assert window.editor_scroll.geometry().right() <= window.workspace_splitter.contentsRect().right()
         assert window.editor.action_editor.width() <= window.editor_scroll.viewport().width() + 2
         file_widget = window.editor.action_editor.field_widgets["file_path"]
         assert file_widget.width() <= window.editor.action_editor.width()
 
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_profile_autosave_batches_editor_changes(monkeypatch):
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    save_calls = []
+    monkeypatch.setattr(services.profile_service, "save_current", lambda: save_calls.append("save"))
+
+    window.save_button_changes()
+    window.save_button_changes()
+
+    assert window._profile_autosave_timer.isActive()
+    assert save_calls == []
+
+    window._flush_profile_autosave()
+
+    assert save_calls == ["save"]
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_soundboard_panel_reuses_instance_and_pauses_hidden_refresh():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+
+    window.show_soundboard_panel()
+    app.processEvents()
+    first_panel = window.soundboard_panel
+
+    assert first_panel is not None
+    assert first_panel.isVisible()
+    assert first_panel.timer.isActive()
+
+    first_panel.hide()
+    app.processEvents()
+
+    assert not first_panel.timer.isActive()
+
+    window.show_soundboard_panel()
+    app.processEvents()
+
+    assert window.soundboard_panel is first_panel
+    assert first_panel.timer.isActive()
+
+    first_panel.hide()
     window._force_quit = True
     window.close()
     services.action_runner.shutdown()
@@ -299,7 +417,7 @@ def test_voice_route_close_hides_instead_of_quitting(monkeypatch):
 
 
 def test_voice_route_guard_restarts_stopped_route():
-    app = QApplication.instance() or QApplication([])
+    QApplication.instance() or QApplication([])
     services = build_services()
     services.settings_service.settings.first_run_complete = True
     services.settings_service.settings.auto_connect = False
@@ -315,6 +433,7 @@ def test_voice_route_guard_restarts_stopped_route():
     window.ensure_voice_route_running()
 
     assert window.voice_route_guard_timer.isActive()
+    assert window.voice_route_guard_timer.interval() == 60_000
     assert bridge.started_with == [("mic-1", "voice-route", 70)]
     assert services.audio_engine.voice_route_microphone_state().running is True
 

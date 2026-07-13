@@ -1,4 +1,7 @@
 from pathlib import Path
+import tomllib
+
+from openlaunchdeck.version import __version__
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,3 +36,13 @@ def test_windows_exe_metadata_and_icon_refresh_are_configured():
     assert "ie4uinit.exe" in installer
     assert 'DestName: "OpenLaunchDeck.ico"' in installer
     assert 'IconFilename: "{app}\\OpenLaunchDeck.ico"' in installer
+    assert "[InstallDelete]" in installer
+    assert 'Type: filesandordirs; Name: "{app}\\_internal"' in installer
+
+
+def test_package_metadata_reads_the_app_version_source():
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+
+    assert "version" in project["project"]["dynamic"]
+    assert project["tool"]["setuptools"]["dynamic"]["version"]["attr"] == "openlaunchdeck.version.__version__"
+    assert __version__

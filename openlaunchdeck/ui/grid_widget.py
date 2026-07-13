@@ -51,11 +51,17 @@ class GridWidget(QWidget):
         cell.set_state(button, selected=button_id == self.selected_button_id, armed=armed, playing=playing)
 
     def update_buttons(self, page, button_ids, dangerous_service=None, audio_engine=None) -> None:
+        playing_buttons = None
+        if audio_engine is not None and hasattr(audio_engine, "playing_button_ids"):
+            playing_buttons = audio_engine.playing_button_ids()
         for button_id in button_ids:
             cell = self.cells.get(button_id)
             if not cell:
                 continue
             button = page.get_button(button_id)
             armed = dangerous_service.is_armed(button_id) if dangerous_service else False
-            playing = audio_engine.is_button_playing(button_id) if audio_engine else False
+            if playing_buttons is not None:
+                playing = button_id in playing_buttons
+            else:
+                playing = audio_engine.is_button_playing(button_id) if audio_engine else False
             cell.set_state(button, selected=button_id == self.selected_button_id, armed=armed, playing=playing)

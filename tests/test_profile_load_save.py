@@ -84,7 +84,7 @@ def test_profile_service_repairs_stale_button_ids(tmp_path, monkeypatch):
     assert '"id": "C4"' in profile_path.read_text(encoding="utf-8")
 
 
-def test_retired_unconfigured_starter_profile_moves_to_backup(tmp_path, monkeypatch):
+def test_existing_server_profile_is_not_moved_automatically(tmp_path, monkeypatch):
     profiles_dir = tmp_path / "profiles"
     backups_dir = tmp_path / "backups"
     starters_dir = tmp_path / "starters"
@@ -102,12 +102,11 @@ def test_retired_unconfigured_starter_profile_moves_to_backup(tmp_path, monkeypa
 
     service = profile_service.ProfileService()
 
-    assert not profile_path.exists()
-    assert (backups_dir / "retired_starter_profiles" / "server_admin.json").exists()
-    assert "server_admin" not in service.profiles
+    assert profile_path.exists()
+    assert "server_admin" in service.profiles
 
 
-def test_outdated_starter_profile_refreshes_from_bundled_copy(tmp_path, monkeypatch):
+def test_existing_soundboard_is_not_replaced_from_bundled_copy(tmp_path, monkeypatch):
     profiles_dir = tmp_path / "profiles"
     backups_dir = tmp_path / "backups"
     starters_dir = tmp_path / "starters"
@@ -128,6 +127,65 @@ def test_outdated_starter_profile_refreshes_from_bundled_copy(tmp_path, monkeypa
 
     service = profile_service.ProfileService()
 
-    assert (backups_dir / "refreshed_starter_profiles" / "soundboard.json").exists()
+    assert not (backups_dir / "refreshed_starter_profiles").exists()
     assert service.profiles["soundboard"].name == "Soundboard"
-    assert old_marker not in (profiles_dir / "soundboard.json").read_text(encoding="utf-8")
+    assert old_marker in (profiles_dir / "soundboard.json").read_text(encoding="utf-8")
+
+
+def test_empty_sound_slot_does_not_replace_custom_profile(tmp_path, monkeypatch):
+    profiles_dir = tmp_path / "profiles"
+    backups_dir = tmp_path / "backups"
+    starters_dir = tmp_path / "starters"
+    profiles_dir.mkdir()
+    starters_dir.mkdir()
+    custom = '{"name":"My Sounds","id":"soundboard","pages":[{"name":"Main","id":"main","buttons":{"A1":{"label":"Mine","action":{"type":"play_sound","config":{"file_path":""}}}}}]}'
+    (profiles_dir / "soundboard.json").write_text(custom, encoding="utf-8")
+    (starters_dir / "soundboard.json").write_text('{"name":"Bundled","id":"soundboard","pages":[]}', encoding="utf-8")
+    monkeypatch.setattr(profile_service, "PROFILES_DIR", profiles_dir)
+    monkeypatch.setattr(profile_service, "BACKUPS_DIR", backups_dir)
+    monkeypatch.setattr(profile_service, "STARTER_PROFILES_DIR", starters_dir)
+
+    service = profile_service.ProfileService()
+
+    assert service.profiles["soundboard"].name == "My Sounds"
+    assert not (backups_dir / "refreshed_starter_profiles").exists()
+
+
+def test_import_profile_sanitizes_id_and_avoids_collision(tmp_path, monkeypatch):
+    profiles_dir = tmp_path / "profiles"
+    backups_dir = tmp_path / "backups"
+    starters_dir = tmp_path / "starters"
+    profiles_dir.mkdir()
+    starters_dir.mkdir()
+    (profiles_dir / "safe.json").write_text('{"name":"Existing","id":"safe","pages":[]}', encoding="utf-8")
+    imported = tmp_path / "import.json"
+    imported.write_text('{"name":"Imported","id":"../safe","pages":[]}', encoding="utf-8")
+    monkeypatch.setattr(profile_service, "PROFILES_DIR", profiles_dir)
+    monkeypatch.setattr(profile_service, "BACKUPS_DIR", backups_dir)
+    monkeypatch.setattr(profile_service, "STARTER_PROFILES_DIR", starters_dir)
+    service = profile_service.ProfileService()
+
+    profile = service.import_profile(imported)
+
+    assert profile.id == "safe_2"
+    assert (profiles_dir / "safe_2.json").exists()
+    assert not (tmp_path / "safe_2.json").exists()
+
+
+def test_delete_profile_keeps_backup(tmp_path, monkeypatch):
+    profiles_dir = tmp_path / "profiles"
+    backups_dir = tmp_path / "backups"
+    starters_dir = tmp_path / "starters"
+    profiles_dir.mkdir()
+    starters_dir.mkdir()
+    (profiles_dir / "one.json").write_text('{"name":"One","id":"one","pages":[]}', encoding="utf-8")
+    (profiles_dir / "two.json").write_text('{"name":"Two","id":"two","pages":[]}', encoding="utf-8")
+    monkeypatch.setattr(profile_service, "PROFILES_DIR", profiles_dir)
+    monkeypatch.setattr(profile_service, "BACKUPS_DIR", backups_dir)
+    monkeypatch.setattr(profile_service, "STARTER_PROFILES_DIR", starters_dir)
+    service = profile_service.ProfileService()
+
+    assert service.delete_profile("two") is True
+    assert "two" not in service.profiles
+    assert not (profiles_dir / "two.json").exists()
+    assert (backups_dir / "deleted_profiles" / "two.json").exists()

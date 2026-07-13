@@ -6,7 +6,7 @@ import sys
 def main() -> int:
     try:
         from .app import run
-    except ImportError as exc:
+    except ImportError:
         try:
             from openlaunchdeck.app import run
         except ImportError as fallback_exc:

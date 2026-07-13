@@ -23,3 +23,21 @@ def test_settings_keep_soundboard_voice_chat_routing_fields():
     assert settings.soundboard_voice_route_microphone_enabled is True
     assert settings.soundboard_voice_route_microphone_device == "mic-1"
     assert settings.soundboard_voice_route_microphone_volume == 100
+
+
+def test_settings_recover_from_wrong_types():
+    settings = Settings.from_dict(
+        {
+            "theme": ["dark"],
+            "auto_connect": "false",
+            "minimize_to_tray": "yes",
+            "soundboard_global_volume": "loud",
+            "update_channel": 7,
+        }
+    )
+
+    assert settings.theme == "dark"
+    assert settings.auto_connect is False
+    assert settings.minimize_to_tray is True
+    assert settings.soundboard_global_volume == 100
+    assert settings.update_channel == "stable"

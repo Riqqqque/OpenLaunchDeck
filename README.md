@@ -76,6 +76,8 @@ The beginner-friendly [GitHub Wiki](https://github.com/Riqqqque/OpenLaunchDeck/w
 - Microphone routing into the selected soundboard voice route
 - OpenLaunchDeck Audio Bridge detection for a built-in voice route endpoint pair
 - Background action execution
+- Coalesced RGB output and a shared lighting timer to avoid thread churn during rapid presses
+- Queued file logging and debounced profile autosaves
 - Manual update checks with SHA256 verification
 - Launch at startup using the current Windows user startup entry
 - Optional startup update checks
@@ -97,11 +99,11 @@ Installer upgrades replace program files only. Profiles, settings, logs, backups
 
 ## Updating
 
-Open `Help > Check for Updates` to check a configured update manifest. Startup checks are optional and run in the background.
+Open `Help > Check for Updates` to check the latest checksum-backed GitHub release. Startup checks are optional and run in the background. Advanced deployments can override this with a custom update manifest URL in Settings.
 
 The updater can:
 
-- Fetch a remote JSON manifest with a timeout
+- Read the installer and checksum assets from the latest GitHub release, or fetch a custom JSON manifest with a timeout
 - Compare semantic versions
 - Detect required updates and unsupported current versions
 - Download installers to `%APPDATA%\OpenLaunchDeck\updates`
@@ -117,7 +119,20 @@ See [docs/updating.md](docs/updating.md) for the manifest format and local updat
 
 Enable `Settings > Launch at startup` to start OpenLaunchDeck when you sign in to Windows. The setting writes a current-user startup entry, so it does not require administrator rights.
 
-`Start minimized` can be used with it. If the microphone voice route is enabled, OpenLaunchDeck keeps running in the tray when the window is closed so Discord or game chat does not receive silence. Use `File > Quit` or the tray `Quit` action when you intentionally want to stop the route.
+The installed startup entry uses background mode so Windows sign-in does not fight with window-layout tools. `Start minimized` still controls normal app launches. If the microphone voice route is enabled, OpenLaunchDeck keeps running in the tray when the window is closed so Discord or game chat does not receive silence. Use `File > Quit` or the tray `Quit` action when you intentionally want to stop the route.
+
+If another Windows cleanup or startup manager removes the entry, launch OpenLaunchDeck once and open Settings to re-enable `Launch at startup`. The installed app repairs stale startup paths when it runs.
+
+OpenLaunchDeck is single-instance. If Windows Startup, a macro helper, or a window-layout tool launches it while it is already running, the new launch hands off to the existing app and exits.
+
+External startup tools can use these optional launch flags:
+
+```powershell
+OpenLaunchDeck.exe --show
+OpenLaunchDeck.exe --background
+```
+
+Use `--show` or `--focus` when the tool should bring the existing window forward for positioning. Use `--background` or `--start-minimized` when the tool only needs to make sure OpenLaunchDeck is running.
 
 ## Running From Source
 
@@ -227,6 +242,8 @@ OpenLaunchDeck keeps expensive work away from the GUI thread:
 - Lighting refreshes skip unchanged pad colors and send MIDI output on a background worker
 - Grid cells skip redundant text/style updates
 - MIDI Debug UI updates stay off unless the debug window is open
+- The Windows process stays at Normal priority so games keep scheduler priority
+- Hidden or minimized windows skip unnecessary grid/status repaints
 - Performance logging is quiet by default and can be enabled in Settings
 
 See [docs/performance.md](docs/performance.md).
@@ -312,6 +329,7 @@ Return clear `ActionResult` values so the GUI, logs, and Launchpad feedback can 
 ## Known Limitations
 
 - OBS WebSocket actions require the OBS WebSocket server to be enabled. If authentication is enabled in OBS, set the button password field to the OBS WebSocket password.
+- OBS passwords are masked in the editor but remain part of the local profile JSON so actions can reconnect. Treat exported profiles as sensitive when they contain a password.
 - SSH command support depends on Paramiko and key-based authentication setup.
 - Volume actions control the default Windows playback endpoint. App-specific mixer sliders are handled by Windows and virtual audio tools.
 - Launchpad mappings should be verified in MIDI Debug before relying on them live.

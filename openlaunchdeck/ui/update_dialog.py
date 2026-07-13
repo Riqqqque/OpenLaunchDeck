@@ -27,15 +27,20 @@ class UpdateCheckWorker(QObject):
     finished = Signal(object)
     failed = Signal(str)
 
-    def __init__(self, service: UpdateService, manifest_url: str) -> None:
+    def __init__(self, service: UpdateService, manifest_url: str = "", channel: str = "stable") -> None:
         super().__init__()
         self.service = service
         self.manifest_url = manifest_url
+        self.channel = channel
 
     @Slot()
     def run(self) -> None:
         try:
-            manifest = self.service.fetch_manifest(self.manifest_url)
+            manifest = (
+                self.service.fetch_manifest(self.manifest_url)
+                if self.manifest_url
+                else self.service.fetch_release_manifest(self.channel)
+            )
             self.finished.emit(self.service.check_manifest(manifest))
         except Exception as exc:
             self.failed.emit(str(exc))
@@ -64,6 +69,8 @@ class UpdateDownloadWorker(QObject):
 
 
 class UpdateDialog(QDialog):
+    idle = Signal()
+
     def __init__(self, settings_service, logger=None, parent=None, auto_check: bool = False) -> None:
         super().__init__(parent)
         self.settings_service = settings_service
@@ -114,23 +121,19 @@ class UpdateDialog(QDialog):
             QTimer.singleShot(0, self.check)
 
     def check(self) -> None:
+        if self._check_thread is not None or self._download_thread is not None:
+            return
         manifest_url = self.settings_service.settings.update_manifest_url.strip()
         service = UpdateService(__version__, self.logger)
-        if not manifest_url:
-            self.label.setText("No update manifest URL is configured.")
-            self.output.setPlainText("Set an update manifest URL in Settings before checking from source or portable builds.")
-            self._result = None
-            self._installer_path = None
-            self._update_buttons()
-            return
         self._result = None
         self._installer_path = None
         self.check_button.setEnabled(False)
+        self.close_button.setEnabled(False)
         self.label.setText("Checking for updates...")
         self.output.setPlainText("")
         self.progress.setVisible(False)
         self._check_thread = QThread(self)
-        self._check_worker = UpdateCheckWorker(service, manifest_url)
+        self._check_worker = UpdateCheckWorker(service, manifest_url, self.settings_service.settings.update_channel)
         self._check_worker.moveToThread(self._check_thread)
         self._check_thread.started.connect(self._check_worker.run)
         self._check_worker.finished.connect(self._on_check_result)
@@ -143,11 +146,12 @@ class UpdateDialog(QDialog):
         self._check_thread.start()
 
     def download_update(self) -> None:
-        if not self._result or not self._result.manifest:
+        if self._download_thread is not None or not self._result or not self._result.manifest:
             return
         service = UpdateService(__version__, self.logger)
         self.download_button.setEnabled(False)
         self.install_button.setEnabled(False)
+        self.close_button.setEnabled(False)
         self.progress.setVisible(True)
         self.progress.setValue(0)
         self.label.setText("Downloading update...")
@@ -293,8 +297,33 @@ class UpdateDialog(QDialog):
         self._check_thread = None
         self._check_worker = None
         self.check_button.setEnabled(True)
+        self.close_button.setEnabled(True)
+        if not self._has_active_worker():
+            self.idle.emit()
 
     def _clear_download_worker(self) -> None:
         self._download_thread = None
         self._download_worker = None
+        self.close_button.setEnabled(True)
         self._update_buttons()
+        if not self._has_active_worker():
+            self.idle.emit()
+
+    def reject(self) -> None:
+        if self._has_active_worker():
+            self.label.setText("Please wait for the current update operation to finish.")
+            return
+        super().reject()
+
+    def closeEvent(self, event) -> None:
+        if self._has_active_worker():
+            self.label.setText("Please wait for the current update operation to finish.")
+            event.ignore()
+            return
+        super().closeEvent(event)
+
+    def _has_active_worker(self) -> bool:
+        return self._check_thread is not None or self._download_thread is not None
+
+    def has_active_worker(self) -> bool:
+        return self._has_active_worker()

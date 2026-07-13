@@ -7,6 +7,20 @@ from ..constants import DEFAULT_BUTTON_COLOR
 from .action_config import ActionConfig
 
 
+def _bool_value(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().casefold()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off", ""}:
+            return False
+    return default
+
+
 @dataclass(slots=True)
 class ButtonConfig:
     id: str
@@ -40,8 +54,8 @@ class ButtonConfig:
             id=button_id,
             label=str(data.get("label") or ""),
             color=str(data.get("color") or DEFAULT_BUTTON_COLOR),
-            enabled=bool(data.get("enabled", True)),
-            dangerous=bool(data.get("dangerous", False)),
+            enabled=_bool_value(data.get("enabled", True), True),
+            dangerous=_bool_value(data.get("dangerous", False), False),
             notes=str(data.get("notes") or ""),
             icon_path=str(data.get("icon_path") or ""),
             icon_name=str(data.get("icon_name") or ""),

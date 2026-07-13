@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from openlaunchdeck.paths import APP_DATA_DIR, BACKUPS_DIR, LOGS_DIR, MIDI_MAPPINGS_DIR, PROFILES_DIR, SETTINGS_FILE
@@ -11,3 +12,7 @@ def test_user_data_paths_are_outside_repository():
         resolved = path.resolve()
         assert APP_NAME in resolved.parts
         assert not resolved.is_relative_to(repo_root)
+
+
+def test_test_data_override_is_active():
+    assert APP_DATA_DIR == Path(os.environ["OPENLAUNCHDECK_DATA_DIR"])

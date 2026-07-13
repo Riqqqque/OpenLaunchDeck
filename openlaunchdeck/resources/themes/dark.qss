@@ -14,9 +14,9 @@ QWidget#MainSurface {
 }
 
 QFrame#AppHeader {
-  background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #121a25, stop:0.58 #151e2b, stop:1 #101722);
+  background: #121a25;
   border: 1px solid #29384e;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 QWidget#HeaderBrand, QWidget#HeaderMeta {
@@ -26,7 +26,7 @@ QWidget#HeaderBrand, QWidget#HeaderMeta {
 QFrame#HeaderActions {
   background: #0b111a;
   border: 1px solid #243146;
-  border-radius: 10px;
+  border-radius: 8px;
 }
 
 QWidget#SidebarPanel, QFrame#DeckPanel, QWidget#InspectorPanel {
@@ -65,7 +65,7 @@ QSplitter#WorkspaceSplitter::handle:hover {
 
 QLabel#HeaderTitle {
   color: #f9fbff;
-  font-size: 19pt;
+  font-size: 17pt;
   font-weight: 800;
 }
 
@@ -163,6 +163,7 @@ QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox, QListWidget {
 QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus, QSpinBox:focus {
   border: 1px solid #38bdf8;
 }
+QPlainTextEdit[invalid="true"] { border: 1px solid #ef4444; }
 
 QComboBox::drop-down {
   border: none;
@@ -172,7 +173,7 @@ QComboBox::drop-down {
 QPushButton {
   background: #223049;
   border: 1px solid #34445c;
-  border-radius: 8px;
+  border-radius: 7px;
   color: #f3f7fb;
   font-weight: 700;
   padding: 8px 12px;
@@ -204,7 +205,7 @@ QPushButton#SecondaryButton, QPushButton#HeaderButton {
 }
 
 QPushButton#HeaderButton {
-  border-radius: 8px;
+  border-radius: 7px;
   padding: 7px 10px;
 }
 
@@ -215,7 +216,7 @@ QPushButton#SecondaryButton:hover, QPushButton#HeaderButton:hover {
 QPushButton#HeaderPrimaryButton {
   background: #0f766e;
   border: 1px solid #2dd4bf;
-  border-radius: 8px;
+  border-radius: 7px;
   color: #ecfeff;
   font-weight: 800;
   padding: 7px 10px;

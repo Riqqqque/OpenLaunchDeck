@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QPushButton,
     QPlainTextEdit,
+    QMessageBox,
     QSizePolicy,
     QVBoxLayout,
     QWidget,
@@ -96,7 +97,7 @@ class ButtonEditor(QWidget):
         self.color_combo.currentIndexChanged.connect(lambda _index: self.apply_changes())
         self.enabled_check.stateChanged.connect(lambda _state: self.apply_changes())
         self.dangerous_check.stateChanged.connect(lambda _state: self.apply_changes())
-        self.notes_edit.textChanged.connect(lambda: self._notes_timer.start(350))
+        self.notes_edit.textChanged.connect(self._queue_notes_change)
         self.action_editor.action_type_combo.currentIndexChanged.connect(lambda _index: self.apply_changes())
         self.action_editor.changed.connect(self.apply_changes)
         self.test_button.clicked.connect(self._test)
@@ -105,6 +106,7 @@ class ButtonEditor(QWidget):
         self.paste_button.clicked.connect(self.paste_requested.emit)
 
     def set_button(self, button: ButtonConfig) -> None:
+        self._notes_timer.stop()
         self._loading = True
         self.button = button
         self.title.setText(f"Button {button.id}")
@@ -117,6 +119,10 @@ class ButtonEditor(QWidget):
         action = button.action or ActionConfig()
         self.action_editor.set_action(action.type, action.config)
         self._loading = False
+
+    def _queue_notes_change(self) -> None:
+        if not self._loading:
+            self._notes_timer.start(350)
 
     def apply_changes(self) -> None:
         if self._loading or self.button is None:
@@ -132,4 +138,7 @@ class ButtonEditor(QWidget):
 
     def _test(self) -> None:
         self.apply_changes()
+        if self.action_editor.has_validation_errors():
+            QMessageBox.warning(self, "Invalid action settings", "Fix the highlighted action settings before testing this button.")
+            return
         self.test_requested.emit()

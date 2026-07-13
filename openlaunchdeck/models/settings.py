@@ -4,6 +4,49 @@ from dataclasses import asdict, dataclass
 from typing import Any
 
 
+BOOL_FIELDS = {
+    "auto_connect",
+    "start_minimized",
+    "minimize_to_tray",
+    "launch_at_startup",
+    "midi_debug_logging",
+    "profile_autosave",
+    "backup_profiles_automatically",
+    "soundboard_monitor_voice_chat",
+    "soundboard_voice_route_microphone_enabled",
+    "soundboard_stop_sounds_on_exit",
+    "check_updates_on_startup",
+    "enable_performance_logging",
+    "use_native_acceleration",
+    "first_run_complete",
+}
+PERCENT_FIELDS = {
+    "soundboard_voice_route_microphone_volume",
+    "soundboard_global_volume",
+}
+
+
+def _coerce_bool(value: Any, default: bool) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().casefold()
+        if normalized in {"true", "1", "yes", "on"}:
+            return True
+        if normalized in {"false", "0", "no", "off", ""}:
+            return False
+    return default
+
+
+def _coerce_percent(value: Any, default: int) -> int:
+    try:
+        return max(0, min(100, int(value)))
+    except (TypeError, ValueError):
+        return default
+
+
 @dataclass(slots=True)
 class Settings:
     theme: str = "dark"
@@ -37,14 +80,24 @@ class Settings:
     def from_dict(cls, data: dict[str, Any] | None) -> "Settings":
         if not isinstance(data, dict):
             return cls()
-        allowed = {field for field in cls.__dataclass_fields__}
-        values = {key: value for key, value in data.items() if key in allowed}
+        defaults = cls()
+        allowed = set(cls.__dataclass_fields__)
+        values: dict[str, Any] = {}
+        for key, value in data.items():
+            if key not in allowed:
+                continue
+            default = getattr(defaults, key)
+            if key in BOOL_FIELDS:
+                values[key] = _coerce_bool(value, default)
+            elif key in PERCENT_FIELDS:
+                values[key] = _coerce_percent(value, default)
+            elif isinstance(default, str):
+                values[key] = value if isinstance(value, str) else default
+            else:
+                values[key] = value
         settings = cls(**values)
-        settings.soundboard_global_volume = max(0, min(100, int(settings.soundboard_global_volume)))
-        settings.soundboard_voice_route_microphone_volume = max(
-            0,
-            min(100, int(settings.soundboard_voice_route_microphone_volume)),
-        )
+        if settings.theme not in {"dark", "light", "system"}:
+            settings.theme = "dark"
         if settings.grid_density not in {"compact", "comfortable", "large"}:
             settings.grid_density = "comfortable"
         if settings.update_channel not in {"stable", "beta"}:

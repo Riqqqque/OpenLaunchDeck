@@ -20,6 +20,8 @@ class UpdateInstaller:
     def launch(self, installer_path: Path) -> bool:
         if not installer_path.exists():
             raise FileNotFoundError(installer_path)
+        if installer_path.suffix.casefold() != ".exe":
+            raise ValueError("OpenLaunchDeck updates must use a Windows .exe installer.")
         if not self.can_launch_installer():
             if self.logger:
                 self.logger.info("Installer launch is not available on this platform.")

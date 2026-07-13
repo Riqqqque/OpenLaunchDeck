@@ -1,3 +1,5 @@
+import pytest
+
 from openlaunchdeck.devices.device_calibration import CalibrationSession
 from openlaunchdeck.devices.midi_mapping import MidiAddress, MidiMapping, message_to_address
 
@@ -82,3 +84,20 @@ def test_calibration_records_raw_messages():
     assert mapping.address_for_button("A1") == MidiAddress("note", 81, 0)
     assert mapping.address_for_button("A2") == MidiAddress("control", 11, 2)
     assert session.raw_log_lines()[0].startswith("A1:")
+
+
+def test_mapping_rejects_duplicate_addresses():
+    with pytest.raises(ValueError, match="same message"):
+        MidiMapping.from_dict(
+            {
+                "buttons": {
+                    "A1": {"message_type": "note", "number": 81, "channel": 0},
+                    "A2": {"message_type": "note", "number": 81, "channel": 0},
+                }
+            }
+        )
+
+
+def test_mapping_rejects_out_of_range_values():
+    with pytest.raises(ValueError, match="between 0 and 127"):
+        MidiAddress.from_dict({"message_type": "note", "number": 200, "channel": 0})

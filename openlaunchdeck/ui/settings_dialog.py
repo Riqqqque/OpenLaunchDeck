@@ -10,8 +10,10 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
 from ..audio.input_devices import list_input_devices
@@ -31,7 +33,8 @@ class SettingsDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
-        form = QFormLayout()
+        form_widget = QWidget()
+        form = QFormLayout(form_widget)
         form.setSpacing(10)
 
         self.theme = QComboBox()
@@ -152,7 +155,11 @@ class SettingsDialog(QDialog):
         form.addRow("Update manifest URL", self.update_url)
         form.addRow("Performance logging", self.performance_logging)
         form.addRow("Native acceleration", self.native_acceleration)
-        layout.addLayout(form)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QScrollArea.Shape.NoFrame)
+        scroll.setWidget(form_widget)
+        layout.addWidget(scroll, 1)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)

@@ -13,6 +13,11 @@ class FakeOutputPort:
         self.messages.append(message)
 
 
+class FailingOutputPort:
+    def send(self, message):
+        raise OSError("port disappeared")
+
+
 def test_color_to_palette_value_uses_named_colors():
     assert color_to_palette_value("red") == 5
     assert color_to_palette_value("cyan") == 37
@@ -44,3 +49,17 @@ def test_enter_programmer_mode_sends_documented_sysex_message():
     assert len(port.messages) == 1
     assert port.messages[0].type == "sysex"
     assert list(port.messages[0].data) == PROGRAMMER_MODE_SYSEX
+
+
+def test_strict_programmer_mode_reports_output_failure():
+    device = LaunchpadMiniMk3()
+    device.output_port = FailingOutputPort()
+    device.connected = True
+
+    try:
+        device.enter_programmer_mode(strict=True)
+    except RuntimeError as exc:
+        assert "programmer_mode" in str(exc)
+    else:
+        raise AssertionError("Strict Programmer Mode did not report the output failure.")
+    assert device.connected is False
