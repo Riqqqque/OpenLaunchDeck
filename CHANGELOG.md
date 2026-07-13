@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.1.50
+
+- Recovered from damaged or mistyped settings without blocking startup and kept the original file in backups.
+- Sanitized imported profile IDs, protected profile paths, preserved deleted profiles as backups, and stopped legacy starter refreshes from replacing customized soundboards.
+- Added working profile create, duplicate, rename, and delete controls.
+- Preserved the last valid multi-action while its JSON is being edited and kept nested page, lighting, and sound actions on the correct thread.
+- Stopped editor refreshes from scheduling profile writes and preserved action fields that are not rendered by the current editor.
+- Bounded command, delay, and HTTP action limits, capped captured command output, hardened PowerShell quoting, and enabled strict SSH host-key checks.
+- Made update dialogs safe to close around worker activity and added checksum-backed GitHub Release checks when no custom manifest is configured.
+- Replaced stale bundled runtime files during installer upgrades without touching AppData.
+- Required a patched cryptography release after the final dependency audit.
+- Added release-tag test execution and focused regression coverage for the new recovery and lifecycle paths.
+
+## 0.1.49
+
+- Replaced per-flash and per-blink timer threads with one shared lighting scheduler.
+- Coalesced pending RGB updates so rapid pad presses cannot build an unbounded lighting queue.
+- Moved file logging off action and GUI threads.
+- Switched Windows text entry and media buttons to the native input path to avoid a large first-use import.
+- Paused Soundboard refresh work while its panel is closed and reused one modeless panel instance.
+- Debounced profile autosaves and kept the grid beside the editor in compact windows.
+- Refreshed the app icon at every packaged size and made the running app use the same multi-size icon as Windows shortcuts.
+- Tightened the first five seconds of priority checks so external launch tools cannot leave the app at RealTime priority during startup.
+
+## 0.1.48
+
+- Changed the Windows process priority guard to keep OpenLaunchDeck at Normal priority instead of AboveNormal so games keep scheduler priority.
+- Reduced priority guard wakeups and microphone route checks to coarse, low-frequency timers.
+- Lowered default background action concurrency to reduce CPU spikes from repeated macro presses.
+- Skipped hidden-window grid/status repaints for hardware button presses and soundboard state changes.
+
+## 0.1.47
+
+- Added single-instance startup handling so duplicate launches activate the running app instead of opening another copy.
+- Added `--show`, `--focus`, `--background`, and `--start-minimized` launch flags for startup and window-layout tools.
+- Made the Windows startup entry use background mode so layout tools can control when the visible window is shown.
+- Added tests for startup launch options and duplicate-launch handling.
+
+## 0.1.46
+
+- Normalized the Windows process priority to AboveNormal during startup and added a low-frequency guard so the app cannot remain at RealTime priority.
+- Reduced startup work when OpenLaunchDeck starts minimized into the tray by skipping the full window show path.
+- Added tests for minimized startup behavior.
+- Kept installer version metadata aligned with the app version.
+
 ## 0.1.45
 
 - Kept OpenLaunchDeck running in the tray when the microphone voice route is enabled, even if normal tray mode is off.

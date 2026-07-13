@@ -20,15 +20,37 @@ class MultiAction(BaseAction):
         if context.action_registry is None:
             return ActionResult.fail("Action registry is unavailable.")
         continue_on_error = bool(config.get("continue_on_error", False))
+        try:
+            depth = max(0, int(config.get("_multi_depth", 0)))
+        except (TypeError, ValueError):
+            depth = 0
+        if depth >= 8:
+            return ActionResult.fail("Multi-action nesting is too deep.")
         results: list[str] = []
+        details: dict = {}
+        should_update_lighting = False
         for index, step in enumerate(steps, start=1):
             if not isinstance(step, dict):
                 result = ActionResult.fail(f"Step {index} is not an action object.")
             else:
                 action_type = str(step.get("type") or "noop")
-                action_config = step.get("config") if isinstance(step.get("config"), dict) else {}
-                result = context.action_registry.get(action_type).execute(context, action_config)
+                action_config = dict(step.get("config")) if isinstance(step.get("config"), dict) else {}
+                if action_type == self.type_name:
+                    action_config["_multi_depth"] = depth + 1
+                if context.action_executor is not None:
+                    result = context.action_executor(action_type, context, action_config)
+                else:
+                    result = context.action_registry.get(action_type).execute(context, action_config)
             results.append(f"{index}: {result.message}")
+            should_update_lighting = should_update_lighting or result.should_update_lighting
+            details.update(result.details)
             if not result.success and not continue_on_error:
-                return ActionResult.fail(f"Multi-action stopped at step {index}: {result.message}", results=results)
-        return ActionResult.ok("Multi-action complete.", results=results)
+                details["results"] = results
+                return ActionResult(
+                    False,
+                    f"Multi-action stopped at step {index}: {result.message}",
+                    details,
+                    should_update_lighting,
+                )
+        details["results"] = results
+        return ActionResult(True, "Multi-action complete.", details, should_update_lighting)

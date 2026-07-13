@@ -134,7 +134,7 @@ class ObsWebSocketAction(BaseAction):
         {"name": "operation", "label": "Operation", "type": "choice", "choices": OBS_OPERATIONS},
         {"name": "host", "label": "Host", "type": "text"},
         {"name": "port", "label": "Port", "type": "number"},
-        {"name": "password", "label": "Password", "type": "text"},
+        {"name": "password", "label": "Password", "type": "password"},
         {"name": "scene_name", "label": "Scene Name", "type": "text"},
         {"name": "source_name", "label": "Source Name", "type": "text"},
         {"name": "input_name", "label": "Input Name", "type": "text"},

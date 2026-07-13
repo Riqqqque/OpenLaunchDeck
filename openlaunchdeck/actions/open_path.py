@@ -12,7 +12,7 @@ class OpenPathAction(BaseAction):
     type_name = "open_path"
     display_name = "Open Path/App"
     description = "Open a file, folder, or application."
-    config_fields = [{"name": "path", "label": "Path", "type": "path"}]
+    config_fields = [{"name": "path", "label": "Path", "type": "file_or_directory"}]
     blocking = True
 
     def execute(self, context, config: dict) -> ActionResult:

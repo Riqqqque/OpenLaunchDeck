@@ -59,6 +59,9 @@
 
 ## Update Manifest
 
+- Leave the custom manifest URL empty and confirm the latest GitHub installer and checksum assets are detected.
+- Confirm a GitHub release without its installer checksum is rejected.
+- Complete the remaining items below when publishing through a custom manifest service.
 - Set `latest_version`.
 - Set `minimum_supported_version`.
 - Set `required`.

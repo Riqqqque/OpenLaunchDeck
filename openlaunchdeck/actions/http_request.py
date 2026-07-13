@@ -18,6 +18,7 @@ class HttpRequestAction(BaseAction):
         {"name": "timeout", "label": "Timeout", "type": "number"},
     ]
     blocking = True
+    allowed_methods = {"GET", "POST", "PUT", "PATCH", "DELETE"}
 
     def execute(self, context, config: dict) -> ActionResult:
         try:
@@ -25,6 +26,8 @@ class HttpRequestAction(BaseAction):
         except Exception:
             return ActionResult.fail("HTTP dependency is not installed.")
         method = str(config.get("method") or "GET").upper()
+        if method not in self.allowed_methods:
+            return ActionResult.fail("HTTP method is not supported.")
         url = str(config.get("url") or "").strip()
         if not url.startswith(("http://", "https://")):
             return ActionResult.fail("Enter a valid HTTP or HTTPS URL.")
@@ -39,12 +42,18 @@ class HttpRequestAction(BaseAction):
                 return ActionResult.fail("Headers JSON must be an object.")
             headers = {str(key): str(value) for key, value in parsed.items()}
         try:
+            timeout = float(config.get("timeout") or DEFAULT_HTTP_TIMEOUT_SECONDS)
+        except (TypeError, ValueError):
+            return ActionResult.fail("HTTP timeout must be a number.")
+        if timeout <= 0 or timeout > 60:
+            return ActionResult.fail("HTTP timeout must be between 1 and 60 seconds.")
+        try:
             response = requests.request(
                 method,
                 url,
                 headers=headers,
                 data=str(config.get("body") or "") or None,
-                timeout=float(config.get("timeout") or DEFAULT_HTTP_TIMEOUT_SECONDS),
+                timeout=timeout,
             )
         except requests.RequestException as exc:
             return ActionResult.fail(f"HTTP request failed: {exc}")

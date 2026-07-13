@@ -2,7 +2,7 @@
 #define MyAppName "OpenLaunchDeck"
 #endif
 #ifndef MyAppVersion
-#define MyAppVersion "0.1.45"
+#define MyAppVersion "0.1.50"
 #endif
 #define MyAppPublisher "Rique"
 #define MyAppExeName "OpenLaunchDeck.exe"
@@ -37,6 +37,9 @@ SetupLogging=yes
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
+
+[InstallDelete]
+Type: filesandordirs; Name: "{app}\_internal"
 
 [Files]
 Source: "..\dist\OpenLaunchDeck\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs

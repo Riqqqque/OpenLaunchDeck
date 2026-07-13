@@ -68,6 +68,22 @@ def test_action_runner_rejects_when_background_queue_is_full():
         runner.shutdown()
 
 
+def test_action_runner_defaults_are_gaming_safe():
+    registry = ActionRegistry()
+    registry.register(NoopAction())
+    runner = ActionRunner(
+        registry=registry,
+        profile_service=FakeProfileService(ButtonConfig(id="A1", action=ActionConfig("noop", {}))),
+        dangerous_service=DangerousConfirmService(),
+    )
+
+    try:
+        assert runner.executor._max_workers == 2
+        assert runner._pending_limit == 8
+    finally:
+        runner.shutdown()
+
+
 def test_obs_start_streaming_requires_confirmation_without_dangerous_flag():
     button = ButtonConfig(
         id="A1",

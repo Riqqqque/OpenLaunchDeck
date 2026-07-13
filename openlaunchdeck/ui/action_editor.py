@@ -55,7 +55,7 @@ class ActionEditor(QWidget):
 
     def current_action(self) -> tuple[str, dict[str, Any]]:
         action_type = self.action_type_combo.currentData()
-        config: dict[str, Any] = {}
+        config: dict[str, Any] = dict(self._config)
         for name, widget in self.field_widgets.items():
             if isinstance(widget, QLineEdit):
                 config[name] = widget.text()
@@ -68,8 +68,13 @@ class ActionEditor(QWidget):
                 if field.get("type") == "json":
                     try:
                         config[name] = json.loads(text) if text.strip() else []
-                    except json.JSONDecodeError:
-                        config[name] = []
+                    except json.JSONDecodeError as exc:
+                        config[name] = self._config.get(name, [])
+                        widget.setToolTip(f"JSON is incomplete or invalid: {exc.msg}")
+                        self._set_invalid(widget, True)
+                    else:
+                        widget.setToolTip("")
+                        self._set_invalid(widget, False)
                 else:
                     config[name] = text
             elif isinstance(widget, QCheckBox):
@@ -81,12 +86,24 @@ class ActionEditor(QWidget):
                     config[name] = widget.currentText().strip()
                 else:
                     config[name] = widget.currentData()
+        self._config = dict(config)
         return str(action_type or "noop"), config
 
     def _clear_dynamic_rows(self) -> None:
         while self.form.rowCount() > 1:
             self.form.removeRow(1)
         self.field_widgets.clear()
+
+    def has_validation_errors(self) -> bool:
+        return any(bool(widget.property("invalid")) for widget in self.field_widgets.values())
+
+    @staticmethod
+    def _set_invalid(widget: QWidget, invalid: bool) -> None:
+        if bool(widget.property("invalid")) == invalid:
+            return
+        widget.setProperty("invalid", invalid)
+        widget.style().unpolish(widget)
+        widget.style().polish(widget)
 
     def _rebuild_fields(self) -> None:
         self._clear_dynamic_rows()
@@ -170,23 +187,32 @@ class ActionEditor(QWidget):
             else:
                 widget.setPlainText(str(value or ""))
             return widget
-        if field_type in {"path", "file"}:
+        if field_type in {"path", "file", "file_or_directory"}:
             container = QWidget()
             layout = QHBoxLayout(container)
             layout.setContentsMargins(0, 0, 0, 0)
             edit = QLineEdit(str(value or ""))
             edit.setMinimumWidth(0)
             edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-            browse = QPushButton("Browse")
+            browse = QPushButton("File" if field_type == "file_or_directory" else "Browse")
             browse.setObjectName("SecondaryButton")
             browse.setMinimumWidth(64)
             layout.addWidget(edit, 1)
             layout.addWidget(browse)
-            browse.clicked.connect(lambda: self._browse(edit, field_type))
+            browse.clicked.connect(lambda: self._browse(edit, "file" if field_type == "file_or_directory" else field_type))
+            if field_type == "file_or_directory":
+                folder = QPushButton("Folder")
+                folder.setObjectName("SecondaryButton")
+                folder.setMinimumWidth(64)
+                layout.addWidget(folder)
+                folder.clicked.connect(lambda: self._browse(edit, "path"))
             container.value_widget = edit
             edit.editingFinished.connect(lambda: self.changed.emit())
             return container
-        return QLineEdit(str(value or ""))
+        widget = QLineEdit(str(value or ""))
+        if field_type == "password":
+            widget.setEchoMode(QLineEdit.EchoMode.Password)
+        return widget
 
     def _connect_widget_changed(self, widget: QWidget) -> None:
         if isinstance(widget, QLineEdit):

@@ -66,12 +66,12 @@ class WindowsRunKeyBackend:
 
 def build_startup_command() -> str:
     if getattr(sys, "frozen", False):
-        return subprocess.list2cmdline([sys.executable])
+        return subprocess.list2cmdline([sys.executable, "--background"])
 
     executable = Path(sys.executable)
     pythonw = executable.with_name("pythonw.exe")
     launcher = pythonw if sys.platform == "win32" and pythonw.exists() else executable
-    return subprocess.list2cmdline([str(launcher), "-m", "openlaunchdeck.main"])
+    return subprocess.list2cmdline([str(launcher), "-m", "openlaunchdeck.main", "--background"])
 
 
 class StartupService:

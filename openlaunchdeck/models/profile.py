@@ -26,7 +26,19 @@ class Profile:
         pages = [Page.from_dict(page) for page in raw_pages] if isinstance(raw_pages, list) else []
         if not pages:
             pages = [Page.blank()]
+        used_page_ids: set[str] = set()
+        for index, page in enumerate(pages, start=1):
+            base_id = page.id.strip() or f"page_{index}"
+            page_id = base_id
+            suffix = 2
+            while page_id in used_page_ids:
+                page_id = f"{base_id}_{suffix}"
+                suffix += 1
+            page.id = page_id
+            used_page_ids.add(page_id)
         default_page = str(data.get("default_page") or pages[0].id)
+        if default_page not in used_page_ids:
+            default_page = pages[0].id
         return cls(
             name=str(data.get("name") or "Untitled"),
             id=str(data.get("id") or "untitled"),

@@ -18,6 +18,7 @@ def test_app_icon_assets_exist_and_load():
     icon = app_icon()
     assert not icon.isNull()
     assert max(size.width() for size in icon.availableSizes()) >= 256
+    assert {size.width() for size in icon.availableSizes()} >= {16, 24, 32, 48, 64, 128, 256}
 
 
 def test_app_icon_has_transparent_outer_corners():

@@ -86,7 +86,8 @@ If the app still does not start after signing in, check these items:
 
 - Confirm the installed app still exists at the path shown in the Windows startup entry.
 - Open OpenLaunchDeck once after an app update; the packaged app repairs stale startup paths.
-- Keep `Start minimized` on only if you want the app to start in the background. If tray mode is off, it starts minimized to the taskbar.
+- The installed startup entry uses background mode. If a window-layout tool should position the window, have that tool launch `OpenLaunchDeck.exe --show` after sign-in.
+- Keep `Start minimized` on only if you want direct app launches to start in the background. If tray mode is off, it starts minimized to the taskbar.
 - Check `%APPDATA%\OpenLaunchDeck\logs` for startup registration errors.
 
 ## Update Check Fails

@@ -1,9 +1,9 @@
 {
-  "latest_version": "0.1.33",
+  "latest_version": "0.2.0",
   "minimum_supported_version": "0.1.0",
   "required": false,
-  "download_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/download/v0.1.33/OpenLaunchDeckSetup-0.1.33.exe",
-  "sha256": "2c02779c04123492635adaeadfbf5093244ffbc66ad0ef56847272c40f5bf4fa",
-  "release_notes_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/tag/v0.1.33",
-  "published_at": "2026-06-07T07:30:00Z"
+  "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "release_notes_url": "https://example.com/releases/v0.2.0",
+  "published_at": "2026-01-01T00:00:00Z"
 }

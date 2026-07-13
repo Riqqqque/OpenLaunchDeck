@@ -10,6 +10,7 @@ from ..actions.registry import ActionRegistry
 from ..models.button import ButtonConfig
 from .dangerous_confirm import DangerousConfirmService
 from .performance_monitor import PerformanceMonitor
+from .qt_dispatch import MainThreadDispatcher
 
 
 class ActionRunner:
@@ -25,8 +26,8 @@ class ActionRunner:
         logger=None,
         performance_monitor: PerformanceMonitor | None = None,
         completion_callback: Callable[[str, ActionResult], None] | None = None,
-        max_workers: int = 4,
-        max_pending: int = 16,
+        max_workers: int = 2,
+        max_pending: int = 8,
     ) -> None:
         self.registry = registry
         self.profile_service = profile_service
@@ -42,8 +43,13 @@ class ActionRunner:
         self._pending_limit = max(1, max_pending)
         self._pending_count = 0
         self._pending_lock = threading.Lock()
+        self._shutting_down = False
+        self._main_thread = MainThreadDispatcher()
 
     def handle_button_press(self, button_id: str, source: str = "simulation") -> ActionResult:
+        with self._pending_lock:
+            if self._shutting_down:
+                return ActionResult.fail("OpenLaunchDeck is shutting down.")
         start = self.performance_monitor.now()
         page = self.profile_service.current_page
         button = page.get_button(button_id)
@@ -65,6 +71,9 @@ class ActionRunner:
         self.dangerous_service.disarm_all()
 
     def shutdown(self) -> None:
+        with self._pending_lock:
+            self._shutting_down = True
+        self.completion_callback = None
         self.executor.shutdown(wait=False, cancel_futures=True)
 
     def _dispatch(self, button_id: str, button: ButtonConfig, press_start: float, source: str) -> ActionResult:
@@ -82,6 +91,7 @@ class ActionRunner:
             device_manager=self.device_manager,
             settings_service=self.settings_service,
             action_registry=self.registry,
+            action_executor=self._execute_nested_action,
         )
         config = dict(action_config.config if action_config else {})
         config.setdefault("_page_id", context.current_page.id)
@@ -136,7 +146,7 @@ class ActionRunner:
 
     def _try_reserve_action_slot(self) -> bool:
         with self._pending_lock:
-            if self._pending_count >= self._pending_limit:
+            if self._shutting_down or self._pending_count >= self._pending_limit:
                 return False
             self._pending_count += 1
             return True
@@ -144,3 +154,9 @@ class ActionRunner:
     def _release_action_slot(self, _future: Future) -> None:
         with self._pending_lock:
             self._pending_count = max(0, self._pending_count - 1)
+
+    def _execute_nested_action(self, action_type: str, context: ActionContext, config: dict) -> ActionResult:
+        action = self.registry.get(action_type)
+        if action.blocking:
+            return action.execute(context, config)
+        return self._main_thread.call(lambda: action.execute(context, config))

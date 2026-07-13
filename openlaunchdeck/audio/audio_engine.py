@@ -199,7 +199,12 @@ class AudioEngine:
             return [instance for instance in self._instances.values() if instance.button_id == button_id]
 
     def is_button_playing(self, button_id: str) -> bool:
-        return bool(self.instances_for_button(button_id))
+        with self._lock:
+            return any(instance.button_id == button_id for instance in self._instances.values())
+
+    def playing_button_ids(self) -> set[str]:
+        with self._lock:
+            return {instance.button_id for instance in self._instances.values()}
 
     def stop_button(self, button_id: str) -> None:
         for instance in self.instances_for_button(button_id):

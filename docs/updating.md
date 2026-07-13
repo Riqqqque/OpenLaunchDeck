@@ -1,6 +1,6 @@
 # Updating
 
-OpenLaunchDeck uses a manifest-based update check for installer releases. The app never installs silently. A user starts a manual check from `Help > Check for Updates`, or enables a quiet startup check in Settings. Startup checks run in the background and only show a status message when an update is available.
+OpenLaunchDeck checks the latest GitHub release by default. It requires both the versioned installer and its `.sha256` asset before offering a download. Advanced deployments can set a custom manifest URL in Settings instead. The app never installs silently. A user starts a manual check from `Help > Check for Updates`, or enables a quiet startup check in Settings. Startup checks run in the background and only show a status message when an update is available.
 
 ## Version Source
 
@@ -19,7 +19,7 @@ When preparing a release:
 4. Commit and push the release changes.
 5. Push a `v<version>` tag.
 6. Confirm the GitHub Release contains the installer, portable ZIP, and checksum files.
-7. Update the remote manifest.
+7. If the release uses a custom update service, update its remote manifest.
 
 `build.ps1` reads the version from `openlaunchdeck/version.py` and passes it to the Inno Setup script.
 The Release workflow uses the same build script and publishes release assets when a version tag is pushed. In GitHub Actions it uses the current runner Python, preinstalled dependencies, faster ZIP packaging, and faster installer compression to reduce tagged-release wait time.
@@ -48,17 +48,17 @@ Before launching a downloaded installer, OpenLaunchDeck tries to back up profile
 
 ```json
 {
-  "latest_version": "0.1.33",
+  "latest_version": "0.2.0",
   "minimum_supported_version": "0.1.0",
   "required": false,
-  "download_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/download/v0.1.33/OpenLaunchDeckSetup-0.1.33.exe",
-  "sha256": "2c02779c04123492635adaeadfbf5093244ffbc66ad0ef56847272c40f5bf4fa",
-  "release_notes_url": "https://github.com/Riqqqque/OpenLaunchDeck/releases/tag/v0.1.33",
-  "published_at": "2026-06-07T07:30:00Z"
+  "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
+  "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
+  "release_notes_url": "https://example.com/releases/v0.2.0",
+  "published_at": "2026-01-01T00:00:00Z"
 }
 ```
 
-The checksum must match the installer named by `download_url`.
+The values above are examples only. Replace the URL and checksum with the published installer values. The checksum must match the installer named by `download_url`.
 
 Rules:
 
@@ -69,7 +69,7 @@ Rules:
 - `release_notes_url` may be empty, otherwise it must be HTTP or HTTPS.
 - `published_at` must be ISO 8601.
 
-The update service compares the current version with `latest_version`, checks whether the current version is below `minimum_supported_version`, and reports whether the update is optional or required.
+The update service compares the current version with `latest_version`, checks whether the current version is below `minimum_supported_version`, and reports whether the update is optional or required. The built-in GitHub release check treats releases as optional and uses `0.1.0` as the minimum supported version; custom manifests can set stricter policy.
 
 ## Download And Verification
 
@@ -121,7 +121,7 @@ Use the installer for normal updates. Use the ZIP for portable testing or troubl
 
 4. Create a manifest JSON using that checksum.
 5. Serve the manifest and installer over HTTP.
-6. Put the manifest URL in Settings.
+6. Put the manifest URL in Settings. Leave this field empty during normal use to check GitHub Releases.
 7. Open `Help > Check for Updates`.
 8. Confirm that the update can be detected, downloaded to AppData, verified, and launched only after user confirmation.
 

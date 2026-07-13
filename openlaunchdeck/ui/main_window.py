@@ -32,7 +32,7 @@ from .. import native_acceleration
 from ..constants import BUTTON_IDS
 from ..devices.midi_manager import MidiManager
 from ..models.button import ButtonConfig
-from ..paths import APP_DATA_DIR, LOGS_DIR, PROFILES_DIR
+from ..paths import LOGS_DIR, PROFILES_DIR
 from ..version import APP_NAME, __version__
 from .button_editor import ButtonEditor
 from .grid_widget import GridWidget
@@ -80,6 +80,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.services = services
         self._force_quit = False
+        self._quit_pending = False
         self.clipboard_button: dict | None = None
         self.midi_debug_window: MidiDebugWindow | None = None
         self.soundboard_panel: SoundboardPanel | None = None
@@ -89,8 +90,15 @@ class MainWindow(QMainWindow):
         self._startup_update_worker: UpdateCheckWorker | None = None
         self._grid_focus_mode = False
         self._midi_debug_callbacks_active = False
+        self._force_next_action_ui_update = False
         self._last_voice_route_guard_message = ""
         self._last_voice_route_guard_log_time = 0.0
+        self._manual_disconnect = False
+        self._automatic_connect_attempt = False
+        self._profile_autosave_timer = QTimer(self)
+        self._profile_autosave_timer.setSingleShot(True)
+        self._profile_autosave_timer.setInterval(450)
+        self._profile_autosave_timer.timeout.connect(self._save_current_profile)
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
         self.resize(1480, 920)
@@ -108,6 +116,7 @@ class MainWindow(QMainWindow):
         self._build_main_layout()
         self._build_status_bar()
         self._connect_signals()
+        self._build_device_reconnect_guard()
         self._build_voice_route_guard()
         self.refresh_all()
         self.tray = TrayController(self, services)
@@ -117,10 +126,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(150, self.show_first_run)
         if self.services.settings_service.settings.auto_connect:
             QTimer.singleShot(250, self.connect_device)
-        if (
-            self.services.settings_service.settings.check_updates_on_startup
-            and self.services.settings_service.settings.update_manifest_url.strip()
-        ):
+        if self.services.settings_service.settings.check_updates_on_startup:
             QTimer.singleShot(1500, self.check_updates_on_startup)
 
     def _build_main_layout(self) -> None:
@@ -301,7 +307,7 @@ class MainWindow(QMainWindow):
 
         profiles_menu = menu_bar.addMenu("Profiles")
         manager_action = QAction("Profile Manager", self)
-        manager_action.triggered.connect(lambda: ProfileManagerDialog(self).exec())
+        manager_action.triggered.connect(self.show_profile_manager)
         profiles_menu.addAction(manager_action)
 
         soundboard_menu = menu_bar.addMenu("Soundboard")
@@ -408,15 +414,20 @@ class MainWindow(QMainWindow):
             return
         self.select_button(button_id)
         self.last_pressed_status.setText(f"Last: {button_id}")
+        self._force_next_action_ui_update = True
         self.services.action_runner.handle_button_press(button_id, "simulation")
 
     def handle_hardware_button(self, button_id: str, pressed: bool, raw) -> None:
         if not pressed:
             return
-        self.select_button(button_id)
-        self.last_pressed_status.setText(f"Last: {button_id}")
+        if self._should_update_visible_ui():
+            self.select_button(button_id)
+            self.last_pressed_status.setText(f"Last: {button_id}")
         self.services.lighting_service.flash(button_id, "white", delay=0.12)
         self.services.action_runner.handle_button_press(button_id, "midi")
+
+    def _should_update_visible_ui(self) -> bool:
+        return self.isVisible() and not self.isMinimized()
 
     def select_button(self, button_id: str) -> None:
         previous = self.grid.select(button_id)
@@ -430,7 +441,7 @@ class MainWindow(QMainWindow):
 
     def save_button_changes(self) -> None:
         if self.services.settings_service.settings.profile_autosave:
-            self.services.profile_service.save_current()
+            self._profile_autosave_timer.start()
         self.grid.update_button(
             self.services.profile_service.current_page,
             self.grid.selected_button_id,
@@ -439,10 +450,27 @@ class MainWindow(QMainWindow):
         )
         self.refresh_lighting()
 
+    def _flush_profile_autosave(self) -> None:
+        if not self._profile_autosave_timer.isActive():
+            return
+        self._profile_autosave_timer.stop()
+        self._save_current_profile()
+
+    def _save_current_profile(self) -> bool:
+        try:
+            self.services.profile_service.save_current()
+        except Exception as exc:
+            if self.services.logger:
+                self.services.logger.exception("Profile could not be saved.")
+            self.statusBar().showMessage(f"Profile could not be saved: {exc}", 8000)
+            return False
+        return True
+
     def clear_selected_button(self) -> None:
+        self._profile_autosave_timer.stop()
         button_id = self.grid.selected_button_id
         self.services.profile_service.current_page.buttons[button_id] = ButtonConfig.blank(button_id)
-        self.services.profile_service.save_current()
+        self._save_current_profile()
         self.refresh_all()
         self.refresh_lighting()
 
@@ -461,19 +489,31 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, APP_NAME, "Clipboard does not contain a button config.")
                 return
         button_id = self.grid.selected_button_id
+        self._profile_autosave_timer.stop()
         self.services.profile_service.current_page.buttons[button_id] = ButtonConfig.from_dict(button_id, data)
-        self.services.profile_service.save_current()
+        self._save_current_profile()
         self.refresh_all()
         self.refresh_lighting()
 
     def change_profile(self, profile_id: str) -> None:
+        self._flush_profile_autosave()
         if profile_id and self.services.profile_service.set_current_profile(profile_id):
+            self.services.settings_service.update(default_profile=profile_id)
             self.services.action_runner.disarm_all()
             self.services.lighting_service.stop_all_blinks()
             self.refresh_all()
             self.refresh_lighting()
 
+    def show_profile_manager(self) -> None:
+        self._flush_profile_autosave()
+        dialog = ProfileManagerDialog(self.services.profile_service, self)
+        dialog.exec()
+        self.services.settings_service.update(default_profile=self.services.profile_service.current_profile_id)
+        self.refresh_all()
+        self.refresh_lighting()
+
     def change_page(self, page_id: str) -> None:
+        self._flush_profile_autosave()
         old_page_id = self.services.profile_service.current_page.id
         if page_id and self.services.profile_service.set_current_page(page_id):
             self.services.action_runner.disarm_all()
@@ -505,6 +545,7 @@ class MainWindow(QMainWindow):
         self.refresh_lighting()
 
     def import_profile(self) -> None:
+        self._flush_profile_autosave()
         path, _ = QFileDialog.getOpenFileName(self, "Import Profile", str(PROFILES_DIR), "JSON files (*.json)")
         if not path:
             return
@@ -526,15 +567,19 @@ class MainWindow(QMainWindow):
         if path:
             self.services.profile_service.export_profile(self.services.profile_service.current_profile_id, Path(path))
 
-    def connect_device(self) -> None:
+    def connect_device(self, automatic: bool = False) -> None:
+        self._manual_disconnect = False
         if self._connect_thread is not None:
             self.statusBar().showMessage("MIDI connection is already in progress.", 2500)
             return
+        self._automatic_connect_attempt = bool(automatic)
         settings = self.services.settings_service.settings
         input_port, output_port = MidiManager.resolve_launchpad_ports(settings.midi_input_port, settings.midi_output_port)
         if not input_port and not output_port:
             self.statusBar().showMessage("No Launchpad MIDI ports detected; simulation mode is active.", 4000)
             self.refresh_all()
+            self._schedule_device_reconnect()
+            self._automatic_connect_attempt = False
             return
         self.statusBar().showMessage("Connecting MIDI device...", 4000)
         self._connect_thread = QThread(self)
@@ -550,6 +595,8 @@ class MainWindow(QMainWindow):
         self.refresh_all()
 
     def disconnect_device(self) -> None:
+        self._manual_disconnect = True
+        self.device_reconnect_timer.stop()
         self.services.device.close()
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
@@ -557,7 +604,11 @@ class MainWindow(QMainWindow):
         self.refresh_all()
 
     def reconnect_device(self) -> None:
-        self.disconnect_device()
+        self._manual_disconnect = False
+        self.services.device.close()
+        self.services.action_runner.disarm_all()
+        self.services.lighting_service.stop_all_blinks()
+        self.services.lighting_service.clear()
         self.connect_device()
 
     def show_midi_debug(self) -> None:
@@ -590,10 +641,14 @@ class MainWindow(QMainWindow):
             self.midi_debug_window.append_outgoing(message, text)
 
     def on_action_finished(self, button_id: str, result) -> None:
-        self.last_result_status.setText(f"Result: {result.message[:60]}")
+        update_visible_ui = self._should_update_visible_ui() or self._force_next_action_ui_update
+        self._force_next_action_ui_update = False
+        if update_visible_ui:
+            self.last_result_status.setText(f"Result: {result.message[:60]}")
         if result.details.get("page_changed"):
             self.services.lighting_service.stop_blink(button_id)
-            self.refresh_all()
+            if update_visible_ui:
+                self.refresh_all()
             self.refresh_lighting()
             return
         if "Press again" in result.message:
@@ -605,16 +660,21 @@ class MainWindow(QMainWindow):
         else:
             self.services.lighting_service.stop_blink(button_id)
             self.services.lighting_service.flash(button_id, "red", delay=0.3)
-        self.grid.update_button(
-            self.services.profile_service.current_page,
-            button_id,
-            self.services.action_runner.dangerous_service,
-            self.services.audio_engine,
-        )
+        if update_visible_ui:
+            self.grid.update_button(
+                self.services.profile_service.current_page,
+                button_id,
+                self.services.action_runner.dangerous_service,
+                self.services.audio_engine,
+            )
 
     def show_soundboard_panel(self) -> None:
-        self.soundboard_panel = SoundboardPanel(self.services.audio_engine, self.services.settings_service, self)
-        self.soundboard_panel.exec()
+        if self.soundboard_panel is None:
+            self.soundboard_panel = SoundboardPanel(self.services.audio_engine, self.services.settings_service, self)
+        self.soundboard_panel.refresh()
+        self.soundboard_panel.show()
+        self.soundboard_panel.raise_()
+        self.soundboard_panel.activateWindow()
 
     def stop_all_sounds(self) -> None:
         self.services.audio_engine.stop_all()
@@ -622,6 +682,7 @@ class MainWindow(QMainWindow):
         self.refresh_lighting()
 
     def show_settings(self) -> None:
+        self._flush_profile_autosave()
         dialog = SettingsDialog(self.services.settings_service, self, self.services.startup_service)
         if dialog.exec():
             self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
@@ -643,6 +704,7 @@ class MainWindow(QMainWindow):
             self.services.audio_engine.performance_logging_enabled = self.services.settings_service.settings.enable_performance_logging
             self.services.performance_monitor.set_enabled(self.services.settings_service.settings.enable_performance_logging)
             native_acceleration.configure(self.services.settings_service.settings.use_native_acceleration, self.services.logger)
+            self._schedule_device_reconnect()
 
     def toggle_grid_focus_mode(self) -> None:
         self.set_grid_focus_mode(not self._grid_focus_mode)
@@ -668,13 +730,13 @@ class MainWindow(QMainWindow):
         width = self.width()
         base_density = self.services.settings_service.settings.grid_density
         if self._grid_focus_mode:
-            if width < 1350:
+            if width < 1050:
                 density = "mini"
-            elif width < 1550 and base_density != "compact":
+            elif width < 1500 and base_density != "compact":
                 density = "compact"
             else:
                 density = base_density
-        elif width < 1600:
+        elif width < 1120:
             density = "mini"
         elif width < 1700 and base_density != "compact":
             density = "compact"
@@ -684,8 +746,8 @@ class MainWindow(QMainWindow):
             self._applied_grid_density = density
             self.grid.set_density(density)
 
-        compact_header = width < 1350
-        narrow_header = width < 1180
+        compact_header = width < 1300
+        narrow_header = width < 1050
         compact_workspace = width < 1350
         self.app_header.setVisible(not self._grid_focus_mode)
         if self._grid_focus_mode:
@@ -700,13 +762,13 @@ class MainWindow(QMainWindow):
             self.deck_layout.setSpacing(12)
 
         self.deck_hint.setVisible(not compact_header and not self._grid_focus_mode)
-        self.header_profile.setVisible(not compact_header)
+        self.header_profile.setVisible(not narrow_header)
         self.header_mode.setVisible(not narrow_header)
         self.header_soundboard_button.setText("Sounds" if compact_header else "Soundboard")
         self.header_reconnect_button.setText("Reconnect" if not narrow_header else "Link")
-        self.header_debug_button.setVisible(not compact_header)
-        self.header_soundboard_button.setVisible(not compact_header)
-        self.header_update_button.setVisible(not compact_header)
+        self.header_debug_button.setVisible(width >= 1450)
+        self.header_soundboard_button.setVisible(width >= 1160)
+        self.header_update_button.setVisible(width >= 1160)
         self.sidebar_scroll.setVisible(not compact_workspace and not self._grid_focus_mode)
         self.editor_scroll.setVisible(not self._grid_focus_mode)
 
@@ -716,15 +778,15 @@ class MainWindow(QMainWindow):
             self.deck_panel.setMinimumWidth(360)
             self.workspace_splitter.setSizes([0, max(760, width - 80), 0])
         elif compact_workspace:
-            self.workspace_splitter.setOrientation(Qt.Orientation.Vertical)
+            self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
             self.grid_scroll.setWidgetResizable(True)
             self.sidebar_scroll.setMinimumWidth(0)
-            self.editor_scroll.setMinimumWidth(0)
-            self.editor_scroll.setMinimumHeight(260)
-            self.deck_panel.setMinimumWidth(360)
-            self.deck_panel.setMinimumHeight(220)
-            editor_height = 300 if self.height() >= 720 else 260
-            self.workspace_splitter.setSizes([0, max(220, self.height() - editor_height - 260), editor_height])
+            self.editor_scroll.setMinimumWidth(300)
+            self.editor_scroll.setMinimumHeight(0)
+            self.deck_panel.setMinimumWidth(480)
+            self.deck_panel.setMinimumHeight(0)
+            editor_width = 340 if width >= 1120 else 310
+            self.workspace_splitter.setSizes([0, max(560, width - editor_width - 70), editor_width])
         else:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
             self.grid_scroll.setWidgetResizable(True)
@@ -747,11 +809,13 @@ class MainWindow(QMainWindow):
         if self._startup_update_thread is not None:
             return
         manifest_url = self.services.settings_service.settings.update_manifest_url.strip()
-        if not manifest_url:
-            return
         service = UpdateService(__version__, self.services.logger)
         self._startup_update_thread = QThread(self)
-        self._startup_update_worker = UpdateCheckWorker(service, manifest_url)
+        self._startup_update_worker = UpdateCheckWorker(
+            service,
+            manifest_url,
+            self.services.settings_service.settings.update_channel,
+        )
         self._startup_update_worker.moveToThread(self._startup_update_thread)
         self._startup_update_thread.started.connect(self._startup_update_worker.run)
         self._startup_update_worker.finished.connect(self.on_startup_update_result)
@@ -776,12 +840,38 @@ class MainWindow(QMainWindow):
     def clear_startup_update_worker(self) -> None:
         self._startup_update_thread = None
         self._startup_update_worker = None
+        self._finish_deferred_quit()
 
     def _build_voice_route_guard(self) -> None:
         self.voice_route_guard_timer = QTimer(self)
-        self.voice_route_guard_timer.setInterval(10_000)
+        self.voice_route_guard_timer.setTimerType(Qt.TimerType.VeryCoarseTimer)
+        self.voice_route_guard_timer.setInterval(60_000)
         self.voice_route_guard_timer.timeout.connect(self.ensure_voice_route_running)
         self.update_voice_route_guard()
+
+    def _build_device_reconnect_guard(self) -> None:
+        self.device_reconnect_timer = QTimer(self)
+        self.device_reconnect_timer.setTimerType(Qt.TimerType.VeryCoarseTimer)
+        self.device_reconnect_timer.setInterval(5000)
+        self.device_reconnect_timer.timeout.connect(self._auto_reconnect_device)
+
+    def _schedule_device_reconnect(self) -> None:
+        should_retry = (
+            self.services.settings_service.settings.auto_connect
+            and not self._manual_disconnect
+            and not self.services.device.connected
+        )
+        if should_retry and not self.device_reconnect_timer.isActive():
+            self.device_reconnect_timer.start()
+        elif not should_retry:
+            self.device_reconnect_timer.stop()
+
+    def _auto_reconnect_device(self) -> None:
+        if self.services.device.connected or self._manual_disconnect:
+            self.device_reconnect_timer.stop()
+            return
+        if self._connect_thread is None:
+            self.connect_device(automatic=True)
 
     def update_voice_route_guard(self) -> None:
         enabled = self.services.audio_engine.voice_route_microphone_enabled
@@ -847,17 +937,25 @@ class MainWindow(QMainWindow):
             subprocess.Popen(["xdg-open", str(path)])
 
     def on_connect_finished(self, success: bool, message: str, input_port: str, output_port: str) -> None:
+        automatic = self._automatic_connect_attempt
+        self._automatic_connect_attempt = False
         if success:
+            self.device_reconnect_timer.stop()
             self.services.settings_service.update(midi_input_port=input_port, midi_output_port=output_port)
             self.statusBar().showMessage("MIDI device connected.", 3000)
             self.refresh_lighting()
         else:
-            QMessageBox.warning(self, APP_NAME, f"Could not connect MIDI device:\n{message}")
+            if automatic:
+                self.statusBar().showMessage(f"Launchpad reconnect failed: {message}", 4000)
+            else:
+                QMessageBox.warning(self, APP_NAME, f"Could not connect MIDI device:\n{message}")
+            self._schedule_device_reconnect()
         self.refresh_all()
 
     def clear_connect_worker(self) -> None:
         self._connect_thread = None
         self._connect_worker = None
+        self._finish_deferred_quit()
 
     def on_device_disconnected(self, reason: str) -> None:
         self.services.action_runner.disarm_all()
@@ -865,13 +963,15 @@ class MainWindow(QMainWindow):
         self.services.lighting_service.clear()
         self.statusBar().showMessage(f"MIDI device disconnected: {reason}", 5000)
         self.refresh_all()
+        self._schedule_device_reconnect()
 
     def on_audio_state_changed(self) -> None:
-        self.grid.update_from_page(
-            self.services.profile_service.current_page,
-            self.services.action_runner.dangerous_service,
-            self.services.audio_engine,
-        )
+        if self._should_update_visible_ui():
+            self.grid.update_from_page(
+                self.services.profile_service.current_page,
+                self.services.action_runner.dangerous_service,
+                self.services.audio_engine,
+            )
         self.refresh_lighting()
         if self.soundboard_panel is not None and self.soundboard_panel.isVisible():
             self.soundboard_panel.refresh()
@@ -881,11 +981,17 @@ class MainWindow(QMainWindow):
         for button_id in BUTTON_IDS:
             if not armed.is_armed(button_id):
                 self.services.lighting_service.stop_blink(button_id)
-        self.grid.update_from_page(self.services.profile_service.current_page, armed, self.services.audio_engine)
+        if self._should_update_visible_ui():
+            self.grid.update_from_page(self.services.profile_service.current_page, armed, self.services.audio_engine)
         self.refresh_lighting()
 
     def closeEvent(self, event) -> None:
-        if not self._force_quit and self.should_keep_running_in_background():
+        self._flush_profile_autosave()
+        app = QApplication.instance()
+        saving_session = bool(app and app.isSavingSession())
+        if not self._force_quit and not saving_session and self.should_keep_running_in_background():
+            if self.soundboard_panel is not None:
+                self.soundboard_panel.hide()
             self.hide()
             if self.services.audio_engine.voice_route_microphone_enabled and not self.services.settings_service.settings.minimize_to_tray:
                 self.tray.tray.showMessage(
@@ -897,6 +1003,8 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         self.services.audio_engine.stop_all()
+        if self.soundboard_panel is not None:
+            self.soundboard_panel.close()
         self.services.device.close()
         super().closeEvent(event)
 
@@ -909,9 +1017,31 @@ class MainWindow(QMainWindow):
 
     def restore_from_tray(self) -> None:
         self.showNormal()
+        self.refresh_all()
         self.raise_()
         self.activateWindow()
 
     def quit_app(self) -> None:
         self._force_quit = True
+        busy_dialogs = [dialog for dialog in self.findChildren(UpdateDialog) if dialog.has_active_worker()]
+        if self._connect_thread is not None or self._startup_update_thread is not None or busy_dialogs:
+            if not self._quit_pending:
+                self._quit_pending = True
+                for dialog in busy_dialogs:
+                    dialog.idle.connect(self._finish_deferred_quit)
+                    dialog.hide()
+                self.hide()
+            return
+        self.services.action_runner.completion_callback = None
+        self.services.audio_engine.state_changed_callback = None
         self.close()
+
+    def _finish_deferred_quit(self) -> None:
+        if not self._quit_pending:
+            return
+        if self._connect_thread is not None or self._startup_update_thread is not None:
+            return
+        if any(dialog.has_active_worker() for dialog in self.findChildren(UpdateDialog)):
+            return
+        self._quit_pending = False
+        QTimer.singleShot(0, self.quit_app)

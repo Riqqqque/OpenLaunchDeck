@@ -142,10 +142,20 @@ class SoundboardPanel(QDialog):
         self.monitor_voice_check.stateChanged.connect(lambda _state: self._set_monitor_voice_routes())
         self.volume_spin.valueChanged.connect(self._set_global_volume)
         self.timer = QTimer(self)
-        self.timer.setInterval(1000)
+        self.timer.setTimerType(Qt.TimerType.VeryCoarseTimer)
+        self.timer.setInterval(2000)
         self.timer.timeout.connect(self.refresh)
-        self.timer.start()
         self.refresh()
+
+    def showEvent(self, event) -> None:
+        self.refresh()
+        if not self.timer.isActive():
+            self.timer.start()
+        super().showEvent(event)
+
+    def hideEvent(self, event) -> None:
+        self.timer.stop()
+        super().hideEvent(event)
 
     def refresh(self) -> None:
         self.refresh_route_status()

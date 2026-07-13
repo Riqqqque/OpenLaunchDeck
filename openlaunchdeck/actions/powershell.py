@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+
 from .run_command import RunCommandAction
 
 
@@ -12,7 +14,8 @@ class PowerShellAction(RunCommandAction):
         command = str(config.get("command") or "").strip()
         if not command:
             return super().execute(context, {"command": "", "wait": True})
-        wrapped = f'powershell -NoProfile -ExecutionPolicy Bypass -Command "{command}"'
+        encoded = base64.b64encode(command.encode("utf-16-le")).decode("ascii")
+        wrapped = f"powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encoded}"
         merged = dict(config)
         merged["command"] = wrapped
         return super().execute(context, merged)

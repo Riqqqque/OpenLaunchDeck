@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 from ..constants import DEFAULT_COMMAND_TIMEOUT_SECONDS
@@ -37,20 +38,31 @@ class RunCommandAction(BaseAction):
             creationflags = subprocess.CREATE_NO_WINDOW
         try:
             if wait:
-                completed = subprocess.run(
-                    command,
-                    shell=True,
-                    cwd=cwd,
-                    timeout=int(config.get("timeout", DEFAULT_COMMAND_TIMEOUT_SECONDS)),
-                    capture_output=True,
-                    text=True,
-                    startupinfo=startupinfo,
-                    creationflags=creationflags,
-                )
+                try:
+                    timeout = int(config.get("timeout", DEFAULT_COMMAND_TIMEOUT_SECONDS))
+                except (TypeError, ValueError):
+                    return ActionResult.fail("Command timeout must be a whole number of seconds.")
+                if timeout <= 0 or timeout > 300:
+                    return ActionResult.fail("Command timeout must be between 1 and 300 seconds.")
+                with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+                    completed = subprocess.run(
+                        command,
+                        shell=True,
+                        cwd=cwd,
+                        timeout=timeout,
+                        stdout=stdout_file,
+                        stderr=stderr_file,
+                        startupinfo=startupinfo,
+                        creationflags=creationflags,
+                    )
+                    stdout_file.seek(0)
+                    stderr_file.seek(0)
+                    stdout = stdout_file.read(65536).decode(errors="replace").strip()
+                    stderr = stderr_file.read(65536).decode(errors="replace").strip()
                 if completed.returncode != 0:
-                    detail = (completed.stderr or completed.stdout or "").strip()
+                    detail = stderr or stdout
                     return ActionResult.fail(f"Command failed with exit code {completed.returncode}.", output=detail)
-                return ActionResult.ok("Command completed.", output=(completed.stdout or "").strip())
+                return ActionResult.ok("Command completed.", output=stdout)
             subprocess.Popen(command, shell=True, cwd=cwd, startupinfo=startupinfo, creationflags=creationflags)
             return ActionResult.ok("Command started.")
         except Exception as exc:

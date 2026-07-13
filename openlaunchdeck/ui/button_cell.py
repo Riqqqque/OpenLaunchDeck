@@ -173,7 +173,7 @@ class ButtonCell(QWidget):
 
         painter.setPen(QPen(border, 2.2 if self._selected else 1.4))
         painter.setBrush(base)
-        painter.drawRoundedRect(rect, 9, 9)
+        painter.drawRoundedRect(rect, 8, 8)
 
         strip = QRect(rect.left() + 9, rect.top() + 8, max(18, rect.width() - 18), 5)
         painter.setPen(Qt.PenStyle.NoPen)
@@ -181,7 +181,7 @@ class ButtonCell(QWidget):
         painter.drawRoundedRect(strip, 3, 3)
 
         painter.setPen(QColor("#dbeafe") if button.enabled else QColor("#64748b"))
-        id_font = QFont("Segoe UI", 6 if self._density == "mini" else 7 if self._density == "compact" else 8, QFont.Weight.DemiBold)
+        id_font = QFont("Segoe UI", 7 if self._density in {"mini", "compact"} else 8, QFont.Weight.DemiBold)
         painter.setFont(id_font)
         painter.drawText(rect.adjusted(11, 14, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
 
@@ -189,7 +189,7 @@ class ButtonCell(QWidget):
         if badge:
             self._draw_badge(painter, rect, badge)
 
-        title_font = QFont("Segoe UI", 7 if self._density == "mini" else 8 if self._density == "compact" else 9 if self._density == "comfortable" else 10, QFont.Weight.Bold)
+        title_font = QFont("Segoe UI", 8 if self._density in {"mini", "compact"} else 9 if self._density == "comfortable" else 10, QFont.Weight.Bold)
         title_font.setStretch(94)
         painter.setFont(title_font)
         title_color = QColor("#f8fafc") if button.enabled else QColor("#94a3b8")
@@ -200,12 +200,12 @@ class ButtonCell(QWidget):
         self._draw_fitted_center(painter, title_rect, label, minimum_size=6 if self._density == "mini" else 7)
 
         action_label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
-        action_font = QFont("Segoe UI", 5 if self._density == "mini" else 6 if self._density == "compact" else 7, QFont.Weight.DemiBold)
+        action_font = QFont("Segoe UI", 6 if self._density in {"mini", "compact"} else 7, QFont.Weight.DemiBold)
         painter.setFont(action_font)
-        action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=5 if self._density == "mini" else 6)
+        action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=6)
         painter.setFont(action_font)
         action_text = metrics.elidedText(action_label, Qt.TextElideMode.ElideRight, max(18, rect.width() - 20))
-        pill_height = 11 if self._density == "mini" else 12 if self._density == "compact" else 13 if self._density == "comfortable" else 14
+        pill_height = 12 if self._density == "mini" else 13 if self._density == "compact" else 14
         pill_bottom_margin = 4 if self._density == "compact" else 5
         pill = QRect(rect.left() + 8, rect.bottom() - pill_height - pill_bottom_margin, rect.width() - 16, pill_height)
         painter.setPen(Qt.PenStyle.NoPen)

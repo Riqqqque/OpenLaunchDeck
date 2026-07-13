@@ -59,6 +59,10 @@ jobs:
           "APP_VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append
           "RELEASE_TAG=$tag" | Out-File -FilePath $env:GITHUB_ENV -Append
 
+      - name: Run release tests
+        shell: pwsh
+        run: python -m pytest -q
+
       - name: Build release assets
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File build.ps1 -RequireInstaller -UseCurrentPython -SkipPipUpgrade -SkipDependencyInstall -SkipTests -FastPackage

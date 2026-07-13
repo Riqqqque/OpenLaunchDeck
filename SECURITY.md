@@ -23,3 +23,5 @@ Include:
 Security-sensitive areas include update checks, downloaded installers, checksum verification, command execution actions, PowerShell actions, SSH actions, profile import, and file/path actions.
 
 OpenLaunchDeck does not silently install updates. Installer downloads must pass SHA256 verification before launch.
+
+OBS WebSocket passwords are masked in the editor but stored in the local profile that uses them. Do not publish or share exported profiles containing credentials.

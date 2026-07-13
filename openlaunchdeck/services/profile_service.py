@@ -10,42 +10,32 @@ from ..models.profile import Profile
 from ..paths import BACKUPS_DIR, PROFILES_DIR, STARTER_PROFILES_DIR, ensure_user_dirs
 
 
-RETIRED_STARTER_PROFILE_IDS = {"minecraft_server", "server_admin"}
-RETIRED_STARTER_MARKERS = (
-    "replace" + "-this-command",
-    "replace" + "-this-user",
-    "example" + ".local",
-)
-REFRESHABLE_STARTER_PROFILE_IDS = {"soundboard"}
-OUTDATED_STARTER_MARKERS = (
-    "plan" + "ned",
-    '"file_path": ""',
-)
-
-
 class ProfileService:
     def __init__(self, logger=None) -> None:
         ensure_user_dirs()
         self.logger = logger
         self.profiles: dict[str, Profile] = {}
+        self._profile_paths: dict[str, Path] = {}
         self.current_profile_id = ""
         self.current_page_id = ""
         self.load_profiles()
 
     def load_profiles(self) -> None:
         self.profiles.clear()
+        self._profile_paths.clear()
         self.ensure_starter_profiles()
-        self.retire_unconfigured_starter_profiles()
-        self.refresh_outdated_starter_profiles()
         for path in sorted(PROFILES_DIR.glob("*.json")):
             try:
                 data = read_json(path, {})
                 profile = Profile.from_dict(data)
+                original_id = profile.id
+                profile.id = self._unique_profile_id(profile.id, fallback=path.stem)
                 self.profiles[profile.id] = profile
-                if self._has_stale_button_ids(data):
+                self._profile_paths[profile.id] = path
+                if self._has_stale_button_ids(data) or profile.id != original_id:
                     self.save_profile(profile)
                     if self.logger:
-                        self.logger.info("Repaired stale button IDs in profile: %s", path)
+                        self.logger.info("Repaired profile data: %s", path)
             except Exception:
                 if self.logger:
                     self.logger.exception("Profile failed to load: %s", path)
@@ -64,46 +54,6 @@ class ProfileService:
         if STARTER_PROFILES_DIR.exists():
             for source in STARTER_PROFILES_DIR.glob("*.json"):
                 shutil.copy2(source, PROFILES_DIR / source.name)
-
-    def retire_unconfigured_starter_profiles(self) -> None:
-        retired_dir = BACKUPS_DIR / "retired_starter_profiles"
-        for profile_id in RETIRED_STARTER_PROFILE_IDS:
-            path = PROFILES_DIR / f"{profile_id}.json"
-            if not path.exists():
-                continue
-            text = path.read_text(encoding="utf-8-sig", errors="replace")
-            if not any(marker in text for marker in RETIRED_STARTER_MARKERS):
-                continue
-            retired_dir.mkdir(parents=True, exist_ok=True)
-            target = retired_dir / path.name
-            index = 2
-            while target.exists():
-                target = retired_dir / f"{path.stem}_{index}{path.suffix}"
-                index += 1
-            shutil.move(str(path), str(target))
-            if self.logger:
-                self.logger.info("Moved retired starter profile to backup: %s", target)
-
-    def refresh_outdated_starter_profiles(self) -> None:
-        backup_dir = BACKUPS_DIR / "refreshed_starter_profiles"
-        for profile_id in REFRESHABLE_STARTER_PROFILE_IDS:
-            path = PROFILES_DIR / f"{profile_id}.json"
-            source = STARTER_PROFILES_DIR / f"{profile_id}.json"
-            if not path.exists() or not source.exists():
-                continue
-            text = path.read_text(encoding="utf-8-sig", errors="replace")
-            if not any(marker in text for marker in OUTDATED_STARTER_MARKERS):
-                continue
-            backup_dir.mkdir(parents=True, exist_ok=True)
-            backup_path = backup_dir / path.name
-            index = 2
-            while backup_path.exists():
-                backup_path = backup_dir / f"{path.stem}_{index}{path.suffix}"
-                index += 1
-            shutil.move(str(path), str(backup_path))
-            shutil.copy2(source, path)
-            if self.logger:
-                self.logger.info("Refreshed starter profile and kept backup: %s", backup_path)
 
     @property
     def current_profile(self) -> Profile:
@@ -130,7 +80,13 @@ class ProfileService:
         self.save_profile(self.current_profile)
 
     def save_profile(self, profile: Profile) -> None:
-        write_json(PROFILES_DIR / f"{profile.id}.json", profile.to_dict())
+        original_id = profile.id
+        profile.id = self._safe_profile_id(profile.id, fallback=profile.name)
+        path = self._profile_paths.pop(original_id, None) or self._profile_paths.get(profile.id)
+        if path is None or not self._is_profiles_path(path):
+            path = PROFILES_DIR / f"{profile.id}.json"
+        self._profile_paths[profile.id] = path
+        write_json(path, profile.to_dict())
 
     def create_profile(self, name: str) -> Profile:
         profile_id = self._slug(name) or f"profile_{uuid.uuid4().hex[:8]}"
@@ -138,8 +94,35 @@ class ProfileService:
             profile_id = f"{profile_id}_{uuid.uuid4().hex[:4]}"
         profile = Profile.blank(name=name, profile_id=profile_id)
         self.profiles[profile.id] = profile
+        self._profile_paths[profile.id] = PROFILES_DIR / f"{profile.id}.json"
         self.save_profile(profile)
         return profile
+
+    def duplicate_profile(self, profile_id: str) -> Profile:
+        source = self.profiles[profile_id]
+        profile = Profile.from_dict(source.to_dict())
+        profile.name = f"{source.name} Copy"
+        profile.id = self._unique_profile_id(self._slug(profile.name), fallback="profile")
+        self.profiles[profile.id] = profile
+        self._profile_paths[profile.id] = PROFILES_DIR / f"{profile.id}.json"
+        self.save_profile(profile)
+        return profile
+
+    def delete_profile(self, profile_id: str) -> bool:
+        if profile_id not in self.profiles or len(self.profiles) <= 1:
+            return False
+        path = self._profile_paths.pop(profile_id, PROFILES_DIR / f"{profile_id}.json")
+        if path.exists() and self._is_profiles_path(path):
+            backup_dir = BACKUPS_DIR / "deleted_profiles"
+            backup_dir.mkdir(parents=True, exist_ok=True)
+            target = self._unique_path(backup_dir / path.name)
+            shutil.move(str(path), str(target))
+        self.profiles.pop(profile_id)
+        if self.current_profile_id == profile_id:
+            first = next(iter(self.profiles.values()))
+            self.current_profile_id = first.id
+            self.current_page_id = first.default_page
+        return True
 
     def add_page(self, name: str = "New Page") -> Page:
         base_id = self._slug(name) or "page"
@@ -178,8 +161,13 @@ class ProfileService:
         return True
 
     def import_profile(self, path: Path) -> Profile:
-        profile = Profile.from_dict(read_json(path, {}))
+        data = read_json(path, {})
+        if not isinstance(data, dict) or not str(data.get("name") or "").strip():
+            raise ValueError("Profile JSON must contain a profile name.")
+        profile = Profile.from_dict(data)
+        profile.id = self._unique_profile_id(profile.id, fallback=profile.name)
         self.profiles[profile.id] = profile
+        self._profile_paths[profile.id] = PROFILES_DIR / f"{profile.id}.json"
         self.save_profile(profile)
         return profile
 
@@ -193,6 +181,36 @@ class ProfileService:
         while "__" in slug:
             slug = slug.replace("__", "_")
         return slug.strip("_")
+
+    @classmethod
+    def _safe_profile_id(cls, value: str, fallback: str = "profile") -> str:
+        return (cls._slug(str(value or "")) or cls._slug(fallback) or "profile")[:80]
+
+    def _unique_profile_id(self, value: str, fallback: str = "profile") -> str:
+        base = self._safe_profile_id(value, fallback)
+        candidate = base
+        index = 2
+        while candidate in self.profiles:
+            candidate = f"{base}_{index}"
+            index += 1
+        return candidate
+
+    @staticmethod
+    def _is_profiles_path(path: Path) -> bool:
+        try:
+            path.resolve().relative_to(PROFILES_DIR.resolve())
+        except (OSError, ValueError):
+            return False
+        return True
+
+    @staticmethod
+    def _unique_path(path: Path) -> Path:
+        candidate = path
+        index = 2
+        while candidate.exists():
+            candidate = path.with_name(f"{path.stem}_{index}{path.suffix}")
+            index += 1
+        return candidate
 
     @staticmethod
     def _has_stale_button_ids(data: object) -> bool:

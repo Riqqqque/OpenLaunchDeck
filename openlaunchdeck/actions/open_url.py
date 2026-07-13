@@ -11,6 +11,7 @@ class OpenUrlAction(BaseAction):
     display_name = "Open URL"
     description = "Open a URL in the default browser."
     config_fields = [{"name": "url", "label": "URL", "type": "text"}]
+    blocking = True
 
     def validate(self, config: dict) -> list[str]:
         url = str(config.get("url") or "")
