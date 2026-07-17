@@ -42,7 +42,7 @@ For camera visibility and microphone mute buttons, use OBS WebSocket operations 
 
 ## Sound Not Playing
 
-Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and the logs folder.
+Confirm the file exists and try `.wav` or `.mp3`. Check Windows volume mixer and the logs folder. USB headsets and audio drivers can receive a new Windows device ID after reconnecting or updating; OpenLaunchDeck falls back to the current system default for listening, while the voice-route cable must still be selected explicitly.
 
 ## Soundboard Not Heard In Voice Chat
 

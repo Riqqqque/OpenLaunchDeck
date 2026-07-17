@@ -2,7 +2,7 @@
 #define MyAppName "OpenLaunchDeck"
 #endif
 #ifndef MyAppVersion
-#define MyAppVersion "0.1.50"
+#define MyAppVersion "0.1.51"
 #endif
 #define MyAppPublisher "Rique"
 #define MyAppExeName "OpenLaunchDeck.exe"
