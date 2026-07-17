@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.51
+
+- Fell back to the current Windows default listening device when a saved soundboard monitor endpoint disappears or receives a new device ID.
+- Kept voice-chat routing strict so a missing cable endpoint cannot send routed clips to the wrong output.
+
 ## 0.1.50
 
 - Recovered from damaged or mistyped settings without blocking startup and kept the original file in backups.

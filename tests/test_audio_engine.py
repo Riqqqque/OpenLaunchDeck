@@ -254,7 +254,7 @@ def test_voice_chat_route_requires_output_device(tmp_path):
     assert "voice route output" in result.message.lower()
 
 
-def test_selected_default_output_must_be_available(tmp_path):
+def test_missing_saved_output_falls_back_to_system_default(tmp_path):
     path = tmp_path / "sound.wav"
     path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(default_output_device_id="missing-output")
@@ -263,9 +263,8 @@ def test_selected_default_output_must_be_available(tmp_path):
 
     result = engine.play_button_sound("A1", {"file_path": str(path)})
 
-    assert result.success is False
-    assert "selected soundboard output" in result.message.lower()
-    assert not engine.currently_playing()
+    assert result.success is True
+    assert engine.currently_playing()[0].audio_output.device is None
 
 
 def test_system_default_output_can_be_used_without_saved_device(tmp_path):
@@ -312,7 +311,7 @@ def test_voice_chat_route_can_disable_monitor(tmp_path):
     assert engine.currently_playing()[0].routed_to_voice_chat is True
 
 
-def test_voice_chat_route_cleans_up_when_monitor_output_is_missing(tmp_path):
+def test_voice_chat_route_uses_system_default_when_monitor_output_is_missing(tmp_path):
     path = tmp_path / "sound.wav"
     path.write_bytes(b"minimal wav bytes")
     engine = AudioEngine(
@@ -325,8 +324,28 @@ def test_voice_chat_route_cleans_up_when_monitor_output_is_missing(tmp_path):
 
     result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
 
+    assert result.success is True
+    instances = engine.currently_playing()
+    assert len(instances) == 2
+    assert any(instance.routed_to_voice_chat for instance in instances)
+    assert any(instance.audio_output.device is None for instance in instances)
+
+
+def test_voice_chat_route_does_not_fall_back_when_voice_output_is_missing(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"minimal wav bytes")
+    engine = AudioEngine(
+        default_output_device_id="monitor",
+        voice_chat_output_device_id="missing-voice",
+        monitor_voice_chat_routes=True,
+    )
+    install_qt_test_double(engine)
+    MediaDevicesTestDouble.devices = [DeviceTestDouble("monitor", "Speakers")]
+
+    result = engine.play_button_sound("A8", {"file_path": str(path), "route_to_voice_chat": True})
+
     assert result.success is False
-    assert "selected soundboard output" in result.message.lower()
+    assert "voice route output" in result.message.lower()
     assert not engine.currently_playing()
 
 

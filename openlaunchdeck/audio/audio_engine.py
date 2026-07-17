@@ -341,9 +341,19 @@ class AudioEngine:
             except Exception:
                 if self.logger:
                     self.logger.exception("Could not select requested audio output device.")
+                if allow_default:
+                    return QAudioOutput()
                 return None
             if self.logger:
-                self.logger.warning("Selected soundboard output is unavailable for %s route: %s", route_name, device_id)
+                fallback = " Falling back to the system default output." if allow_default else ""
+                self.logger.warning(
+                    "Selected soundboard output is unavailable for %s route: %s.%s",
+                    route_name,
+                    device_id,
+                    fallback,
+                )
+            if allow_default:
+                return QAudioOutput()
             return None
         return QAudioOutput()
 

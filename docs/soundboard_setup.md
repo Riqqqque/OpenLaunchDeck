@@ -37,7 +37,7 @@ The Soundboard panel also has a Stop All Sounds button.
 
 Use `System default` for normal monitoring unless you have a specific reason to pin a hardware output. OpenLaunchDeck applies the same gain to every copy of a sound: local monitor playback and voice-routed playback stay matched.
 
-Windows can expose duplicate output names. OpenLaunchDeck hides duplicates and advanced mixer buses in the normal selectors so the list stays readable. If a hidden device ID was already saved, the app keeps that saved ID instead of silently changing it.
+Windows can expose duplicate output names. OpenLaunchDeck hides duplicates and advanced mixer buses in the normal selectors so the list stays readable. If Windows removes or reassigns the saved listening-device ID, monitor playback falls back to the current system default. The voice route does not fall back because sending routed audio to the wrong endpoint would be unsafe. Re-select the listening device when it returns if you do not want to use the system default.
 
 Global soundboard volume is combined with each button's per-sound volume, then applied with a quieter curve so low values stay low. For example, 50% global volume and 80% button volume combine to a 40% raw setting and play at about 16% output gain. A button set to 0% stays silent.
 
