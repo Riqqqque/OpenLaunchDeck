@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.52
+
+- Added an `Open In Private Window` option to URL actions.
+- Opened private URLs through the registered Windows default browser with native private-mode handling for Brave, Chrome, Chromium, Vivaldi, Edge, and Firefox.
+- Kept private URL actions closed on unsupported browser handlers instead of silently opening a normal window.
+
 ## 0.1.51
 
 - Fell back to the current Windows default listening device when a saved soundboard monitor endpoint disappears or receives a new device ID.

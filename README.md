@@ -70,6 +70,7 @@ The beginner-friendly [GitHub Wiki](https://github.com/Riqqqque/OpenLaunchDeck/w
 - Isolated A1-H8 MIDI mapping with calibration
 - Page lighting refresh with changed-pad batching
 - Button editor with action-specific settings
+- URL actions with optional private-window mode
 - Dangerous action double-press confirmation
 - Soundboard playback with stop controls
 - Soundboard output selectors that hide duplicate Windows device names
@@ -298,7 +299,8 @@ Minimal example:
           "action": {
             "type": "open_url",
             "config": {
-              "url": "https://www.google.com"
+              "url": "https://www.google.com",
+              "private_window": false
             }
           }
         }

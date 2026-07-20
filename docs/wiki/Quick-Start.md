@@ -70,8 +70,9 @@ Use a safe test before adding OBS, voice chat, or command actions.
 3. Set color to `green`.
 4. Set action type to `Open URL`.
 5. Set URL to `https://www.google.com`.
-6. Click **Test Action**.
-7. Press `A1` on the Launchpad if the device is connected.
+6. Enable `Open In Private Window` when the page should open in your browser's private mode.
+7. Click **Test Action**.
+8. Press `A1` on the Launchpad if the device is connected.
 
 If the browser opens, the basic action path works.
 
