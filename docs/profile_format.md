@@ -32,7 +32,8 @@ Each page contains a `buttons` object keyed by A1-H8. Missing buttons are filled
           "action": {
             "type": "open_url",
             "config": {
-              "url": "https://www.google.com"
+              "url": "https://www.google.com",
+              "private_window": false
             }
           }
         }

@@ -188,6 +188,9 @@ The Launchpad Mini MK3 has extra buttons around the grid, but OpenLaunchDeck use
 - Color: `green`
 - Action type: `Open URL`
 - URL: the site you want to open
+- Open In Private Window: optional; opens the URL using the registered default browser's private mode
+
+Private-window launching supports Brave, Chrome, Chromium, Vivaldi, Edge, and Firefox on Windows. If the registered handler is unsupported or its executable cannot be resolved, the action reports an error instead of opening the URL in a normal window. Browser or organization policy can disable private browsing; OpenLaunchDeck does not bypass that policy.
 
 Example:
 
