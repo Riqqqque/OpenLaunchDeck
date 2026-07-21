@@ -13,7 +13,7 @@ from .base import ActionResult, BaseAction
 class OpenUrlAction(BaseAction):
     type_name = "open_url"
     display_name = "Open URL"
-    description = "Open a URL in the default browser, optionally in a private window."
+    description = "Open a website in the default browser, optionally in a private window."
     config_fields = [
         {"name": "url", "label": "URL", "type": "text"},
         {"name": "private_window", "label": "Open In Private Window", "type": "bool"},
@@ -21,15 +21,12 @@ class OpenUrlAction(BaseAction):
     blocking = True
 
     def validate(self, config: dict) -> list[str]:
-        url = str(config.get("url") or "")
-        parsed = urlparse(url)
-        return [] if parsed.scheme in {"http", "https"} and parsed.netloc else ["Enter a valid HTTP or HTTPS URL."]
+        return [] if normalize_http_url(config.get("url")) else ["Enter a valid HTTP or HTTPS URL."]
 
     def execute(self, context, config: dict) -> ActionResult:
-        errors = self.validate(config)
-        if errors:
-            return ActionResult.fail(errors[0])
-        url = str(config["url"])
+        url = normalize_http_url(config.get("url"))
+        if url is None:
+            return ActionResult.fail("Enter a valid HTTP or HTTPS URL.")
         if bool(config.get("private_window", False)):
             return _open_private_window(url)
         opened = webbrowser.open(url)
@@ -39,6 +36,38 @@ class OpenUrlAction(BaseAction):
 
 
 _EXECUTABLE_PATTERN = re.compile(r'^\s*(?:"([^"]+\.exe)"|([^\s]+\.exe))(?:\s|$)', re.IGNORECASE)
+_EXPLICIT_SCHEME_PATTERN = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]*:")
+_HOST_PORT_PATTERN = re.compile(r"^[A-Za-z0-9.-]+:\d+(?:[/?#]|$)")
+
+
+def normalize_http_url(value: object) -> str | None:
+    raw = str(value or "").strip()
+    if not raw or any(character.isspace() or ord(character) < 32 for character in raw):
+        return None
+    if "\\" in raw:
+        return None
+
+    lowered = raw.lower()
+    if lowered.startswith(("http://", "https://")):
+        candidate = raw
+    elif raw.startswith("//"):
+        candidate = f"https:{raw}"
+    elif _HOST_PORT_PATTERN.match(raw):
+        candidate = f"https://{raw}"
+    elif _EXPLICIT_SCHEME_PATTERN.match(raw):
+        return None
+    else:
+        candidate = f"https://{raw}"
+
+    try:
+        parsed = urlparse(candidate)
+        hostname = parsed.hostname
+        parsed.port
+    except ValueError:
+        return None
+    if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc or not hostname:
+        return None
+    return candidate
 
 
 def _open_private_window(url: str) -> ActionResult:

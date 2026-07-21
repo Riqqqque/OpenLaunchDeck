@@ -36,7 +36,9 @@ The MIDI Debug window also has a Restore Default Mapping button. Use it to retur
 
 ## Reconnect And Unplug Handling
 
-Connect and reconnect operations run outside the GUI thread. If the device disappears during a lighting send, the app marks the device disconnected, disarms dangerous buttons, stops warning blinks, and returns to simulation mode without requiring a restart.
+Connect, reconnect, and port health checks run outside the GUI thread. While auto-connect is enabled, the app checks the open handles and Windows MIDI port list on a low-frequency timer. A stale, closed, or missing port is marked disconnected and reopened automatically without requiring an app restart.
+
+If the device disappears during a lighting send, the app disarms dangerous buttons, stops warning blinks, and returns to simulation mode while reconnecting. Failures in the MIDI Debug window or another application callback are logged without tearing down an otherwise healthy hardware connection.
 
 ## RGB Lighting Verification
 

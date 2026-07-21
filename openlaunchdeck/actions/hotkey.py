@@ -255,6 +255,7 @@ class HotkeyAction(BaseAction):
         }
     ]
     blocking = True
+    execution_lane = "interactive"
 
     def execute(self, context, config: dict) -> ActionResult:
         hotkey = str(config.get("hotkey") or "").strip()

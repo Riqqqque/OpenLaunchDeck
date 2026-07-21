@@ -16,6 +16,16 @@ def test_normal_url_uses_windows_default_handler(monkeypatch):
     assert opened == ["https://example.com"]
 
 
+def test_plain_domain_is_normalized_to_https(monkeypatch):
+    opened = []
+    monkeypatch.setattr(open_url.webbrowser, "open", lambda url: opened.append(url) or True)
+
+    result = OpenUrlAction().execute(None, {"url": "  example.com/path  "})
+
+    assert result.success is True
+    assert opened == ["https://example.com/path"]
+
+
 def test_private_url_launches_default_brave_in_incognito(monkeypatch, tmp_path):
     browser = tmp_path / "brave.exe"
     browser.write_bytes(b"")
@@ -31,6 +41,20 @@ def test_private_url_launches_default_brave_in_incognito(monkeypatch, tmp_path):
 
     assert result.success is True
     assert launched == [([str(browser), "--incognito", "https://example.com/private"], {"close_fds": True})]
+
+
+def test_private_plain_domain_is_normalized_before_launch(monkeypatch, tmp_path):
+    browser = tmp_path / "brave.exe"
+    browser.write_bytes(b"")
+    launched = []
+    monkeypatch.setattr(open_url.os, "name", "nt")
+    monkeypatch.setattr(open_url, "_default_browser_registration", lambda _scheme: (str(browser), "BraveHTML"))
+    monkeypatch.setattr(open_url.subprocess, "Popen", lambda command, **kwargs: launched.append((command, kwargs)))
+
+    result = OpenUrlAction().execute(None, {"url": "example.com", "private_window": True})
+
+    assert result.success is True
+    assert launched == [([str(browser), "--incognito", "https://example.com"], {"close_fds": True})]
 
 
 def test_private_url_does_not_fall_back_to_normal_window(monkeypatch, tmp_path):
@@ -73,10 +97,20 @@ def test_extract_executable_handles_quoted_windows_command(tmp_path):
     assert Path(open_url._extract_executable(command)) == browser
 
 
-def test_open_url_rejects_non_http_address(monkeypatch):
+@pytest.mark.parametrize(
+    "address",
+    [
+        "file:///C:/Windows/win.ini",
+        "javascript:alert(1)",
+        "mailto:user@example.com",
+        "https://example.com:invalid",
+        "https://example.com/bad path",
+    ],
+)
+def test_open_url_rejects_non_http_or_malformed_address(monkeypatch, address):
     monkeypatch.setattr(open_url.webbrowser, "open", lambda _url: pytest.fail("invalid URL was opened"))
 
-    result = OpenUrlAction().execute(None, {"url": "file:///C:/Windows/win.ini", "private_window": True})
+    result = OpenUrlAction().execute(None, {"url": address, "private_window": True})
 
     assert result.success is False
     assert "valid HTTP or HTTPS" in result.message

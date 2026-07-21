@@ -7,6 +7,7 @@ from typing import Any
 
 from ..constants import NAMED_COLORS
 from ..services.performance_monitor import PerformanceMonitor
+from .midi_manager import MidiManager
 from .midi_mapping import MidiMapping
 
 
@@ -54,6 +55,7 @@ class LaunchpadMiniMk3:
         self.input_port = None
         self.output_port = None
         self.connected = False
+        self.last_input_monotonic = 0.0
         self._lock = threading.RLock()
 
     def connect(self, input_port_name: str, output_port_name: str) -> None:
@@ -75,6 +77,7 @@ class LaunchpadMiniMk3:
                 raise
             else:
                 self.connected = bool(self.input_port or self.output_port)
+                self.last_input_monotonic = 0.0
                 try:
                     if self.output_port and not self.enter_programmer_mode(strict=True):
                         raise RuntimeError("Launchpad did not accept the Programmer Mode command.")
@@ -104,13 +107,20 @@ class LaunchpadMiniMk3:
             self.connected = False
 
     def _on_message(self, message: Any) -> None:
-        try:
-            receive_start = time.perf_counter()
-            self.performance_monitor.mark("midi_raw_receive")
-            if self.logger:
-                self.logger.debug("MIDI IN raw received_at=%.6f %r", receive_start, message)
-            if self.midi_in_callback:
+        if not self.connected:
+            return
+        receive_start = time.perf_counter()
+        self.last_input_monotonic = receive_start
+        self.performance_monitor.mark("midi_raw_receive")
+        if self.logger:
+            self.logger.debug("MIDI IN raw received_at=%.6f %r", receive_start, message)
+        if self.midi_in_callback:
+            try:
                 self.midi_in_callback(message, repr(message))
+            except Exception:
+                if self.logger:
+                    self.logger.exception("MIDI debug callback failed.")
+        try:
             parsed = self.mapping.parse_message(message)
             parse_ms = (time.perf_counter() - receive_start) * 1000
             self.performance_monitor.record("midi_event_parse", parse_ms, recognized=bool(parsed))
@@ -118,12 +128,16 @@ class LaunchpadMiniMk3:
                 self.logger.debug("MIDI parsed %s pressed=%s in %.3f ms", parsed.button_id, parsed.pressed, parse_ms)
             elif self.logger:
                 self.logger.debug("MIDI parse ignored message in %.3f ms", parse_ms)
-            if parsed and self.button_callback:
-                self.button_callback(parsed.button_id, parsed.pressed, message)
-        except Exception as exc:
+        except Exception:
             if self.logger:
-                self.logger.exception("MIDI input callback failed.")
-            self._mark_disconnected(f"MIDI input failed: {exc}")
+                self.logger.exception("MIDI message could not be parsed.")
+            return
+        if parsed and self.button_callback:
+            try:
+                self.button_callback(parsed.button_id, parsed.pressed, message)
+            except Exception:
+                if self.logger:
+                    self.logger.exception("MIDI button callback failed for %s.", parsed.button_id)
 
     def set_pad_color(self, button_id: str, color: str) -> None:
         self.set_many_pad_colors({button_id: color})
@@ -146,14 +160,18 @@ class LaunchpadMiniMk3:
                     continue
                 try:
                     self.output_port.send(message)
-                    sent += 1
-                    if self.midi_out_callback:
-                        self.midi_out_callback(message, repr(message))
-                    if self.logger:
-                        self.logger.debug("MIDI OUT %s color=%s %r", button_id, color, message)
                 except Exception as exc:
                     self._mark_disconnected(f"Could not send MIDI lighting: {exc}")
                     break
+                sent += 1
+                if self.midi_out_callback:
+                    try:
+                        self.midi_out_callback(message, repr(message))
+                    except Exception:
+                        if self.logger:
+                            self.logger.exception("MIDI debug output callback failed.")
+                if self.logger:
+                    self.logger.debug("MIDI OUT %s color=%s %r", button_id, color, message)
         elapsed_ms = (time.perf_counter() - start) * 1000
         self.performance_monitor.record("midi_lighting_batch", elapsed_ms, sent=sent)
         if self.logger:
@@ -182,16 +200,20 @@ class LaunchpadMiniMk3:
             import mido
             message = mido.Message("sysex", data=data)
             self.output_port.send(message)
-            if self.midi_out_callback:
-                self.midi_out_callback(message, repr(message))
-            if self.logger:
-                self.logger.debug("MIDI OUT %s %r", label, message)
-            return True
         except Exception as exc:
             self._mark_disconnected(f"Could not send MIDI SysEx {label}: {exc}")
             if strict:
                 raise RuntimeError(f"Could not send MIDI SysEx {label}: {exc}") from exc
             return False
+        if self.midi_out_callback:
+            try:
+                self.midi_out_callback(message, repr(message))
+            except Exception:
+                if self.logger:
+                    self.logger.exception("MIDI debug output callback failed.")
+        if self.logger:
+            self.logger.debug("MIDI OUT %s %r", label, message)
+        return True
 
     def clear_all_pads(self) -> None:
         self.set_many_pad_colors({button_id: "off" for button_id in self.mapping.button_to_address})
@@ -199,10 +221,41 @@ class LaunchpadMiniMk3:
     def flash_pad(self, button_id: str, color: str = "white") -> None:
         self.set_pad_color(button_id, color)
 
+    def connection_health(
+        self,
+        available_inputs: list[str] | None = None,
+        available_outputs: list[str] | None = None,
+    ) -> tuple[bool, str]:
+        with self._lock:
+            if not self.connected:
+                return False, "MIDI device is not connected."
+            input_port = self.input_port
+            output_port = self.output_port
+            input_name = self.input_port_name
+            output_name = self.output_port_name
+            if input_name and (input_port is None or bool(getattr(input_port, "closed", False))):
+                return False, "MIDI input port is closed."
+            if output_name and (output_port is None or bool(getattr(output_port, "closed", False))):
+                return False, "MIDI output port is closed."
+
+        inputs = MidiManager.available_input_ports() if available_inputs is None else available_inputs
+        outputs = MidiManager.available_output_ports() if available_outputs is None else available_outputs
+        if input_name and input_name not in inputs:
+            return False, f"MIDI input port disappeared: {input_name}"
+        if output_name and output_name not in outputs:
+            return False, f"MIDI output port disappeared: {output_name}"
+        return True, "MIDI connection is healthy."
+
+    def mark_disconnected(self, reason: str) -> None:
+        self._mark_disconnected(reason)
+
     def _mark_disconnected(self, reason: str) -> None:
+        with self._lock:
+            if not self.connected:
+                return
+            self.connected = False
         if self.logger:
             self.logger.warning("%s", reason)
-        self.connected = False
         if self.disconnect_callback:
             self.disconnect_callback(reason)
 

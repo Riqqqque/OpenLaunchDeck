@@ -33,6 +33,7 @@ class MediaControlAction(BaseAction):
     description = "Send a media key."
     config_fields = [{"name": "control", "label": "Control", "type": "choice", "choices": list(MEDIA_KEYS)}]
     blocking = True
+    execution_lane = "interactive"
 
     def execute(self, context, config: dict) -> ActionResult:
         control = str(config.get("control") or "play_pause")
