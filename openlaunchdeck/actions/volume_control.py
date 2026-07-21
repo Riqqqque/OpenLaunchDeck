@@ -17,6 +17,7 @@ class VolumeControlAction(BaseAction):
         {"name": "target_volume", "label": "Target Volume", "type": "number", "min": 0, "max": 100, "default": 50},
     ]
     blocking = True
+    execution_lane = "interactive"
 
     def execute(self, context, config: dict) -> ActionResult:
         mode = str(config.get("mode") or "volume_up")

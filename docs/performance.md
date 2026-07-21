@@ -7,8 +7,10 @@ Key rules:
 - MIDI callbacks only parse and emit lightweight events.
 - MIDI callbacks do not update Qt widgets directly; they emit into Qt signals.
 - MIDI connect and reconnect work runs outside the GUI thread.
+- A low-frequency MIDI health check runs on its own worker and never enumerates Windows MIDI ports on the GUI thread.
 - Blocking actions run through the action runner worker pool.
 - The action runner limits queued background work so repeated presses cannot build an unlimited backlog.
+- Hotkey, media, and volume actions use a separate latency-sensitive worker lane, so slow OBS, network, command, URL, app-launch, or SSH work cannot hold them up.
 - Windows hotkeys, text entry, and media keys use the native input path without loading a large automation package on first press.
 - GUI updates happen on the Qt thread.
 - Network calls use timeouts.
@@ -65,7 +67,7 @@ Recommended low-impact defaults:
 - Prefer short macros and avoid stacking many slow actions on one pad.
 - Keep OpenLaunchDeck minimized or in grid focus mode while gaming if you do not need the editor visible.
 
-OpenLaunchDeck should stay idle most of the time: no hardware means simulation mode with no MIDI polling, connected hardware uses MIDI callbacks instead of polling loops, and update checks only run when enabled or requested.
+OpenLaunchDeck should stay idle most of the time: pad input uses MIDI callbacks instead of polling, the connected-port health check runs only every ten seconds on a background worker, and update checks only run when enabled or requested.
 
 ## Update Performance
 

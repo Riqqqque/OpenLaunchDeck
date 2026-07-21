@@ -470,3 +470,70 @@ def test_midi_debug_callbacks_only_run_when_debug_window_is_open():
     services.action_runner.shutdown()
     services.device.close()
 
+
+def test_stale_midi_health_result_cannot_disconnect_new_connection(monkeypatch):
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    disconnects = []
+    monkeypatch.setattr(services.device, "mark_disconnected", disconnects.append)
+    services.device.connected = True
+    services.settings_service.settings.auto_connect = True
+    window._midi_connection_epoch = 4
+
+    window.on_device_health_result(False, "old probe failed", 3)
+    window.on_device_health_result(False, "current probe failed", 4)
+
+    assert disconnects == ["current probe failed"]
+
+    services.settings_service.settings.auto_connect = False
+    services.device.connected = False
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_midi_health_result_is_ignored_after_auto_connect_is_disabled(monkeypatch):
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    disconnects = []
+    monkeypatch.setattr(services.device, "mark_disconnected", disconnects.append)
+    services.device.connected = True
+
+    window.on_device_health_result(False, "probe failed", window._midi_connection_epoch)
+
+    assert disconnects == []
+
+    services.device.connected = False
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_connected_device_guard_stays_active_for_health_checks():
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = True
+    services.device.connected = True
+    window = MainWindow(services)
+
+    window._schedule_device_reconnect()
+
+    assert window.device_reconnect_timer.isActive()
+    assert window.device_reconnect_timer.interval() == 10_000
+
+    services.settings_service.settings.auto_connect = False
+    services.device.connected = False
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+

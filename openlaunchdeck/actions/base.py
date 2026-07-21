@@ -36,6 +36,7 @@ class BaseAction:
     description = "Does nothing."
     config_fields: list[dict[str, Any]] = []
     blocking = False
+    execution_lane = "background"
 
     def validate(self, config: dict[str, Any]) -> list[str]:
         return []

@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.53
+
+- Accepted plain website addresses in URL actions by adding HTTPS automatically while continuing to reject unsafe URL schemes.
+- Added a low-frequency background MIDI port health check that reconnects stale Windows handles automatically.
+- Isolated MIDI debug and application callback failures so they cannot falsely disconnect the Launchpad transport.
+- Separated hotkey, media, and volume actions from slower background work so OBS, network, command, URL, and app-launch actions cannot hold up latency-sensitive buttons.
+- Ignored outdated health-check results after a manual reconnect and emitted each disconnect notification only once.
+
 ## 0.1.52
 
 - Added an `Open In Private Window` option to URL actions.

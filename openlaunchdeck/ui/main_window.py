@@ -6,6 +6,7 @@ import platform
 import subprocess
 import sys
 import time
+from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
 from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
@@ -74,6 +75,7 @@ class MainWindow(QMainWindow):
     midi_in = Signal(object, str)
     midi_out = Signal(object, str)
     device_disconnected = Signal(str)
+    device_health_result = Signal(bool, str, int)
     audio_state_changed = Signal()
 
     def __init__(self, services) -> None:
@@ -95,6 +97,9 @@ class MainWindow(QMainWindow):
         self._last_voice_route_guard_log_time = 0.0
         self._manual_disconnect = False
         self._automatic_connect_attempt = False
+        self._midi_health_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="openlaunchdeck-midi-health")
+        self._midi_health_future: Future | None = None
+        self._midi_connection_epoch = 0
         self._profile_autosave_timer = QTimer(self)
         self._profile_autosave_timer.setSingleShot(True)
         self._profile_autosave_timer.setInterval(450)
@@ -371,6 +376,7 @@ class MainWindow(QMainWindow):
         self.midi_in.connect(self.on_midi_in)
         self.midi_out.connect(self.on_midi_out)
         self.device_disconnected.connect(self.on_device_disconnected)
+        self.device_health_result.connect(self.on_device_health_result)
         self.audio_state_changed.connect(self.on_audio_state_changed)
 
     def refresh_all(self) -> None:
@@ -581,6 +587,7 @@ class MainWindow(QMainWindow):
             self._schedule_device_reconnect()
             self._automatic_connect_attempt = False
             return
+        self._midi_connection_epoch += 1
         self.statusBar().showMessage("Connecting MIDI device...", 4000)
         self._connect_thread = QThread(self)
         self._connect_worker = MidiConnectionWorker(self.services.device, input_port, output_port)
@@ -596,6 +603,7 @@ class MainWindow(QMainWindow):
 
     def disconnect_device(self) -> None:
         self._manual_disconnect = True
+        self._midi_connection_epoch += 1
         self.device_reconnect_timer.stop()
         self.services.device.close()
         self.services.action_runner.disarm_all()
@@ -852,26 +860,66 @@ class MainWindow(QMainWindow):
     def _build_device_reconnect_guard(self) -> None:
         self.device_reconnect_timer = QTimer(self)
         self.device_reconnect_timer.setTimerType(Qt.TimerType.VeryCoarseTimer)
-        self.device_reconnect_timer.setInterval(5000)
+        self.device_reconnect_timer.setInterval(10_000)
         self.device_reconnect_timer.timeout.connect(self._auto_reconnect_device)
+        self._schedule_device_reconnect()
 
     def _schedule_device_reconnect(self) -> None:
-        should_retry = (
+        should_monitor = (
             self.services.settings_service.settings.auto_connect
             and not self._manual_disconnect
-            and not self.services.device.connected
         )
-        if should_retry and not self.device_reconnect_timer.isActive():
+        if should_monitor and not self.device_reconnect_timer.isActive():
             self.device_reconnect_timer.start()
-        elif not should_retry:
+        elif not should_monitor:
             self.device_reconnect_timer.stop()
 
     def _auto_reconnect_device(self) -> None:
-        if self.services.device.connected or self._manual_disconnect:
+        if self._manual_disconnect or not self.services.settings_service.settings.auto_connect:
             self.device_reconnect_timer.stop()
+            return
+        if self.services.device.connected:
+            self._start_device_health_probe()
             return
         if self._connect_thread is None:
             self.connect_device(automatic=True)
+
+    def _start_device_health_probe(self) -> None:
+        if self._force_quit:
+            return
+        if self._midi_health_future is not None and not self._midi_health_future.done():
+            return
+        try:
+            future = self._midi_health_executor.submit(self.services.device.connection_health)
+        except RuntimeError:
+            return
+        epoch = self._midi_connection_epoch
+        self._midi_health_future = future
+        future.add_done_callback(
+            lambda completed, probe_epoch=epoch: self._finish_device_health_probe(completed, probe_epoch)
+        )
+
+    def _finish_device_health_probe(self, future: Future, epoch: int) -> None:
+        if self._force_quit:
+            return
+        try:
+            healthy, message = future.result()
+        except Exception as exc:
+            healthy, message = False, f"MIDI health check failed: {exc}"
+        self.device_health_result.emit(bool(healthy), str(message), epoch)
+
+    def on_device_health_result(self, healthy: bool, message: str, epoch: int) -> None:
+        if (
+            epoch != self._midi_connection_epoch
+            or healthy
+            or self._manual_disconnect
+            or not self.services.settings_service.settings.auto_connect
+        ):
+            return
+        if self.services.device.connected:
+            self.services.device.mark_disconnected(message)
+        else:
+            self._schedule_device_reconnect()
 
     def update_voice_route_guard(self) -> None:
         enabled = self.services.audio_engine.voice_route_microphone_enabled
@@ -940,7 +988,6 @@ class MainWindow(QMainWindow):
         automatic = self._automatic_connect_attempt
         self._automatic_connect_attempt = False
         if success:
-            self.device_reconnect_timer.stop()
             self.services.settings_service.update(midi_input_port=input_port, midi_output_port=output_port)
             self.statusBar().showMessage("MIDI device connected.", 3000)
             self.refresh_lighting()
@@ -949,7 +996,7 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"Launchpad reconnect failed: {message}", 4000)
             else:
                 QMessageBox.warning(self, APP_NAME, f"Could not connect MIDI device:\n{message}")
-            self._schedule_device_reconnect()
+        self._schedule_device_reconnect()
         self.refresh_all()
 
     def clear_connect_worker(self) -> None:
@@ -1005,6 +1052,8 @@ class MainWindow(QMainWindow):
         self.services.audio_engine.stop_all()
         if self.soundboard_panel is not None:
             self.soundboard_panel.close()
+        self.device_reconnect_timer.stop()
+        self._midi_health_executor.shutdown(wait=False, cancel_futures=True)
         self.services.device.close()
         super().closeEvent(event)
 

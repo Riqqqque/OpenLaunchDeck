@@ -32,6 +32,19 @@ class FakeObsAction(BaseAction):
         return ActionResult.ok(f"OBS operation {config.get('operation')} ran.")
 
 
+class InteractiveAction(BaseAction):
+    type_name = "interactive"
+    blocking = True
+    execution_lane = "interactive"
+
+    def __init__(self, completed: threading.Event) -> None:
+        self.completed = completed
+
+    def execute(self, context, config):
+        self.completed.set()
+        return ActionResult.ok("Interactive action finished.")
+
+
 class FakeProfileService:
     def __init__(self, button: ButtonConfig | None = None) -> None:
         page = Page.blank()
@@ -79,8 +92,43 @@ def test_action_runner_defaults_are_gaming_safe():
 
     try:
         assert runner.executor._max_workers == 2
+        assert runner.interactive_executor._max_workers == 1
         assert runner._pending_limit == 8
+        assert runner._pending_limits["interactive"] == 16
     finally:
+        runner.shutdown()
+
+
+def test_interactive_action_is_not_blocked_by_background_queue():
+    background_started = threading.Event()
+    background_release = threading.Event()
+    interactive_completed = threading.Event()
+    registry = ActionRegistry()
+    registry.register(NoopAction())
+    registry.register(SlowAction(background_started, background_release))
+    registry.register(InteractiveAction(interactive_completed))
+    profile_service = FakeProfileService()
+    profile_service.current_page.buttons["A2"] = ButtonConfig(id="A2", action=ActionConfig("interactive", {}))
+    runner = ActionRunner(
+        registry=registry,
+        profile_service=profile_service,
+        dangerous_service=DangerousConfirmService(),
+        max_workers=1,
+        max_pending=1,
+        interactive_workers=1,
+        max_interactive_pending=1,
+    )
+
+    try:
+        assert runner.handle_button_press("A1").success
+        assert background_started.wait(timeout=1)
+
+        result = runner.handle_button_press("A2")
+
+        assert result.success
+        assert interactive_completed.wait(timeout=1)
+    finally:
+        background_release.set()
         runner.shutdown()
 
 

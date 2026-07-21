@@ -68,9 +68,10 @@ The beginner-friendly [GitHub Wiki](https://github.com/Riqqqque/OpenLaunchDeck/w
 - Simulation testing without hardware through the button editor
 - MIDI input/output structure for Launchpad Mini MK3
 - Isolated A1-H8 MIDI mapping with calibration
+- Background MIDI connection health checks with automatic stale-port recovery
 - Page lighting refresh with changed-pad batching
 - Button editor with action-specific settings
-- URL actions with optional private-window mode
+- URL actions with automatic HTTPS handling and optional private-window mode
 - Dangerous action double-press confirmation
 - Soundboard playback with stop controls
 - Soundboard output selectors that hide duplicate Windows device names
@@ -209,7 +210,7 @@ The Launchpad Mini MK3 has extra navigation and scene-launch buttons around the 
 
 Use `Device > MIDI Debug` when pads do not map or light correctly. The debug window shows available ports, raw incoming messages, outgoing lighting messages, parsed button IDs, and the current mapping table.
 
-If OpenLaunchDeck shows Connected mode but physical pad presses do not trigger anything, press Reconnect. The app switches the device into Programmer Mode on connect and uses the Launchpad Mini MK3 MIDI interface rather than the DAW/session interface.
+With auto-connect enabled, OpenLaunchDeck checks the Windows MIDI handles in the background and reconnects a stale or unplugged port automatically. If a pad still does not respond, press Reconnect once, then use MIDI Debug to confirm the app selected the Launchpad Mini MK3 MIDI interface rather than the DAW/session interface.
 
 If the default mapping is wrong for your device mode, run calibration. Saved mappings live in:
 
@@ -236,7 +237,7 @@ See [docs/soundboard_setup.md](docs/soundboard_setup.md), [docs/discord_voice_ro
 OpenLaunchDeck keeps expensive work away from the GUI thread:
 
 - MIDI callbacks parse and emit lightweight events
-- Blocking actions run through a bounded worker pool
+- Blocking actions run through bounded worker pools, with latency-sensitive controls separated from slower OBS, network, command, and SSH work
 - Update checks and downloads run on Qt worker threads
 - Sound playback uses non-blocking QtMultimedia APIs
 - Hotkeys use a Windows native keyboard path first, with Python automation as a fallback

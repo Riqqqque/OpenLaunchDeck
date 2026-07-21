@@ -8,6 +8,7 @@ from openlaunchdeck.devices.launchpad_mini_mk3 import (
 class FakeOutputPort:
     def __init__(self):
         self.messages = []
+        self.closed = False
 
     def send(self, message):
         self.messages.append(message)
@@ -16,6 +17,18 @@ class FakeOutputPort:
 class FailingOutputPort:
     def send(self, message):
         raise OSError("port disappeared")
+
+
+class FakeInputPort:
+    def __init__(self, closed=False):
+        self.closed = closed
+
+
+class FakePadMessage:
+    type = "note_on"
+    note = 81
+    velocity = 127
+    channel = 0
 
 
 def test_color_to_palette_value_uses_named_colors():
@@ -63,3 +76,73 @@ def test_strict_programmer_mode_reports_output_failure():
     else:
         raise AssertionError("Strict Programmer Mode did not report the output failure.")
     assert device.connected is False
+
+
+def test_connection_health_detects_closed_input_port_without_hardware():
+    device = LaunchpadMiniMk3()
+    device.connected = True
+    device.input_port_name = "Launchpad Input"
+    device.output_port_name = "Launchpad Output"
+    device.input_port = FakeInputPort(closed=True)
+    device.output_port = FakeOutputPort()
+
+    healthy, message = device.connection_health(["Launchpad Input"], ["Launchpad Output"])
+
+    assert not healthy
+    assert "input port is closed" in message.lower()
+
+
+def test_connection_health_detects_port_removed_from_windows():
+    device = LaunchpadMiniMk3()
+    device.connected = True
+    device.input_port_name = "Launchpad Input"
+    device.input_port = FakeInputPort()
+
+    healthy, message = device.connection_health([], [])
+
+    assert not healthy
+    assert "disappeared" in message.lower()
+
+
+def test_button_callback_failure_does_not_disconnect_midi_transport():
+    device = LaunchpadMiniMk3()
+    device.connected = True
+    device.button_callback = lambda *_args: (_ for _ in ()).throw(RuntimeError("UI callback failed"))
+
+    device._on_message(FakePadMessage())
+
+    assert device.connected is True
+    assert device.last_input_monotonic > 0
+
+
+def test_closed_transport_ignores_late_input_callback():
+    events = []
+    device = LaunchpadMiniMk3(button_callback=lambda *args: events.append(args))
+
+    device._on_message(FakePadMessage())
+
+    assert events == []
+    assert device.last_input_monotonic == 0
+
+
+def test_debug_output_callback_failure_does_not_disconnect_midi_transport():
+    device = LaunchpadMiniMk3()
+    device.output_port = FakeOutputPort()
+    device.connected = True
+    device.midi_out_callback = lambda *_args: (_ for _ in ()).throw(RuntimeError("debug window closed"))
+
+    sent = device.set_many_pad_colors({"A1": "green"})
+
+    assert sent == 1
+    assert device.connected is True
+
+
+def test_disconnect_notification_is_emitted_once_per_failure():
+    reasons = []
+    device = LaunchpadMiniMk3(disconnect_callback=reasons.append)
+    device.connected = True
+
+    device.mark_disconnected("first failure")
+    device.mark_disconnected("duplicate failure")
+
+    assert reasons == ["first failure"]

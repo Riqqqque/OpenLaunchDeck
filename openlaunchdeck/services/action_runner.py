@@ -28,6 +28,8 @@ class ActionRunner:
         completion_callback: Callable[[str, ActionResult], None] | None = None,
         max_workers: int = 2,
         max_pending: int = 8,
+        interactive_workers: int = 1,
+        max_interactive_pending: int = 16,
     ) -> None:
         self.registry = registry
         self.profile_service = profile_service
@@ -40,8 +42,16 @@ class ActionRunner:
         self.performance_monitor = performance_monitor or PerformanceMonitor(logger)
         self.completion_callback = completion_callback
         self.executor = ThreadPoolExecutor(max_workers=max(1, max_workers), thread_name_prefix="openlaunchdeck-action")
-        self._pending_limit = max(1, max_pending)
-        self._pending_count = 0
+        self.interactive_executor = ThreadPoolExecutor(
+            max_workers=max(1, interactive_workers),
+            thread_name_prefix="openlaunchdeck-input",
+        )
+        self._pending_limits = {
+            "background": max(1, max_pending),
+            "interactive": max(1, max_interactive_pending),
+        }
+        self._pending_limit = self._pending_limits["background"]
+        self._pending_counts = {"background": 0, "interactive": 0}
         self._pending_lock = threading.Lock()
         self._shutting_down = False
         self._main_thread = MainThreadDispatcher()
@@ -75,6 +85,7 @@ class ActionRunner:
             self._shutting_down = True
         self.completion_callback = None
         self.executor.shutdown(wait=False, cancel_futures=True)
+        self.interactive_executor.shutdown(wait=False, cancel_futures=True)
 
     def _dispatch(self, button_id: str, button: ButtonConfig, press_start: float, source: str) -> ActionResult:
         action_config = button.action
@@ -103,12 +114,20 @@ class ActionRunner:
             action=action.type_name,
         )
         if action.blocking:
-            if not self._try_reserve_action_slot():
-                result = ActionResult.fail("Action queue is busy. Try again in a moment.")
+            lane = "interactive" if getattr(action, "execution_lane", "background") == "interactive" else "background"
+            if not self._try_reserve_action_slot(lane):
+                result = ActionResult.fail(f"{lane.title()} action queue is busy. Try again in a moment.")
                 self._complete(button_id, result)
                 return result
-            future = self.executor.submit(self._run_action, button_id, action, context, config)
-            future.add_done_callback(self._release_action_slot)
+            executor = self.interactive_executor if lane == "interactive" else self.executor
+            try:
+                future = executor.submit(self._run_action, button_id, action, context, config)
+            except RuntimeError:
+                self._release_action_slot(None, lane)
+                result = ActionResult.fail("OpenLaunchDeck is shutting down.")
+                self._complete(button_id, result)
+                return result
+            future.add_done_callback(lambda completed, selected_lane=lane: self._release_action_slot(completed, selected_lane))
             return ActionResult.ok("Action started.")
         result = self._run_action(button_id, action, context, config)
         return result
@@ -144,16 +163,16 @@ class ActionRunner:
         if self.completion_callback:
             self.completion_callback(button_id, result)
 
-    def _try_reserve_action_slot(self) -> bool:
+    def _try_reserve_action_slot(self, lane: str) -> bool:
         with self._pending_lock:
-            if self._shutting_down or self._pending_count >= self._pending_limit:
+            if self._shutting_down or self._pending_counts[lane] >= self._pending_limits[lane]:
                 return False
-            self._pending_count += 1
+            self._pending_counts[lane] += 1
             return True
 
-    def _release_action_slot(self, _future: Future) -> None:
+    def _release_action_slot(self, _future: Future | None, lane: str) -> None:
         with self._pending_lock:
-            self._pending_count = max(0, self._pending_count - 1)
+            self._pending_counts[lane] = max(0, self._pending_counts[lane] - 1)
 
     def _execute_nested_action(self, action_type: str, context: ActionContext, config: dict) -> ActionResult:
         action = self.registry.get(action_type)
