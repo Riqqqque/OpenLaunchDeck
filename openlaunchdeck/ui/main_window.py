@@ -9,7 +9,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, QSize, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSplitter,
+    QStyle,
     QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
@@ -91,6 +92,7 @@ class MainWindow(QMainWindow):
         self._startup_update_thread: QThread | None = None
         self._startup_update_worker: UpdateCheckWorker | None = None
         self._grid_focus_mode = False
+        self._responsive_mode = ""
         self._midi_debug_callbacks_active = False
         self._force_next_action_ui_update = False
         self._last_voice_route_guard_message = ""
@@ -120,6 +122,7 @@ class MainWindow(QMainWindow):
         self._build_menu()
         self._build_main_layout()
         self._build_status_bar()
+        self._apply_responsive_layout()
         self._connect_signals()
         self._build_device_reconnect_guard()
         self._build_voice_route_guard()
@@ -139,24 +142,24 @@ class MainWindow(QMainWindow):
         central.setObjectName("MainSurface")
         root = QVBoxLayout(central)
         self.main_root_layout = root
-        root.setContentsMargins(18, 16, 18, 16)
-        root.setSpacing(14)
+        root.setContentsMargins(12, 10, 12, 12)
+        root.setSpacing(10)
 
         header = QFrame()
         self.app_header = header
         header.setObjectName("AppHeader")
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(18, 14, 18, 14)
-        header_layout.setSpacing(12)
+        header_layout.setContentsMargins(14, 10, 12, 10)
+        header_layout.setSpacing(10)
 
         brand = QWidget()
         brand.setObjectName("HeaderBrand")
         brand_layout = QVBoxLayout(brand)
         brand_layout.setContentsMargins(0, 0, 0, 0)
-        brand_layout.setSpacing(1)
+        brand_layout.setSpacing(0)
         title = QLabel(APP_NAME)
         title.setObjectName("HeaderTitle")
-        subtitle = QLabel("Macro deck workspace for Launchpad Mini MK3")
+        subtitle = QLabel("Launchpad Mini MK3 workspace")
         subtitle.setObjectName("HeaderSubtitle")
         brand_layout.addWidget(title)
         brand_layout.addWidget(subtitle)
@@ -164,22 +167,22 @@ class MainWindow(QMainWindow):
 
         header_meta = QWidget()
         header_meta.setObjectName("HeaderMeta")
-        header_meta_layout = QVBoxLayout(header_meta)
+        header_meta_layout = QHBoxLayout(header_meta)
         header_meta_layout.setContentsMargins(0, 0, 0, 0)
-        header_meta_layout.setSpacing(6)
+        header_meta_layout.setSpacing(8)
         self.header_profile = QLabel("")
         self.header_profile.setObjectName("HeaderActiveDeck")
         self.header_mode = QLabel("Simulation")
         self.header_mode.setObjectName("HeaderModeChip")
-        header_meta_layout.addWidget(self.header_profile, 0, Qt.AlignmentFlag.AlignRight)
-        header_meta_layout.addWidget(self.header_mode, 0, Qt.AlignmentFlag.AlignRight)
+        header_meta_layout.addWidget(self.header_profile, 0, Qt.AlignmentFlag.AlignVCenter)
+        header_meta_layout.addWidget(self.header_mode, 0, Qt.AlignmentFlag.AlignVCenter)
         header_layout.addWidget(header_meta)
 
         actions_frame = QFrame()
         actions_frame.setObjectName("HeaderActions")
         actions_layout = QHBoxLayout(actions_frame)
-        actions_layout.setContentsMargins(6, 6, 6, 6)
-        actions_layout.setSpacing(6)
+        actions_layout.setContentsMargins(0, 0, 0, 0)
+        actions_layout.setSpacing(4)
         self.header_reconnect_button = QPushButton("Reconnect")
         self.header_debug_button = QPushButton("MIDI")
         self.header_soundboard_button = QPushButton("Soundboard")
@@ -191,7 +194,16 @@ class MainWindow(QMainWindow):
             self.header_update_button,
         ):
             button.setObjectName("HeaderButton")
+            button.setIconSize(QSize(15, 15))
             actions_layout.addWidget(button)
+        self.header_reconnect_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
+        self.header_debug_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
+        self.header_soundboard_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaVolume))
+        self.header_update_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
+        self.header_reconnect_button.setToolTip("Reconnect the Launchpad MIDI ports.")
+        self.header_debug_button.setToolTip("Open MIDI diagnostics and calibration.")
+        self.header_soundboard_button.setToolTip("Open currently playing sounds and audio settings.")
+        self.header_update_button.setToolTip("Check for a newer OpenLaunchDeck release.")
         self.header_update_button.setObjectName("HeaderPrimaryButton")
         header_layout.addWidget(actions_frame)
 
@@ -223,15 +235,17 @@ class MainWindow(QMainWindow):
         deck_panel.setMinimumWidth(360)
         deck_layout = QVBoxLayout(deck_panel)
         self.deck_layout = deck_layout
-        deck_layout.setContentsMargins(18, 18, 18, 18)
-        deck_layout.setSpacing(12)
+        deck_layout.setContentsMargins(14, 12, 14, 14)
+        deck_layout.setSpacing(10)
         deck_header = QHBoxLayout()
         deck_title = QLabel("Launchpad Grid")
         deck_title.setObjectName("PanelTitle")
-        self.deck_hint = QLabel("Click pads to edit. Use Test to run the selected action.")
+        self.deck_hint = QLabel("Edit mode")
         self.deck_hint.setObjectName("PanelHint")
         self.grid_focus_button = QPushButton("Focus Grid")
         self.grid_focus_button.setObjectName("HeaderButton")
+        self.grid_focus_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarMaxButton))
+        self.grid_focus_button.setIconSize(QSize(14, 14))
         self.grid_focus_button.setToolTip("Hide the side panels and give the Launchpad grid more room.")
         deck_header.addWidget(deck_title)
         deck_header.addStretch(1)
@@ -260,7 +274,6 @@ class MainWindow(QMainWindow):
         self.workspace_splitter.setSizes([238, 850, 360])
         root.addWidget(self.workspace_splitter, 1)
         self.setCentralWidget(central)
-        self._apply_responsive_layout()
 
         self.header_reconnect_button.clicked.connect(self.reconnect_device)
         self.header_debug_button.clicked.connect(self.show_midi_debug)
@@ -759,32 +772,35 @@ class MainWindow(QMainWindow):
         compact_workspace = width < 1350
         self.app_header.setVisible(not self._grid_focus_mode)
         if self._grid_focus_mode:
-            self.main_root_layout.setContentsMargins(14, 12, 14, 12)
-            self.main_root_layout.setSpacing(10)
-            self.deck_layout.setContentsMargins(12, 12, 12, 12)
+            self.main_root_layout.setContentsMargins(8, 8, 8, 8)
+            self.main_root_layout.setSpacing(8)
+            self.deck_layout.setContentsMargins(10, 10, 10, 10)
             self.deck_layout.setSpacing(8)
         else:
-            self.main_root_layout.setContentsMargins(18, 16, 18, 16)
-            self.main_root_layout.setSpacing(14)
-            self.deck_layout.setContentsMargins(18, 18, 18, 18)
-            self.deck_layout.setSpacing(12)
+            self.main_root_layout.setContentsMargins(12, 10, 12, 12)
+            self.main_root_layout.setSpacing(10)
+            self.deck_layout.setContentsMargins(14, 12, 14, 14)
+            self.deck_layout.setSpacing(10)
 
         self.deck_hint.setVisible(not compact_header and not self._grid_focus_mode)
         self.header_profile.setVisible(not narrow_header)
         self.header_mode.setVisible(not narrow_header)
         self.header_soundboard_button.setText("Sounds" if compact_header else "Soundboard")
         self.header_reconnect_button.setText("Reconnect" if not narrow_header else "Link")
-        self.header_debug_button.setVisible(width >= 1450)
-        self.header_soundboard_button.setVisible(width >= 1160)
-        self.header_update_button.setVisible(width >= 1160)
+        self.header_debug_button.setVisible(width >= 1320)
+        self.header_soundboard_button.setVisible(width >= 1080)
+        self.header_update_button.setVisible(width >= 1080)
         self.sidebar_scroll.setVisible(not compact_workspace and not self._grid_focus_mode)
         self.editor_scroll.setVisible(not self._grid_focus_mode)
+        self.mode_status.setVisible(width >= 1320)
+        self.profile_status.setVisible(width >= 1120)
+        self.page_status.setVisible(width >= 1120)
 
+        responsive_mode = "focus" if self._grid_focus_mode else "compact" if compact_workspace else "wide"
         if self._grid_focus_mode:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
             self.grid_scroll.setWidgetResizable(True)
             self.deck_panel.setMinimumWidth(360)
-            self.workspace_splitter.setSizes([0, max(760, width - 80), 0])
         elif compact_workspace:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
             self.grid_scroll.setWidgetResizable(True)
@@ -793,8 +809,6 @@ class MainWindow(QMainWindow):
             self.editor_scroll.setMinimumHeight(0)
             self.deck_panel.setMinimumWidth(480)
             self.deck_panel.setMinimumHeight(0)
-            editor_width = 340 if width >= 1120 else 310
-            self.workspace_splitter.setSizes([0, max(560, width - editor_width - 70), editor_width])
         else:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
             self.grid_scroll.setWidgetResizable(True)
@@ -803,6 +817,16 @@ class MainWindow(QMainWindow):
             self.deck_panel.setMinimumHeight(0)
             self.editor_scroll.setMinimumWidth(300)
             self.deck_panel.setMinimumWidth(520)
+
+        if responsive_mode == self._responsive_mode:
+            return
+        self._responsive_mode = responsive_mode
+        if responsive_mode == "focus":
+            self.workspace_splitter.setSizes([0, max(760, width - 48), 0])
+        elif responsive_mode == "compact":
+            editor_width = 340 if width >= 1120 else 310
+            self.workspace_splitter.setSizes([0, max(560, width - editor_width - 44), editor_width])
+        else:
             self.workspace_splitter.setSizes([238, max(620, width - 660), 360])
 
     def show_first_run(self) -> None:

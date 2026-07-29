@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import os
 import sys
 import time
 from dataclasses import dataclass
@@ -24,6 +25,7 @@ from .services.settings_service import SettingsService
 from .services.startup_service import StartupService
 from .single_instance import (
     COMMAND_BACKGROUND,
+    SERVER_NAME,
     LaunchOptions,
     SingleInstanceServer,
     notify_existing_instance,
@@ -44,6 +46,7 @@ PRIORITY_CLASSES_TO_NORMALIZE = {
 }
 PRIORITY_STARTUP_RECHECK_DELAYS_MS = (100, 500, 1_000, 2_000, 5_000)
 PRIORITY_GUARD_INTERVAL_MS = 60_000
+SMOKE_TEST_ENV = "OPENLAUNCHDECK_SMOKE_TEST"
 
 
 def _kernel32_priority_api() -> object:
@@ -133,7 +136,7 @@ def build_services() -> AppServices:
     if settings_service.load_warning:
         logger.warning("%s", settings_service.load_warning)
     startup_service = StartupService(logger=logger)
-    if getattr(sys, "frozen", False):
+    if should_sync_windows_startup():
         startup_service.sync(settings_service.settings.launch_at_startup)
     native_acceleration.configure(settings_service.settings.use_native_acceleration, logger)
     performance_monitor = PerformanceMonitor(logger, settings_service.settings.enable_performance_logging)
@@ -209,18 +212,30 @@ def handle_single_instance_command(window: MainWindow, command: str) -> None:
     window.restore_from_tray()
 
 
+def smoke_test_requested() -> bool:
+    return os.environ.get(SMOKE_TEST_ENV, "").strip() == "1"
+
+
+def should_sync_windows_startup() -> bool:
+    return bool(getattr(sys, "frozen", False)) and not smoke_test_requested()
+
+
 def run() -> int:
     start = time.perf_counter()
     launch_options = parse_launch_options(sys.argv)
+    smoke_test = smoke_test_requested()
     _set_windows_app_user_model_id()
     _set_windows_process_priority()
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setOrganizationName(APP_NAME)
     app.setWindowIcon(app_icon())
-    if notify_existing_instance(launch_options.command):
+    if not smoke_test and notify_existing_instance(launch_options.command):
         return 0
-    single_instance = SingleInstanceServer(parent=app)
+    single_instance = SingleInstanceServer(
+        parent=app,
+        server_name=f"{SERVER_NAME}.Smoke.{os.getpid()}" if smoke_test else SERVER_NAME,
+    )
     single_instance_listening = single_instance.listen()
     try:
         services = build_services()
@@ -233,19 +248,27 @@ def run() -> int:
         )
         return 1
     _set_windows_process_priority(logger=services.logger)
+    if smoke_test:
+        services.settings_service.settings.first_run_complete = True
+        services.settings_service.settings.auto_connect = False
+        services.settings_service.settings.check_updates_on_startup = False
     single_instance.set_logger(services.logger)
     if not single_instance_listening:
         services.logger.warning("Single-instance startup handling is unavailable.")
-    priority_guard = start_windows_priority_guard(app, services.logger)
+    priority_guard = None if smoke_test else start_windows_priority_guard(app, services.logger)
     try:
         with services.performance_monitor.measure("app_startup_main_window"):
             window = MainWindow(services)
         single_instance.set_command_handler(lambda command: handle_single_instance_command(window, command))
         _set_windows_process_priority(logger=services.logger)
-        show_initial_window_state(
-            window,
-            resolve_start_minimized(services.settings_service.settings.start_minimized, launch_options),
-        )
+        if smoke_test:
+            window.hide()
+            QTimer.singleShot(250, app.quit)
+        else:
+            show_initial_window_state(
+                window,
+                resolve_start_minimized(services.settings_service.settings.start_minimized, launch_options),
+            )
         _set_windows_process_priority(logger=services.logger)
         services.performance_monitor.record_since("app_startup_to_initial_state", start)
         result = app.exec()

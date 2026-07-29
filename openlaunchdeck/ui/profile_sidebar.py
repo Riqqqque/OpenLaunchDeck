@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QComboBox,
+    QGridLayout,
     QLabel,
     QPushButton,
     QSizePolicy,
@@ -25,8 +26,8 @@ class ProfileSidebar(QWidget):
         self.setObjectName("SidebarPanel")
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Expanding)
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 18, 16, 18)
-        layout.setSpacing(10)
+        layout.setContentsMargins(14, 14, 14, 14)
+        layout.setSpacing(8)
 
         title = QLabel("Deck Library")
         title.setObjectName("PanelTitle")
@@ -50,22 +51,31 @@ class ProfileSidebar(QWidget):
         self.add_page_button = QPushButton("Add Page")
         self.duplicate_page_button = QPushButton("Duplicate")
         self.delete_page_button = QPushButton("Delete")
+        page_buttons = QGridLayout()
+        page_buttons.setSpacing(6)
         for button in (
             self.add_page_button,
             self.duplicate_page_button,
             self.delete_page_button,
         ):
             button.setObjectName("SecondaryButton")
-            layout.addWidget(button)
+        page_buttons.addWidget(self.add_page_button, 0, 0, 1, 2)
+        page_buttons.addWidget(self.duplicate_page_button, 1, 0)
+        page_buttons.addWidget(self.delete_page_button, 1, 1)
+        layout.addLayout(page_buttons)
 
         profile_tools = QLabel("Profiles")
         profile_tools.setObjectName("SectionTitle")
         layout.addWidget(profile_tools)
         self.import_button = QPushButton("Import Profile")
         self.export_button = QPushButton("Export Profile")
+        profile_buttons = QGridLayout()
+        profile_buttons.setSpacing(6)
         for button in (self.import_button, self.export_button):
             button.setObjectName("SecondaryButton")
-            layout.addWidget(button)
+        profile_buttons.addWidget(self.import_button, 0, 0)
+        profile_buttons.addWidget(self.export_button, 0, 1)
+        layout.addLayout(profile_buttons)
 
         layout.addStretch(1)
         self.profile_combo.currentIndexChanged.connect(lambda: self.profile_changed.emit(str(self.profile_combo.currentData() or "")))

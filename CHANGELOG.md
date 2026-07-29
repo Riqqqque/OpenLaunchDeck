@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.54
+
+- Switched browser play/pause and other media controls to Windows application commands with a keyboard fallback.
+- Routed volume-key fallback through the same reliable global media-control backend.
+- Tightened the main command bar, side panels, themes, and pad visuals for a cleaner workspace.
+- Preserved user-adjusted splitter widths while resizing within the same layout breakpoint.
+- Kept all eight pad columns visible at the minimum supported window width.
+
 ## 0.1.53
 
 - Accepted plain website addresses in URL actions by adding HTTPS automatically while continuing to reject unsafe URL schemes.

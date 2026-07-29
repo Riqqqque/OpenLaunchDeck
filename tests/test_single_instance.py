@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import uuid
 
-from openlaunchdeck.app import handle_single_instance_command, resolve_start_minimized
+from openlaunchdeck.app import (
+    handle_single_instance_command,
+    resolve_start_minimized,
+    should_sync_windows_startup,
+    smoke_test_requested,
+)
 from openlaunchdeck.single_instance import (
     COMMAND_BACKGROUND,
     COMMAND_SHOW,
@@ -66,3 +71,24 @@ def test_notify_existing_instance_returns_false_without_server():
     server_name = f"OpenLaunchDeck.Test.{uuid.uuid4()}"
 
     assert notify_existing_instance(COMMAND_BACKGROUND, server_name=server_name, timeout_ms=25) is False
+
+
+def test_smoke_test_mode_requires_explicit_environment_value(monkeypatch):
+    monkeypatch.delenv("OPENLAUNCHDECK_SMOKE_TEST", raising=False)
+    assert smoke_test_requested() is False
+
+    monkeypatch.setenv("OPENLAUNCHDECK_SMOKE_TEST", "1")
+    assert smoke_test_requested() is True
+
+    monkeypatch.setenv("OPENLAUNCHDECK_SMOKE_TEST", "true")
+    assert smoke_test_requested() is False
+
+
+def test_smoke_test_mode_never_syncs_windows_startup(monkeypatch):
+    monkeypatch.setattr("openlaunchdeck.app.sys.frozen", True, raising=False)
+    monkeypatch.setenv("OPENLAUNCHDECK_SMOKE_TEST", "1")
+
+    assert should_sync_windows_startup() is False
+
+    monkeypatch.delenv("OPENLAUNCHDECK_SMOKE_TEST")
+    assert should_sync_windows_startup() is True

@@ -305,6 +305,34 @@ def test_button_editor_remains_accessible_in_narrow_window():
     services.device.close()
 
 
+def test_resize_within_same_breakpoint_preserves_splitter_adjustment():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    window.resize(1500, 760)
+    window.show()
+    app.processEvents()
+
+    custom_sizes = [260, 760, 420]
+    window.workspace_splitter.setSizes(custom_sizes)
+    app.processEvents()
+    before_resize = window.workspace_splitter.sizes()
+
+    window.resize(1520, 760)
+    app.processEvents()
+
+    after_resize = window.workspace_splitter.sizes()
+    assert abs(after_resize[0] - before_resize[0]) <= 2
+    assert abs(after_resize[2] - before_resize[2]) <= 2
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
 def test_profile_autosave_batches_editor_changes(monkeypatch):
     QApplication.instance() or QApplication([])
     services = build_services()

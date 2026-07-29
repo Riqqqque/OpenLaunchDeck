@@ -9,7 +9,7 @@ from ..models.button import ButtonConfig
 
 
 CELL_SIZES = {
-    "mini": QSize(74, 66),
+    "mini": QSize(68, 62),
     "compact": QSize(84, 74),
     "comfortable": QSize(102, 88),
     "large": QSize(118, 102),
@@ -153,34 +153,34 @@ class ButtonCell(QWidget):
             color_name = "off"
 
         accent = QColor(NAMED_COLORS.get(color_name, color_name if color_name.startswith("#") else NAMED_COLORS["dim"]))
-        base = QColor("#111a25")
+        base = QColor("#15191f")
         if button.enabled:
-            base = self._blend(base, accent, 0.075 if not self._hover else 0.13)
+            base = self._blend(base, accent, 0.055 if not self._hover else 0.1)
         else:
-            base = QColor("#101722")
+            base = QColor("#111419")
         if self._pressed:
             base = self._blend(base, accent, 0.18)
 
-        border = QColor("#2f3d52")
+        border = QColor("#303740")
         if self._selected:
-            border = QColor("#9be7ff")
+            border = QColor("#5eead4")
         elif self._armed:
             border = QColor("#facc15")
         elif self._playing:
-            border = QColor("#38bdf8")
+            border = QColor("#67e8f9")
         elif self._hover:
-            border = self._blend(QColor("#64748b"), accent, 0.35)
+            border = self._blend(QColor("#737b87"), accent, 0.28)
 
         painter.setPen(QPen(border, 2.2 if self._selected else 1.4))
         painter.setBrush(base)
-        painter.drawRoundedRect(rect, 8, 8)
+        painter.drawRoundedRect(rect, 7, 7)
 
-        strip = QRect(rect.left() + 9, rect.top() + 8, max(18, rect.width() - 18), 5)
+        strip = QRect(rect.left() + 9, rect.top() + 8, max(18, rect.width() - 18), 4)
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(accent if button.enabled else QColor("#273244"))
         painter.drawRoundedRect(strip, 3, 3)
 
-        painter.setPen(QColor("#dbeafe") if button.enabled else QColor("#64748b"))
+        painter.setPen(QColor("#cbd2dc") if button.enabled else QColor("#68707c"))
         id_font = QFont("Segoe UI", 7 if self._density in {"mini", "compact"} else 8, QFont.Weight.DemiBold)
         painter.setFont(id_font)
         painter.drawText(rect.adjusted(11, 14, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
@@ -192,7 +192,7 @@ class ButtonCell(QWidget):
         title_font = QFont("Segoe UI", 8 if self._density in {"mini", "compact"} else 9 if self._density == "comfortable" else 10, QFont.Weight.Bold)
         title_font.setStretch(94)
         painter.setFont(title_font)
-        title_color = QColor("#f8fafc") if button.enabled else QColor("#94a3b8")
+        title_color = QColor("#f7f8fa") if button.enabled else QColor("#8a929e")
         painter.setPen(title_color)
         title_top = {"mini": 25, "compact": 27, "comfortable": 28, "large": 30}.get(self._density, 28)
         title_bottom_padding = {"mini": 22, "compact": 25, "comfortable": 31, "large": 35}.get(self._density, 31)
@@ -209,9 +209,9 @@ class ButtonCell(QWidget):
         pill_bottom_margin = 4 if self._density == "compact" else 5
         pill = QRect(rect.left() + 8, rect.bottom() - pill_height - pill_bottom_margin, rect.width() - 16, pill_height)
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(7, 12, 20, 190))
+        painter.setBrush(QColor(9, 11, 14, 210))
         painter.drawRoundedRect(pill, 7, 7)
-        painter.setPen(QColor("#cbd5e1") if button.enabled else QColor("#64748b"))
+        painter.setPen(QColor("#bec5ce") if button.enabled else QColor("#68707c"))
         painter.drawText(pill, Qt.AlignmentFlag.AlignCenter, action_text)
 
     def _badge_text(self, enabled: bool) -> str:
