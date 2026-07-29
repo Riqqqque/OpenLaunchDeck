@@ -1,6 +1,6 @@
 QMainWindow, QDialog, QWidget {
-  background: #eef3f8;
-  color: #111827;
+  background: #f3f5f7;
+  color: #171a1f;
   font-family: "Segoe UI";
   font-size: 10pt;
 }
@@ -10,13 +10,13 @@ QLabel {
 }
 
 QWidget#MainSurface {
-  background: #edf3f8;
+  background: #eceff2;
 }
 
 QFrame#AppHeader {
   background: #ffffff;
-  border: 1px solid #cfdbea;
-  border-radius: 8px;
+  border: 1px solid #d5d9df;
+  border-radius: 7px;
 }
 
 QWidget#HeaderBrand, QWidget#HeaderMeta {
@@ -24,15 +24,14 @@ QWidget#HeaderBrand, QWidget#HeaderMeta {
 }
 
 QFrame#HeaderActions {
-  background: #f7fbff;
-  border: 1px solid #d5e1ee;
-  border-radius: 8px;
+  background: transparent;
+  border: none;
 }
 
 QWidget#SidebarPanel, QFrame#DeckPanel, QWidget#InspectorPanel {
   background: #ffffff;
-  border: 1px solid #d5dee9;
-  border-radius: 8px;
+  border: 1px solid #d7dbe0;
+  border-radius: 7px;
 }
 
 QScrollArea#InspectorScroll {
@@ -64,30 +63,30 @@ QSplitter#WorkspaceSplitter::handle:hover {
 }
 
 QLabel#HeaderTitle {
-  color: #0f172a;
-  font-size: 17pt;
+  color: #15181c;
+  font-size: 15pt;
   font-weight: 800;
 }
 
 QLabel#HeaderSubtitle, QLabel#PanelHint {
-  color: #5b6b7d;
-  font-size: 9pt;
+  color: #69717c;
+  font-size: 8pt;
 }
 
 QLabel#HeaderActiveDeck {
-  color: #102033;
-  font-size: 10pt;
+  color: #343a43;
+  font-size: 9pt;
   font-weight: 800;
 }
 
 QLabel#HeaderModeChip {
   background: #eaf3ff;
   border: 1px solid #c4d9ed;
-  border-radius: 8px;
+  border-radius: 7px;
   color: #16324f;
   font-size: 8pt;
   font-weight: 800;
-  padding: 5px 10px;
+  padding: 4px 9px;
 }
 
 QLabel#HeaderModeChip[state="simulation"] {
@@ -103,13 +102,13 @@ QLabel#HeaderModeChip[state="connected"] {
 }
 
 QLabel#PanelTitle {
-  color: #111827;
-  font-size: 15pt;
+  color: #181b20;
+  font-size: 13pt;
   font-weight: 800;
 }
 
 QLabel#SectionTitle {
-  color: #087f8c;
+  color: #087b72;
   font-size: 9pt;
   font-weight: 800;
   margin-top: 8px;
@@ -155,7 +154,7 @@ QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox, QListWidget {
   background: #ffffff;
   color: #111827;
   border: 1px solid #cbd6e3;
-  border-radius: 8px;
+  border-radius: 6px;
   padding: 7px 9px;
   selection-background-color: #2563eb;
 }
@@ -171,17 +170,17 @@ QComboBox::drop-down {
 }
 
 QPushButton {
-  background: #edf3fa;
-  border: 1px solid #cbd7e6;
-  border-radius: 7px;
+  background: #f0f2f4;
+  border: 1px solid #cfd4da;
+  border-radius: 6px;
   color: #122033;
   font-weight: 700;
   padding: 8px 12px;
 }
 
 QPushButton:hover {
-  background: #ddebf8;
-  border-color: #9eb5cc;
+  background: #e4e8ec;
+  border-color: #aeb6c0;
 }
 
 QPushButton:pressed {
@@ -199,14 +198,14 @@ QPushButton#PrimaryButton:hover {
 }
 
 QPushButton#SecondaryButton, QPushButton#HeaderButton {
-  background: #f6f9fc;
-  border-color: #d2deea;
-  color: #26384d;
+  background: #f7f8f9;
+  border-color: #d5d9de;
+  color: #30363d;
 }
 
 QPushButton#HeaderButton {
-  border-radius: 7px;
-  padding: 7px 10px;
+  border-radius: 6px;
+  padding: 6px 9px;
 }
 
 QPushButton#SecondaryButton:hover, QPushButton#HeaderButton:hover {
@@ -245,8 +244,8 @@ QCheckBox::indicator:checked {
 
 QStatusBar {
   background: #ffffff;
-  color: #475569;
-  border-top: 1px solid #dbe4ef;
+  color: #59616c;
+  border-top: 1px solid #d8dce1;
 }
 
 QStatusBar QLabel {
@@ -278,6 +277,13 @@ QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
 
 QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
   background: #94a7bc;
+}
+
+QToolTip {
+  background: #ffffff;
+  color: #171a1f;
+  border: 1px solid #c8cdd3;
+  padding: 5px 7px;
 }
 
 QScrollBar::add-line, QScrollBar::sub-line {

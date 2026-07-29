@@ -1,8 +1,5 @@
 from __future__ import annotations
 
-import sys
-import types
-
 from openlaunchdeck.actions.volume_control import VolumeControlAction
 
 
@@ -41,15 +38,18 @@ def test_volume_control_uses_windows_endpoint_controller(monkeypatch):
 
 
 def test_volume_control_falls_back_to_media_key_for_step(monkeypatch):
-    pressed = []
+    controls = []
     monkeypatch.setattr("openlaunchdeck.actions.volume_control.create_volume_controller", lambda: None)
-    monkeypatch.setitem(sys.modules, "pyautogui", types.SimpleNamespace(press=lambda key: pressed.append(key)))
+    monkeypatch.setattr(
+        "openlaunchdeck.actions.volume_control.send_media_control",
+        lambda control: controls.append(control) or "windows_appcommand",
+    )
     action = VolumeControlAction()
 
     result = action.execute(None, {"mode": "volume_down"})
 
     assert result.success is True
-    assert pressed == ["volumedown"]
+    assert controls == ["volume_down"]
 
 
 def test_volume_control_fails_set_volume_without_endpoint_controller(monkeypatch):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from .base import ActionResult, BaseAction
-from .media_control import MEDIA_KEYS
+from .media_control import MEDIA_KEYS, send_media_control
 from .windows_volume import create_volume_controller
 
 
@@ -49,12 +49,10 @@ class VolumeControlAction(BaseAction):
                     return ActionResult.fail(f"Volume control failed: {exc}")
 
         media_key = "mute" if mode == "toggle_mute" else mode
-        key = MEDIA_KEYS.get(media_key)
-        if key is None:
+        if MEDIA_KEYS.get(media_key) is None:
             return ActionResult.fail("Windows endpoint volume control is unavailable.")
         try:
-            import pyautogui
-            pyautogui.press(key)
+            send_media_control(media_key)
         except Exception as exc:
             return ActionResult.fail(f"Volume control failed: {exc}")
         return ActionResult.ok(f"Volume command sent: {media_key}.")
