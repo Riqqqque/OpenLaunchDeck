@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ctypes
 import json
 import os
 import platform
@@ -1089,10 +1090,45 @@ class MainWindow(QMainWindow):
         return self.services.audio_engine.voice_route_microphone_enabled
 
     def restore_from_tray(self) -> None:
+        self.setWindowState(self.windowState() & ~Qt.WindowState.WindowMinimized)
+        self.show()
         self.showNormal()
-        self.refresh_all()
+        self._restore_native_window()
+        QTimer.singleShot(0, self._finish_restore_from_tray)
+
+    def _finish_restore_from_tray(self) -> None:
         self.raise_()
         self.activateWindow()
+        self._restore_native_window()
+        self.refresh_all()
+
+    def _restore_native_window(self) -> None:
+        if sys.platform != "win32":
+            return
+        try:
+            from ctypes import wintypes
+
+            hwnd = wintypes.HWND(int(self.winId()))
+            user32 = ctypes.windll.user32
+            user32.ShowWindowAsync.argtypes = (wintypes.HWND, ctypes.c_int)
+            user32.ShowWindowAsync.restype = wintypes.BOOL
+            user32.SetWindowPos.argtypes = (
+                wintypes.HWND,
+                wintypes.HWND,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                ctypes.c_int,
+                wintypes.UINT,
+            )
+            user32.SetWindowPos.restype = wintypes.BOOL
+            user32.SetForegroundWindow.argtypes = (wintypes.HWND,)
+            user32.SetForegroundWindow.restype = wintypes.BOOL
+            user32.ShowWindowAsync(hwnd, 9)  # SW_RESTORE
+            user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0043)  # Keep size/position and show.
+            user32.SetForegroundWindow(hwnd)
+        except (AttributeError, OSError, TypeError, ValueError):
+            self.services.logger.exception("Windows could not restore the main window.")
 
     def quit_app(self) -> None:
         self._force_quit = True

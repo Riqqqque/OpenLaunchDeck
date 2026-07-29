@@ -207,6 +207,9 @@ def resolve_start_minimized(settings_start_minimized: bool, launch_options: Laun
 
 
 def handle_single_instance_command(window: MainWindow, command: str) -> None:
+    logger = getattr(getattr(window, "services", None), "logger", None)
+    if logger is not None:
+        logger.info("Single-instance command received: %s", command)
     if command == COMMAND_BACKGROUND:
         return
     window.restore_from_tray()

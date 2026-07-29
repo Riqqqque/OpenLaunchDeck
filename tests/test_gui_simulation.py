@@ -391,7 +391,7 @@ def test_soundboard_panel_reuses_instance_and_pauses_hidden_refresh():
     services.device.close()
 
 
-def test_restore_from_tray_shows_hidden_window():
+def test_restore_from_tray_shows_hidden_window(monkeypatch):
     app = QApplication.instance() or QApplication([])
     services = build_services()
     services.settings_service.settings.first_run_complete = True
@@ -405,11 +405,14 @@ def test_restore_from_tray_shows_hidden_window():
 
     assert not window.isVisible()
 
-    window.tray.on_activated(QSystemTrayIcon.ActivationReason.Trigger)
+    native_restore_calls = []
+    monkeypatch.setattr(window, "_restore_native_window", lambda: native_restore_calls.append(True))
+    window.restore_from_tray()
     app.processEvents()
 
     assert window.isVisible()
     assert not window.isMinimized()
+    assert len(native_restore_calls) == 2
 
     window._force_quit = True
     window.close()
