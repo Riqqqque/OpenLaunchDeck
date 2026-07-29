@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.55
+
+- Fixed restoring the main window from a background or tray instance on Windows.
+- Added logging for single-instance launch commands.
+
 ## 0.1.54
 
 - Switched browser play/pause and other media controls to Windows application commands with a keyboard fallback.
