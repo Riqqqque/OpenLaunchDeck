@@ -68,6 +68,20 @@ function Write-Checksum {
     Write-Host "SHA256:    $($Hash.Hash.ToLower())"
 }
 
+function Reset-PackageOutput {
+    $DistPath = Join-Path $Root "dist"
+    if (!(Test-Path -LiteralPath $DistPath)) {
+        return
+    }
+
+    $RootPrefix = [System.IO.Path]::GetFullPath($Root).TrimEnd('\') + '\'
+    $ResolvedDist = [System.IO.Path]::GetFullPath($DistPath)
+    if (!$ResolvedDist.StartsWith($RootPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+        throw "Refusing to clean package output outside the project folder: $ResolvedDist"
+    }
+    Remove-Item -LiteralPath $ResolvedDist -Recurse -Force
+}
+
 function Get-InnoSetupCompiler {
     $Command = Get-Command ISCC.exe -ErrorAction SilentlyContinue
     if ($Command) {
@@ -132,6 +146,7 @@ if ($BuildAudioBridge) {
 if (!$SkipTests) {
     Invoke-Checked { & $Python -m pytest } "Run tests"
 }
+Reset-PackageOutput
 Invoke-Checked { & $Python -m PyInstaller openlaunchdeck.spec --noconfirm } "Build executable"
 
 $ExePath = Join-Path $Root "dist\OpenLaunchDeck\OpenLaunchDeck.exe"

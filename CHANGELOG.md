@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.56
+
+- Prevented local release builds from accumulating outdated installers and portable archives.
+- Ignored version-specific development environments consistently.
+
 ## 0.1.55
 
 - Fixed restoring the main window from a background or tray instance on Windows.
