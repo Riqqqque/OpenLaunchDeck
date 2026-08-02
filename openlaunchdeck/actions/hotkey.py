@@ -10,9 +10,9 @@ FUNCTION_KEYS = [f"f{index}" for index in range(1, 25)]
 EXTENDED_FUNCTION_KEYS = [f"f{index}" for index in range(13, 25)]
 
 HOTKEY_SUGGESTION_KEYS = [
+    *FUNCTION_KEYS,
     *list("abcdefghijklmnopqrstuvwxyz"),
     *[str(index) for index in range(10)],
-    *FUNCTION_KEYS,
     "backspace",
     "tab",
     "enter",
@@ -28,8 +28,10 @@ HOTKEY_SUGGESTION_KEYS = [
     "right",
     "down",
     "printscreen",
+    "pause",
     "insert",
     "delete",
+    "apps",
     "numlock",
     "scrolllock",
     "semicolon",
@@ -165,8 +167,21 @@ for _index, _char in enumerate("abcdefghijklmnopqrstuvwxyz"):
     VK_CODES[_char] = 0x41 + _index
 
 KEY_ALIASES = {
+    "control": "ctrl",
     "command": "win",
+    "cmd": "win",
+    "windows": "win",
+    "lwin": "win",
+    "rwin": "win",
     "option": "alt",
+    "return": "enter",
+    "esc": "escape",
+    "prtsc": "printscreen",
+    "ins": "insert",
+    "del": "delete",
+    "num_lock": "numlock",
+    "scroll_lock": "scrolllock",
+    "media_prev": "media_previous",
     "plus": "equals",
     "pgup": "pageup",
     "pgdn": "pagedown",
@@ -336,8 +351,8 @@ class HotkeyAction(BaseAction):
             "name": "hotkey",
             "label": "Hotkey",
             "type": "hotkey",
-            "suggestions": build_hotkey_suggestions(),
-            "help": "Type any combination, such as shift+left, ctrl+alt+k, or f15.",
+            "keys": HOTKEY_SUGGESTION_KEYS,
+            "help": "Choose Ctrl, Alt, Shift, or Win, then select a key. The list includes F1 through F24, navigation, media, letters, numbers, and punctuation.",
         }
     ]
     blocking = True

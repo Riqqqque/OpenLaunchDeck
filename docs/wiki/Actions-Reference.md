@@ -73,9 +73,11 @@ Mark commands that stop services, change files, restart systems, or remove data 
 
 ## Hotkey
 
-**Field:** Hotkey
+**Controls:** Ctrl, Alt, Shift, Win, Key
 
-The field is searchable and editable. Examples:
+Select any needed modifiers, then choose the main key from the searchable drop-down. The list includes letters, numbers, navigation and editing keys, punctuation, media keys, and `F1` through `F24`. Typing into the key list filters it; you do not need to type the complete shortcut syntax.
+
+Examples of the resulting shortcuts:
 
 ```text
 ctrl+c
@@ -84,8 +86,6 @@ shift+left
 ctrl+alt+k
 f15
 ```
-
-Supported suggestions include letters, digits, navigation/editing keys, punctuation, media keys, and `F1` through `F24`, combined with `ctrl`, `shift`, `alt`, and `win`.
 
 Some elevated applications and games reject input from a non-elevated app. Run both applications at the same privilege level when that happens.
 

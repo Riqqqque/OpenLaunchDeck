@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.59
+
+- Replaced the hotkey syntax field with modifier controls and a searchable key selector covering F1-F24, navigation, media, letters, numbers, and punctuation.
+- Added a current-profile page selector for Switch Page actions.
+- Made action option labels readable while preserving their existing profile values.
+
 ## 0.1.58
 
 - Rebuilt the README as a concise project overview with direct setup and support paths.

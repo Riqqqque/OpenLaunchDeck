@@ -14,7 +14,7 @@ from openlaunchdeck.actions.hotkey import (
     parse_hotkey,
 )
 from openlaunchdeck.actions.registry import create_default_registry
-from openlaunchdeck.ui.action_editor import ActionEditor
+from openlaunchdeck.ui.action_editor import ActionEditor, HotkeyPicker
 
 
 def test_hotkey_suggestions_include_extended_function_keys():
@@ -40,6 +40,8 @@ def test_hotkey_parser_normalizes_common_aliases():
     assert parse_hotkey("Ctrl + Shift + F14") == ["ctrl", "shift", "f14"]
     assert parse_hotkey("win+print screen") == ["win", "print_screen"]
     assert parse_hotkey("command+pgdn") == ["win", "pagedown"]
+    assert parse_hotkey("control+esc") == ["ctrl", "escape"]
+    assert parse_hotkey("windows+prtsc") == ["win", "printscreen"]
     assert parse_hotkey("Shift + Left Arrow") == ["shift", "left"]
     assert parse_hotkey("shift+arrow right") == ["shift", "right"]
 
@@ -97,25 +99,114 @@ def test_extended_function_keys_use_virtual_key_events():
     assert not _should_send_virtual_key("f12", 88)
 
 
-def test_hotkey_editor_uses_editable_autocomplete_combo():
+def test_hotkey_editor_uses_modifier_picker_and_searchable_key_list():
     app = QApplication.instance() or QApplication([])
     editor = ActionEditor(create_default_registry())
 
     editor.set_action("hotkey", {"hotkey": "f15"})
     widget = editor.field_widgets["hotkey"]
 
-    assert isinstance(widget, QComboBox)
-    assert widget.isEditable()
-    assert widget.currentText() == "f15"
-    assert widget.findText("f24") >= 0
-    assert widget.findText("shift+left") >= 0
-    assert "shift+left" in widget.toolTip()
+    assert isinstance(widget, HotkeyPicker)
+    assert widget.key_combo.isEditable()
+    assert widget.key_combo.currentData() == "f15"
+    assert widget.key_combo.findData("f24") >= 0
+    assert widget.key_combo.findData("left") >= 0
+    assert widget.preview.text() == "F15"
 
-    widget.setEditText("ctrl+shift+f19")
+    widget.modifier_checks["ctrl"].setChecked(True)
+    widget.modifier_checks["shift"].setChecked(True)
+    widget.key_combo.setCurrentIndex(widget.key_combo.findData("f19"))
 
     action_type, config = editor.current_action()
     assert action_type == "hotkey"
     assert config["hotkey"] == "ctrl+shift+f19"
+
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_hotkey_picker_handles_win_shortcuts_and_preserves_existing_custom_values():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+
+    editor.set_action("hotkey", {"hotkey": "win+shift+s"})
+    widget = editor.field_widgets["hotkey"]
+
+    assert isinstance(widget, HotkeyPicker)
+    assert widget.modifier_checks["win"].isChecked()
+    assert widget.modifier_checks["shift"].isChecked()
+    assert widget.key_combo.currentData() == "s"
+    assert widget.value() == "win+shift+s"
+
+    editor.set_action("hotkey", {"hotkey": "ctrl+a+b"})
+    widget = editor.field_widgets["hotkey"]
+    assert widget.value() == "ctrl+a+b"
+
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_hotkey_picker_maps_search_result_labels_to_key_values():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+
+    editor.set_action("hotkey", {})
+    widget = editor.field_widgets["hotkey"]
+    widget.key_combo.setEditText("Play / Pause")
+
+    assert widget.value() == "media_play_pause"
+    assert editor.current_action()[1]["hotkey"] == "media_play_pause"
+
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_choice_fields_use_friendly_labels_without_changing_saved_values():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+
+    editor.set_action("media_control", {"control": "play_pause"})
+    widget = editor.field_widgets["control"]
+
+    assert isinstance(widget, QComboBox)
+    assert widget.currentText() == "Play / Pause"
+    assert widget.currentData() == "play_pause"
+    assert editor.current_action()[1]["control"] == "play_pause"
+
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_every_bounded_action_field_uses_a_selector():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+    editor.set_context_choices("switch_page", "page_id", [("Main", "main")])
+
+    for action in editor.registry.all():
+        editor.set_action(action.type_name, {})
+        for field in action.config_fields:
+            widget = editor.field_widgets[field["name"]]
+            if field["type"] in {"choice", "color"}:
+                assert isinstance(widget, QComboBox), (action.type_name, field["name"])
+            elif field["type"] == "hotkey":
+                assert isinstance(widget, HotkeyPicker), (action.type_name, field["name"])
+
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_switch_page_uses_current_profile_page_choices():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+    editor.set_context_choices("switch_page", "page_id", [("Main", "main"), ("Streaming", "streaming")])
+
+    editor.set_action("switch_page", {"page_id": "streaming"})
+    widget = editor.field_widgets["page_id"]
+
+    assert isinstance(widget, QComboBox)
+    assert widget.currentText() == "Streaming"
+    assert widget.currentData() == "streaming"
+    assert editor.current_action()[1]["page_id"] == "streaming"
 
     editor.deleteLater()
     app.processEvents()

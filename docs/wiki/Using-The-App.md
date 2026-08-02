@@ -30,11 +30,13 @@ Every button has:
 - Enabled state
 - Dangerous confirmation option
 - Notes
-- Action type and action-specific settings
+- Action type and action-specific settings; fixed option sets use drop-downs
 - Optional icon reference
 - Optional active, success, and error colors in the profile format
 
 Disabled buttons stay visible in the editor but do not run. Dangerous buttons need a second press within five seconds.
+
+The Hotkey action uses modifier controls plus a searchable key drop-down. Switch Page lists the pages in the current profile. Names that come from an external system, such as an OBS scene or source, remain text fields because they must match that external application exactly.
 
 ### Editor Commands
 

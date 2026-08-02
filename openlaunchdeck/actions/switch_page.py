@@ -7,7 +7,15 @@ class SwitchPageAction(BaseAction):
     type_name = "switch_page"
     display_name = "Switch Page"
     description = "Switch to another page in the current profile."
-    config_fields = [{"name": "page_id", "label": "Page ID", "type": "text"}]
+    config_fields = [
+        {
+            "name": "page_id",
+            "label": "Page",
+            "type": "choice",
+            "choices": [],
+            "help": "Choose a page from the current profile.",
+        }
+    ]
 
     def validate(self, config: dict) -> list[str]:
         return [] if config.get("page_id") else ["Page ID is required."]

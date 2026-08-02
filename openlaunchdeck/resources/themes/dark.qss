@@ -121,6 +121,19 @@ QLabel#FieldLabel {
   font-weight: 700;
 }
 
+QLabel#HotkeyPreview {
+  color: #70d7ca;
+  font-size: 9pt;
+  font-weight: 700;
+  padding: 1px 2px 0 2px;
+}
+
+QCheckBox#HotkeyModifier {
+  color: #d7dbe1;
+  font-size: 9pt;
+  spacing: 5px;
+}
+
 QMenuBar {
   background: #0d0f12;
   color: #dfe2e7;
@@ -163,11 +176,6 @@ QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus, QSpinBo
   border: 1px solid #4fd1c5;
 }
 QPlainTextEdit[invalid="true"] { border: 1px solid #ef4444; }
-
-QComboBox::drop-down {
-  border: none;
-  width: 24px;
-}
 
 QPushButton {
   background: #1c2229;
