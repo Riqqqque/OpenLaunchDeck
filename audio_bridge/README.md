@@ -1,6 +1,6 @@
 # OpenLaunchDeck Audio Bridge
 
-OpenLaunchDeck Audio Bridge is the planned Windows audio endpoint pair for soundboard voice chat routing:
+OpenLaunchDeck Audio Bridge is a separate driver project for a dedicated soundboard voice-chat route:
 
 - Playback endpoint: `OpenLaunchDeck Voice Output`
 - Recording endpoint: `OpenLaunchDeck Voice Input`
@@ -9,7 +9,7 @@ OpenLaunchDeck already mixes routed soundboard clips and the selected microphone
 
 ## Current State
 
-The desktop app detects and prefers this bridge when the endpoint pair exists. The bridge driver itself must be built and signed separately before Windows will load it.
+The desktop app detects and prefers this bridge when the endpoint pair exists. A signed public driver package is not included in the current release. Until one is available, use another signed Windows audio route or a hardware loopback input.
 
 Windows audio endpoints are provided by drivers. A normal desktop process cannot create a system-wide recording device that Discord can select.
 
@@ -40,6 +40,8 @@ Unsigned or test-signed drivers are for development machines only. Public releas
 `uninstall_audio_bridge.ps1` removes an installed bridge driver package by INF name.
 
 These scripts intentionally fail clearly when prerequisites are missing. Silent fallback installs are not used for driver work.
+
+The normal OpenLaunchDeck installer does not run these scripts or modify Windows audio drivers.
 
 ## App Integration
 

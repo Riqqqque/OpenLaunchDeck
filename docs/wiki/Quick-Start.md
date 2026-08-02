@@ -1,162 +1,131 @@
 # Quick Start
 
-This page gets OpenLaunchDeck usable quickly. Follow it in order the first time.
+This guide gets OpenLaunchDeck installed, explains Simulation mode, creates one safe button, and verifies the Launchpad connection.
 
 ## Before You Start
 
 You need:
 
-- Windows 10 or Windows 11.
-- OpenLaunchDeck installed from GitHub Releases.
-- A Novation Launchpad Mini MK3 if you want physical pad control.
-- OBS only if you want streaming, clipping, screenshots, or scene controls.
-- A voice chat route only if you want Discord or game chat to hear soundboard clips.
-- Local `.wav` or `.mp3` files if you want soundboard buttons.
+- Windows 11
+- The latest OpenLaunchDeck installer
+- A Novation Launchpad Mini MK3 and USB cable for physical use
 
-You can still use the app before the Launchpad arrives. That is what Simulation mode is for.
+The Launchpad is optional while you learn the app. Simulation mode is a normal editing mode, not an error.
 
 ## 1. Install OpenLaunchDeck
 
-1. Open the latest GitHub Release.
+1. Open the [latest release](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest).
 2. Download `OpenLaunchDeckSetup-<version>.exe`.
 3. Run the installer.
-4. Launch OpenLaunchDeck from the Start Menu or desktop shortcut.
+4. Open OpenLaunchDeck from the Start menu or desktop shortcut.
 
-Use the installer for normal use. Use the portable ZIP only when you want to test without replacing the installed copy.
+Windows may show a publisher warning because the installer is currently unsigned. Confirm that the file came from the official repository and use the provided SHA256 file when you need to verify it manually.
 
-## 2. Know What The Header Means
+## 2. Choose A Starter Profile
 
-The top of the app shows the current device state.
+On first launch, choose a starter profile:
 
-- **Connected mode:** OpenLaunchDeck sees the Launchpad MIDI ports. Physical pad presses can run actions.
-- **Simulation mode:** no active Launchpad MIDI connection is available. The app still works for editing, profile setup, and Test Action.
+- **Blank** for an empty deck
+- **Basic PC** for common Windows shortcuts
+- **OBS Streaming** for streaming examples
+- **Discord Audio** for voice-chat hotkey examples
+- **Soundboard** for audio button examples
 
-Simulation mode is not a crash and not a bad install. It means one of these is true:
+Starter buttons are examples. Replace paths, URLs, names, hotkeys, and sound files with your own values before relying on them.
 
-- The Launchpad is not plugged in.
-- The wrong MIDI port is selected.
-- Another app has the MIDI port open.
-- The device needs reconnecting.
+## 3. Understand Simulation Mode
 
-## 3. Pick A Starter Profile
+Simulation mode appears when OpenLaunchDeck does not have an active Launchpad MIDI input and output connection.
 
-Open the profile selector on the left and choose one:
+You can still:
 
-- **Basic PC:** browser, copy, paste, media, volume, and common shortcuts.
-- **OBS Streaming:** recording, replay buffer, screenshots, scenes, and source examples.
-- **Soundboard:** sound buttons and stop buttons.
-- **Discord Audio:** mute, deafen, and voice-call style shortcuts.
+- Edit every pad
+- Create profiles and pages
+- Import and export profiles
+- Use **Test Action**
+- Configure settings
+- Open MIDI Debug
 
-Starter profiles are examples. They do not include private paths, tokens, passwords, or personal server details.
+Hover over the Simulation mode label to see why the app entered that mode.
 
-## 4. Edit A Button Without Accidentally Running It
+## 4. Select And Edit A Button
 
-1. Click a pad in the grid.
-2. Look at the editor on the right.
-3. Change the label.
-4. Pick a color.
-5. Choose an action type.
-6. Fill in the action fields.
-7. Click **Test Action** only when you want to run it.
+1. Click pad `A1` in the on-screen grid.
+2. Edit the label, color, enabled state, notes, and action in the right panel.
+3. Choose an action type.
+4. Fill in the action fields.
+5. Wait briefly for autosave, or switch away from the field to commit the edit.
 
-Important: clicking a pad in the app selects it for editing. It does not run the action. Physical Launchpad presses run actions.
+Clicking the grid only selects a pad. It never runs the action.
 
-## 5. Make A Harmless First Button
+Use these editor controls deliberately:
 
-Use a safe test before adding OBS, voice chat, or command actions.
+- **Test Action** runs the selected button through the same action runner used by hardware.
+- **Clear** resets the selected button.
+- **Copy** copies the full button configuration.
+- **Paste** replaces the selected button with the copied configuration.
 
-1. Click `A1`.
-2. Set label to `Google`.
-3. Set color to `green`.
-4. Set action type to `Open URL`.
-5. Set URL to `https://www.google.com`.
-6. Enable `Open In Private Window` when the page should open in your browser's private mode.
-7. Click **Test Action**.
-8. Press `A1` on the Launchpad if the device is connected.
+## 5. Make A Safe First Button
 
-If the browser opens, the basic action path works.
+Create a website button:
 
-## 6. Test The Launchpad
-
-1. Plug the Launchpad Mini MK3 into USB.
-2. Press **Reconnect** in OpenLaunchDeck.
-3. Open `Device > MIDI Debug`.
-4. Press the top-left physical pad.
-5. Confirm a raw MIDI message appears.
-6. Confirm the parsed button ID is `A1`.
-
-If the parsed ID is wrong or blank, go to [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md).
-
-## 7. Make An OBS Clip Button
-
-Use OBS WebSocket instead of a keyboard hotkey for clips. It works better while games are focused.
-
-1. Open OBS.
-2. Go to `Tools > WebSocket Server Settings`.
-3. Enable the WebSocket server.
-4. In OBS settings, enable Replay Buffer.
-5. In OpenLaunchDeck, select a pad.
-6. Set action type to `OBS WebSocket`.
-7. Set operation to `save_replay_buffer`.
-8. Enable `Start Replay Buffer If Needed`.
-9. Click **Test Action** while OBS is open.
-
-The first press may start the replay buffer. After it is running, pressing again saves a clip.
-
-## 8. Make An OBS Screenshot Button
-
-1. Select a pad.
-2. Set action type to `OBS WebSocket`.
-3. Set operation to `save_screenshot`.
-4. Leave Screenshot Source blank to capture the current program scene.
-5. Set Screenshot Folder to `%USERPROFILE%\Videos` or leave it blank for the OBS recording folder.
-6. Set format to `png`.
+1. Select `A1`.
+2. Set **Label** to `Website`.
+3. Set **Color** to `green`.
+4. Choose **Open URL**.
+5. Enter `https://www.google.com`.
+6. Leave **Open In Private Window** off for the first test.
 7. Click **Test Action**.
 
-OpenLaunchDeck reports failure if OBS does not create the image file.
+If the browser opens, profile editing and action execution are working.
 
-## 9. Make A Soundboard Button
+## 6. Connect The Launchpad
 
-1. Select a pad.
-2. Set action type to `Play Sound`.
-3. Choose a local `.wav` or `.mp3` file.
-4. Start volume at `60`.
-5. Set Already Playing to `restart`.
-6. Click **Test Action**.
+1. Connect the Launchpad directly to USB.
+2. Put it in Programmer Mode when practical.
+3. Click **Reconnect** in OpenLaunchDeck.
+4. Open **Device > MIDI Debug**.
+5. Confirm an input and output containing `LPMiniMK3 MIDI` are selected.
+6. Press physical pad `A1`.
 
-If you hear it locally, the file and playback path work.
+The on-screen `A1` pad should react and its configured action should run. If a different cell reacts, use calibration instead of manually changing scattered note values.
 
-To make Discord or in-game voice chat hear it too, see [Soundboard And Voice Chat Routing](Soundboard-and-Discord-Routing.md).
+Windows can expose more than one Launchpad interface. OpenLaunchDeck normally prefers the second MIDI interface used for programmer control. See [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md) if the wrong interface opens.
 
-For more common button setups, see [Button Recipes](Button-Recipes.md).
+## 7. Add Your First Real Controls
 
-## 10. Stop Sounds
+Good next buttons are:
 
-Create a safety button:
+- A harmless hotkey such as `ctrl+c`
+- **Media Control > Play/Pause**
+- **Switch Page**
+- **Stop Sound > all**
+- An OBS screenshot after OBS WebSocket is configured
 
-1. Select a nearby pad.
-2. Set label to `Stop`.
-3. Set color to `red`.
-4. Set action type to `Stop Sound`.
-5. Set scope to `all`.
+Use [Button Recipes](Button-Recipes.md) for exact field values and [Actions Reference](Actions-Reference.md) for every available action.
 
-Use it when a loop or long clip keeps playing.
+## 8. Make It Start With Windows
 
-## 11. Where Your Setup Is Stored
+Open **Settings > Settings** and enable:
 
-User files are stored here:
+- **Launch at startup** to start after Windows sign-in
+- **Start minimized** if the normal app launch should begin hidden
+- **Minimize to tray** to keep the Launchpad and audio routes active when the window closes
+
+OpenLaunchDeck is single-instance. If Windows Startup and another layout utility both launch it, the second launch hands off to the existing instance and exits.
+
+## Where Your Setup Lives
 
 ```text
 %APPDATA%\OpenLaunchDeck
 ```
 
-Important files and folders:
+Open **Settings > Settings > Config folder** to open it. Back up this folder before major manual changes.
 
-- `settings.json`
-- `profiles`
-- `logs`
-- `backups`
-- `midi_mappings`
-- `imported_assets`
+## Next Steps
 
-The installer updates app files. Your setup lives in AppData.
+- [Using the App](Using-The-App.md)
+- [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md)
+- [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md)
+- [OBS WebSocket Setup](OBS-WebSocket-Setup.md)
+- [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md)

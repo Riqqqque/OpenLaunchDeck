@@ -1,5 +1,15 @@
 # Updater
 
-OpenLaunchDeck checks the latest GitHub release by default and requires a matching installer `.sha256` asset. A custom JSON manifest URL can override that source for self-hosted deployments. The app compares versions, asks before installing, downloads the installer to `%APPDATA%\OpenLaunchDeck\updates`, verifies SHA256, and then launches the installer when supported.
+OpenLaunchDeck checks the latest GitHub Release by default. An update is offered only when the release contains both the versioned Windows installer and its matching `.sha256` file.
 
-Source and portable runs may not be able to replace their own files automatically. In that case, download and run the installer manually.
+The updater:
+
+1. Checks for a newer semantic version in the background.
+2. Asks before downloading or installing anything.
+3. Downloads to `%APPDATA%\OpenLaunchDeck\updates`, outside the program folder.
+4. Verifies the complete installer with SHA256.
+5. Refuses to launch the installer if verification fails.
+
+A custom JSON manifest URL can replace the GitHub Release source for self-hosted deployments. Source and portable runs can still check and download an update, but users may need to close the app and run the verified installer manually.
+
+See [Updating](../docs/updating.md) for the manifest format, local testing, release assets, and user-data guarantees.

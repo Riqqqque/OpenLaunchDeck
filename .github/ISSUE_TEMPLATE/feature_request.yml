@@ -1,25 +1,50 @@
 name: Feature Request
-description: Suggest an improvement for OpenLaunchDeck.
+description: Suggest a focused improvement to OpenLaunchDeck.
 title: "[Feature]: "
 labels:
   - enhancement
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Search existing issues first. Describe the workflow you need rather than only naming a control or library.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Launchpad or MIDI
+        - Profiles, pages, or editor
+        - New action or integration
+        - OBS
+        - Soundboard or voice routing
+        - Updates or installer
+        - Performance
+        - Documentation
+        - Other
+    validations:
+      required: true
   - type: textarea
     id: use_case
     attributes:
-      label: Use Case
-      description: What are you trying to do?
+      label: What Are You Trying To Do?
+      description: Explain the real workflow and what currently gets in the way.
     validations:
       required: true
   - type: textarea
     id: proposal
     attributes:
-      label: Proposed Behavior
-      description: Describe the change you would like to see.
+      label: Preferred Behavior
+      description: Describe how the feature should work from the user's point of view.
     validations:
       required: true
   - type: textarea
+    id: alternatives
+    attributes:
+      label: Current Workaround
+      description: Explain how you handle this today, if at all.
+  - type: textarea
     id: notes
     attributes:
-      label: Notes
-      description: Add hardware details, workflow details, or links that help explain the request.
+      label: Additional Context
+      description: Add hardware details, screenshots, examples, or compatibility requirements.

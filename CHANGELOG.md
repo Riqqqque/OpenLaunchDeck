@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.58
+
+- Rebuilt the README as a concise project overview with direct setup and support paths.
+- Reorganized the public wiki around beginner setup, complete action/settings references, focused feature guides, and symptom-first troubleshooting.
+- Improved issue forms, contributor guidance, package descriptions, and wiki publishing checks.
+
 ## 0.1.57
 
 - Added searchable hotkey suggestions for arrow, navigation, editing, media, letter, number, punctuation, and F1-F24 keys.

@@ -1,116 +1,126 @@
 # Launchpad Mini MK3 Setup
 
-OpenLaunchDeck targets the Novation Launchpad Mini MK3 over USB MIDI.
+OpenLaunchDeck uses USB MIDI to receive pad presses and send RGB lighting to a Novation Launchpad Mini MK3.
 
-The important idea: the Launchpad sends MIDI messages when pads are pressed, and OpenLaunchDeck sends MIDI messages back to light pads.
+## Connect The Device
 
-## Connect the Device
+1. Connect the Launchpad directly to USB.
+2. Open OpenLaunchDeck.
+3. Click **Reconnect** or use **Device > Connect**.
+4. Check the header connection status.
 
-1. Plug the Launchpad Mini MK3 into USB.
-2. Start OpenLaunchDeck.
-3. Use `Device > Connect` or the `Reconnect` button if it does not connect automatically.
-4. The header should show `Connected mode`.
+**Connected** means both selected ports opened successfully. **Simulation mode** means no usable MIDI pair is active; editing and Test Action still work.
 
-When no Launchpad is connected, OpenLaunchDeck runs in simulation mode. Simulation mode is normal for editing profiles without hardware.
+## Pick The Correct Windows Ports
 
-## Windows Port Names
+Windows may expose more than one interface:
 
-On Windows, the device may expose more than one MIDI port. Common names include:
+```text
+LPMiniMK3 MIDI
+MIDIIN2 (LPMiniMK3 MIDI)
+MIDIOUT2 (LPMiniMK3 MIDI)
+```
 
-- `LPMiniMK3 MIDI`
-- `MIDIIN2 (LPMiniMK3 MIDI)`
-- `MIDIOUT2 (LPMiniMK3 MIDI)`
+The second MIDI interface is normally used for programmer control. OpenLaunchDeck prefers it automatically.
 
-The second MIDI interface is usually the correct path for macro control and lighting. OpenLaunchDeck tries to prefer that interface automatically.
+If the app says Connected but no pad presses arrive:
 
-If the app says connected but pad presses do nothing, use MIDI Debug and try the other Launchpad port.
+1. Open **Device > MIDI Debug**.
+2. Check the selected input and output names.
+3. Disconnect.
+4. Choose the other Launchpad MIDI pair in Settings.
+5. Connect again.
 
 ## Programmer Mode
 
-OpenLaunchDeck uses the Launchpad Mini MK3 Programmer Mode path for predictable pad input and RGB output. The app sends the Programmer Mode SysEx command when it connects and restores Live Mode when closing the MIDI port.
+Programmer Mode gives predictable grid note messages and RGB control. OpenLaunchDeck sends the Launchpad Mini MK3 Programmer Mode command when it connects and restores Live Mode when it closes the MIDI port.
 
-If pad input or lighting looks wrong, use MIDI Debug and calibration before assuming the hardware is broken.
+Device firmware and mode can still affect messages. Use MIDI Debug and calibration instead of assuming a note number.
 
-## First Hardware Test
+## Verify The Grid
 
-Use a harmless test before assigning real actions.
+Open **Device > MIDI Debug**, then press:
 
-1. Open `Device > MIDI Debug`.
-2. Press the top-left pad on the Launchpad.
-3. The debug window should show a raw MIDI message.
-4. The parsed button should be `A1`.
-5. Press the top-right pad.
-6. The parsed button should be `A8`.
-7. Press the bottom-left pad.
-8. The parsed button should be `H1`.
+| Physical pad | Expected button ID |
+| --- | --- |
+| Top-left | `A1` |
+| Top-right | `A8` |
+| Bottom-left | `H1` |
+| Bottom-right | `H8` |
 
-If those are correct, the main grid mapping is probably good.
+The debug window should show the raw MIDI message and parsed button ID. The matching GUI pad should react.
 
 ## MIDI Debug
 
-Open `Device > MIDI Debug`.
+The window shows:
 
-Use it to check:
+- Available input and output ports
+- Selected input and output
+- Live incoming messages
+- Logged outgoing lighting messages
+- Raw status, note/control, and value data
+- Parsed button ID when recognized
+- Calibration state
 
-- Available MIDI input ports
-- Available MIDI output ports
-- Incoming MIDI messages
-- Outgoing MIDI messages
-- Parsed button IDs
-- Raw note/control data
+Use **Clear Log** before a focused test and **Save Log** when a hardware report needs exact messages.
 
-The debug window is safe to leave open while testing, but close it during normal gaming if you want the quietest possible runtime.
+Close MIDI Debug during normal gaming or streaming. Its live display is intentionally more active than the normal background path.
 
-## Calibration
+## Calibrate A Custom Mapping
 
-Use calibration if a pad reports the wrong button ID.
+Use calibration when raw messages arrive but the parsed cell is wrong.
 
-The default grid labels are:
-
-`A1` through `A8` on the top row, down to `H1` through `H8` on the bottom row.
-
-The current default mapping is isolated in:
-
-`openlaunchdeck/devices/midi_mapping.py`
-
-Custom mappings are stored in:
-
-`%APPDATA%\OpenLaunchDeck\midi_mappings`
-
-Calibration flow:
-
-1. Open `Device > MIDI Debug`.
+1. Open **Device > MIDI Debug**.
 2. Start calibration.
-3. Press the requested pad.
-4. Wait for the next requested pad.
-5. Continue until the app has enough mappings.
-6. Save the mapping.
-7. Reconnect the device.
+3. Read the requested button ID.
+4. Press that physical pad once.
+5. Wait for the next requested ID.
+6. Continue through the requested grid.
+7. Save the mapping.
+8. Reconnect and repeat the corner-pad test.
 
-Use restore default mapping if a custom mapping makes things worse.
+Custom mappings are stored under:
 
-## Lighting
+```text
+%APPDATA%\OpenLaunchDeck\midi_mappings
+```
+
+Use **Restore Default Mapping** if the custom mapping is incomplete or worse than the built-in map.
+
+## Lighting Feedback
 
 OpenLaunchDeck can:
 
-- Set individual pad colors.
-- Clear all pads.
-- Refresh the active page.
-- Flash press feedback.
-- Flash success and error feedback.
-- Blink dangerous armed buttons.
-- Show active soundboard buttons.
+- Set individual pad colors
+- Clear all pads
+- Refresh the active page
+- Flash white on press
+- Flash green after success
+- Flash red after failure
+- Blink an armed dangerous button
+- Show the active color while a sound is playing
 
-Lighting is batched where practical so page switches do not send unnecessary duplicate color messages.
+Page refreshes send changed pads in batches and avoid resending colors that are already active.
 
-## Button Behavior
+Lighting confirms what the app attempted to send. If colors are wrong on real hardware, capture outgoing messages and device mode in MIDI Debug before changing the palette or protocol.
 
-Physical Launchpad presses and editor Test actions both go through the action runner. Clicking a pad in the UI selects it for editing; it does not run the action.
+## Unplug And Reconnect
 
-## Extra Launchpad Buttons
+The MIDI callback does minimal parsing and never updates widgets directly. A low-frequency background health check detects stale Windows handles and reconnects when auto-connect is enabled.
 
-The Launchpad Mini MK3 has buttons around the 8x8 grid. OpenLaunchDeck currently treats the 8x8 grid as the supported macro surface.
+If unplugging does not recover automatically:
 
-To change pages today, assign a grid pad to the `Switch Page` action.
+1. Wait a few seconds.
+2. Reconnect USB.
+3. Click **Reconnect** once.
+4. Confirm ports in MIDI Debug.
 
-Extra hardware buttons can be inspected in MIDI Debug. They should not be wired into app page navigation until their messages are verified for the device mode being used.
+## Extra Hardware Buttons
+
+OpenLaunchDeck currently treats the 8x8 grid as the supported macro surface. The arrows, scene-launch buttons, and other edge controls are not assigned to profile/page navigation by default.
+
+Their raw messages can be inspected in MIDI Debug. They should only be added after the messages are verified in the intended Launchpad mode.
+
+## Still Not Working?
+
+Open [Troubleshooting](Troubleshooting.md) and use the Launchpad section. Include selected ports, mode, raw messages, parsed IDs, and whether restoring the default mapping changes the result.

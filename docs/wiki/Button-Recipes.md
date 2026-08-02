@@ -1,6 +1,6 @@
 # Button Recipes
 
-This page gives exact button setups for common streaming, gaming, and soundboard actions.
+This page gives exact starting values for common buttons. Use [Actions Reference](Actions-Reference.md) when you need every field or operation.
 
 Use these as starting points. After a recipe works, rename the label, change the color, or move it to a different pad.
 
@@ -9,6 +9,14 @@ Use these as starting points. After a recipe works, rename the label, change the
 Clicking a pad in the app selects it for editing. It does not run the action.
 
 Use **Test Action** in the editor when you want to test from the app. Use the physical Launchpad pad when you want the real macro behavior.
+
+## Choose A Recipe
+
+- OBS: replay clip, screenshot, camera, microphone, or stream controls
+- Hotkeys: voice chat, games, media, or extended function keys
+- Soundboard: local playback, voice routing, and stop controls
+- Navigation: switch pages
+- Windows: websites, apps, folders, and commands
 
 ## OBS Replay Clip
 
@@ -156,6 +164,25 @@ The Hotkey field is searchable and editable. You can select a suggestion or type
 
 Use a different extended function key than the mute button.
 
+## Play Or Pause Music
+
+- Label: `Media`
+- Color: `blue`
+- Action type: `Media Control`
+- Control: `play_pause`
+
+Use the Media Control action instead of binding a browser-specific key. The active browser or media application must still accept the Windows media command.
+
+## Set Windows Volume
+
+- Label: `Vol 40`
+- Color: `blue`
+- Action type: `Volume Control`
+- Mode: `set_volume`
+- Target Volume: `40`
+
+This changes the default Windows playback endpoint, not an individual application's mixer slider.
+
 ## Play A Soundboard Clip Locally
 
 - Label: short clip name
@@ -242,6 +269,42 @@ Only use command buttons when you understand what the command does.
 - Dangerous: on if the command stops, deletes, restarts, or changes something important
 
 Dangerous buttons require a second press inside the arm window.
+
+## Multi-Action With A Delay
+
+Use this when one pad should run actions in order.
+
+- Label: `Ready`
+- Color: `cyan`
+- Action type: `Multi-Action`
+- Continue On Error: off
+
+Steps:
+
+```json
+[
+  {
+    "type": "hotkey",
+    "config": {
+      "hotkey": "f15"
+    }
+  },
+  {
+    "type": "delay",
+    "config": {
+      "milliseconds": 500
+    }
+  },
+  {
+    "type": "media_control",
+    "config": {
+      "control": "play_pause"
+    }
+  }
+]
+```
+
+Test each step by itself before combining them.
 
 ## Good First Layout
 

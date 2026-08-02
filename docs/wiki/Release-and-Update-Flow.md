@@ -1,97 +1,123 @@
-# Release and Update Flow
+# Release And Update Flow
 
-OpenLaunchDeck publishes Windows builds through GitHub Releases.
+OpenLaunchDeck publishes versioned Windows installers and portable ZIPs through GitHub Releases.
 
-This page explains what users should expect from updates and what maintainers should verify before publishing.
+## For Users
 
-## Install
+### Install
 
-Use the latest `OpenLaunchDeckSetup-<version>.exe` from GitHub Releases for normal installation.
+Download `OpenLaunchDeckSetup-<version>.exe` from the [latest release](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest).
 
-The installer updates program files. It does not delete user profiles, settings, logs, backups, or MIDI mappings.
+The installer updates program files while user data remains under:
 
-User data lives under:
+```text
+%APPDATA%\OpenLaunchDeck
+```
 
-`%APPDATA%\OpenLaunchDeck`
+### Check For Updates
 
-Important user folders:
+Use **Help > Check for Updates**.
 
-- `profiles`
-- `settings.json`
-- `logs`
-- `backups`
-- `midi_mappings`
-- `imported_assets`
-- `updates`
+The app can:
+
+1. Read the latest GitHub release or a configured manifest.
+2. Compare semantic versions.
+3. Show whether the update is normal, required, or unsupported by the current version.
+4. Download the installer outside the program folder.
+5. Verify SHA256.
+6. Ask before launching the installer.
+
+It does not silently download and install updates by default.
+
+### Manual Update
+
+1. Download the latest installer and checksum.
+2. Verify the checksum when needed.
+3. Quit OpenLaunchDeck from the tray.
+4. Run the installer.
+5. Launch the app.
+6. Confirm the version under **Help > About OpenLaunchDeck**.
+7. Test one safe button.
+
+### Preserved Data
+
+- Settings
+- Profiles
+- Logs
+- Backups
+- MIDI mappings
+- Imported assets
+- Update metadata/downloads
+
+Uninstalling the program does not need to remove this data. Delete the AppData folder separately only when you intentionally want to erase the setup.
 
 ## Release Assets
 
-Each release should include:
+Each public release should include:
 
-- Installer EXE
-- Installer SHA256 checksum
-- Portable Windows ZIP
-- Portable ZIP SHA256 checksum
+- `OpenLaunchDeckSetup-<version>.exe`
+- Installer `.sha256`
+- `OpenLaunchDeck-<version>-Windows.zip`
+- Portable ZIP `.sha256`
 
-## Updating
+The installer is the normal choice. The ZIP is for portable testing and diagnostics.
 
-Normal updates replace the installed app files. User data stays in AppData.
+## For Maintainers
 
-Before testing an update, verify:
+### Version Source
 
-- Existing profiles still load
-- Settings still load
-- Launchpad still connects
-- OBS clip and screenshot actions still work
-- Soundboard output still works
+Update `openlaunchdeck/version.py`:
 
-## Manual Update Path
+```python
+APP_NAME = "OpenLaunchDeck"
+__version__ = "0.1.0"
+```
 
-1. Download the latest installer from GitHub Releases.
-2. Close OpenLaunchDeck.
-3. Run the installer.
-4. Launch OpenLaunchDeck.
-5. Confirm your profile is still selected.
-6. Test one safe button.
+Keep the fallback version in `installer/openlaunchdeck.iss` synchronized. Update the changelog and any release-specific docs in the same commit.
 
-## In-App Update Checks
+### Build And Verify
 
-OpenLaunchDeck can check a JSON update manifest.
+```powershell
+powershell -ExecutionPolicy Bypass -File build.ps1 -RequireInstaller
+```
 
-The manifest includes:
+The build creates the application, installer, portable ZIP, and checksum files. It runs tests unless explicitly told not to.
 
-- Latest version
-- Minimum supported version
-- Required update flag
-- Download URL
-- SHA256 checksum
-- Release notes URL
-- Publish time
+Before release:
 
-The app downloads update installers to AppData, verifies SHA256, and asks before launching the installer. It does not silently install updates.
+1. Install over the previous version.
+2. Compare profile/settings data before and after.
+3. Launch the installed application.
+4. Test Simulation mode.
+5. Test real Launchpad input/lighting when hardware behavior changed.
+6. Test OBS and soundboard paths when they changed.
+7. Verify installer and ZIP checksums.
 
-## Verified OBS Button Pattern
+Follow [the full release checklist](https://github.com/Riqqqque/OpenLaunchDeck/blob/main/docs/release_checklist.md).
 
-A practical OBS layout is:
+### Publish
 
-- `H7`: OBS replay buffer clip
-- `H8`: OBS screenshot
+Push a tag matching the source version:
 
-Both use OBS WebSocket instead of keyboard hotkeys.
+```powershell
+git tag v<version>
+git push origin v<version>
+```
 
-## Maintainer Release Checklist
+The Release workflow validates the tag, runs tests, builds Windows packages, verifies expected assets, and publishes the GitHub release.
 
-Before publishing a release:
+### Custom Manifest
 
-1. Run tests.
-2. Build the portable ZIP.
-3. Build the installer.
-4. Install over the previous version.
-5. Confirm AppData is preserved.
-6. Confirm the app launches.
-7. Confirm the Launchpad connects or simulation mode works.
-8. Test OBS replay and screenshot actions.
-9. Test a soundboard button.
-10. Upload installer, ZIP, and checksum files.
-11. Update release notes.
-12. Update the update manifest if one is being used.
+The optional JSON manifest contains:
+
+- `latest_version`
+- `minimum_supported_version`
+- `required`
+- `download_url`
+- `sha256`
+- `release_notes_url`
+- `published_at`
+
+Use placeholder URLs and checksums in examples. Never publish a manifest until the real installer exists and its SHA256 is known.
+
+More technical detail is in [docs/updating.md](https://github.com/Riqqqque/OpenLaunchDeck/blob/main/docs/updating.md).

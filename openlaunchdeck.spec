@@ -35,7 +35,7 @@ VSVersionInfo(
         '040904B0',
         [
           StringStruct('CompanyName', 'Rique'),
-          StringStruct('FileDescription', '{APP_NAME}'),
+          StringStruct('FileDescription', 'Launchpad Mini MK3 macro deck for Windows'),
           StringStruct('FileVersion', '{__version__}'),
           StringStruct('InternalName', '{APP_NAME}'),
           StringStruct('LegalCopyright', 'Copyright (c) Rique'),

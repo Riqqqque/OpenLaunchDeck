@@ -1,37 +1,22 @@
-# OpenLaunchDeck Wiki
+# Wiki Source
 
-This folder is the source for the public GitHub wiki.
+This folder is the source of truth for the public OpenLaunchDeck wiki.
 
-Use [Home](Home.md) as the wiki landing page. The pages are written so a new user can set up the app without already knowing MIDI, OBS WebSocket, or Windows audio routing.
+## Publishing
 
-The source files in this folder use normal `.md` links so they render correctly in the main repository. The live GitHub Wiki should use extensionless page links, otherwise wiki navigation can open raw Markdown files instead of rendered pages. Use `scripts\sync-wiki.ps1` to copy the pages into the wiki repository and rewrite those links safely.
-
-## Pages
-
-- [Home](Home.md)
-- [Quick Start](Quick-Start.md)
-- [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md)
-- [Profiles, Pages, And Macros](Profiles-Pages-And-Macros.md)
-- [Button Recipes](Button-Recipes.md)
-- [OBS WebSocket Setup](OBS-WebSocket-Setup.md)
-- [Streaming Safety](Streaming-Safety.md)
-- [Soundboard And Voice Chat Routing](Soundboard-and-Discord-Routing.md)
-- [Performance And Gaming](Performance-And-Gaming.md)
-- [Troubleshooting](Troubleshooting.md)
-- [Release And Update Flow](Release-and-Update-Flow.md)
-
-## Syncing To GitHub Wiki
-
-The GitHub wiki uses a separate repository:
-
-```text
-https://github.com/Riqqqque/OpenLaunchDeck.wiki.git
-```
-
-Copy the Markdown files from this folder into that wiki repository and push the wiki repo after editing.
-
-Recommended sync command:
+1. Edit and review the Markdown files in this folder.
+2. Run the repository tests to validate local links and navigation.
+3. Clone `https://github.com/Riqqqque/OpenLaunchDeck.wiki.git`.
+4. Sync the source into the clone:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\sync-wiki.ps1 -WikiPath "$env:LOCALAPPDATA\Temp\OpenLaunchDeck.wiki"
+powershell -ExecutionPolicy Bypass -File scripts\sync-wiki.ps1 -WikiPath <wiki-clone-path>
 ```
+
+5. Review, commit, and push the wiki repository.
+
+The sync script does not publish this maintainer README. It publishes the user-facing pages, removes stale pages from the wiki clone, and converts local `.md` links to extensionless GitHub Wiki links.
+
+## Navigation
+
+Every user-facing page must be linked from `_Sidebar.md`. `Home.md` is the landing page and `_Footer.md` provides repository, download, and issue links.
