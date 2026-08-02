@@ -120,6 +120,9 @@ class ButtonEditor(QWidget):
         self.action_editor.set_action(action.type, action.config)
         self._loading = False
 
+    def set_page_choices(self, pages: list[tuple[str, str]]) -> None:
+        self.action_editor.set_context_choices("switch_page", "page_id", pages)
+
     def _queue_notes_change(self) -> None:
         if not self._loading:
             self._notes_timer.start(350)

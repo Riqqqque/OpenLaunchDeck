@@ -397,6 +397,7 @@ class MainWindow(QMainWindow):
         profile_service = self.services.profile_service
         current_page = profile_service.current_page
         self.sidebar.refresh(profile_service)
+        self.editor.set_page_choices([(page.name, page.id) for page in profile_service.current_profile.pages])
         if self.grid.selected_button_id not in BUTTON_IDS:
             self.grid.select("A1")
         self.grid.update_from_page(current_page, self.services.action_runner.dangerous_service, self.services.audio_engine)

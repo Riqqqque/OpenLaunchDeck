@@ -38,7 +38,7 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 | OBS | Save replay-buffer clips, take screenshots, switch scenes, show or hide sources, mute inputs, start or stop recording |
 | Soundboard | Play local `.wav` and `.mp3` clips, loop or overlap sounds, control volume, stop one page or every sound |
 | Voice chat | Send selected clips to a configured Windows voice route while monitoring them locally |
-| Hotkeys | Use normal shortcuts, arrow/navigation combinations, media keys, and `F1` through `F24` |
+| Hotkeys | Build shortcuts with modifier controls and a searchable key list covering navigation, media keys, and `F1` through `F24` |
 | Windows | Open websites, apps, folders, files, commands, PowerShell, and typed text |
 | Automation | Send HTTP requests, run key-based SSH commands, and combine actions with delays |
 | Deck organization | Create profiles, pages, labels, colors, page-switch buttons, and dangerous-action confirmations |

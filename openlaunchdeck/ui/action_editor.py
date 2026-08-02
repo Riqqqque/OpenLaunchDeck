@@ -3,11 +3,10 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Signal
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QCompleter,
     QFormLayout,
     QHBoxLayout,
     QLineEdit,
@@ -20,6 +19,14 @@ from PySide6.QtWidgets import (
 )
 
 from ..constants import NAMED_COLORS
+from .hotkey_picker import HotkeyPicker
+
+
+CHOICE_DISPLAY_LABELS = {
+    "play_pause": "Play / Pause",
+    "png": "PNG",
+    "jpg": "JPG",
+}
 
 
 class ActionEditor(QWidget):
@@ -44,8 +51,12 @@ class ActionEditor(QWidget):
         self.form.addRow("Action", self.action_type_combo)
         self.field_widgets: dict[str, Any] = {}
         self._config: dict[str, Any] = {}
+        self._dynamic_choices: dict[tuple[str, str], list[tuple[str, Any]]] = {}
         self.action_type_combo.currentIndexChanged.connect(self._rebuild_fields)
         self.action_type_combo.currentIndexChanged.connect(lambda _index: self.changed.emit())
+
+    def set_context_choices(self, action_type: str, field_name: str, choices: list[tuple[str, Any]]) -> None:
+        self._dynamic_choices[(action_type, field_name)] = [(str(label), data) for label, data in choices]
 
     def set_action(self, action_type: str, config: dict[str, Any]) -> None:
         index = self.action_type_combo.findData(action_type)
@@ -57,7 +68,9 @@ class ActionEditor(QWidget):
         action_type = self.action_type_combo.currentData()
         config: dict[str, Any] = dict(self._config)
         for name, widget in self.field_widgets.items():
-            if isinstance(widget, QLineEdit):
+            if isinstance(widget, HotkeyPicker):
+                config[name] = widget.value()
+            elif isinstance(widget, QLineEdit):
                 config[name] = widget.text()
             elif hasattr(widget, "value_widget") and isinstance(widget.value_widget, QLineEdit):
                 config[name] = widget.value_widget.text()
@@ -109,7 +122,11 @@ class ActionEditor(QWidget):
         self._clear_dynamic_rows()
         action = self.registry.get(str(self.action_type_combo.currentData() or "noop"))
         for field in action.config_fields:
+            field = dict(field)
             name = field["name"]
+            dynamic_choices = self._dynamic_choices.get((action.type_name, name))
+            if dynamic_choices is not None:
+                field["choices"] = dynamic_choices
             widget = self._make_widget(field, self._config.get(name))
             help_text = str(field.get("help") or "").strip()
             if help_text:
@@ -141,43 +158,31 @@ class ActionEditor(QWidget):
             widget = QComboBox()
             widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             widget.setMinimumContentsLength(8)
+            widget.setMaxVisibleItems(18)
             for choice in field.get("choices", []):
-                widget.addItem(str(choice), choice)
+                if isinstance(choice, (tuple, list)) and len(choice) == 2:
+                    label, data = choice
+                else:
+                    data = choice
+                    text = str(choice)
+                    label = CHOICE_DISPLAY_LABELS.get(text, text if text.isupper() else text.replace("_", " ").title())
+                widget.addItem(str(label), data)
             index = widget.findData(value)
             if index >= 0:
                 widget.setCurrentIndex(index)
+            elif value not in (None, ""):
+                widget.addItem(f"Unavailable: {value}", value)
+                widget.setCurrentIndex(widget.count() - 1)
             return widget
         if field_type == "hotkey":
-            widget = QComboBox()
-            widget.setEditable(True)
-            widget.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
-            widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-            widget.setMinimumContentsLength(8)
-            widget.addItem("", "")
-            suggestions = [str(item) for item in field.get("suggestions", []) if str(item).strip()]
-            for suggestion in suggestions:
-                widget.addItem(suggestion, suggestion)
-            completer = QCompleter(suggestions, widget)
-            completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
-            completer.setCompletionMode(QCompleter.CompletionMode.PopupCompletion)
-            completer.setFilterMode(Qt.MatchFlag.MatchContains)
-            widget.setCompleter(completer)
-            if value:
-                text = str(value)
-                index = widget.findText(text, Qt.MatchFlag.MatchFixedString)
-                if index >= 0:
-                    widget.setCurrentIndex(index)
-                else:
-                    widget.setEditText(text)
-            else:
-                widget.setCurrentIndex(0)
-            return widget
+            keys = [str(item) for item in field.get("keys", []) if str(item).strip()]
+            return HotkeyPicker(keys, value)
         if field_type == "color":
             widget = QComboBox()
             widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             widget.setMinimumContentsLength(8)
             for color in NAMED_COLORS:
-                widget.addItem(color, color)
+                widget.addItem(color.title(), color)
             index = widget.findData(value)
             if index >= 0:
                 widget.setCurrentIndex(index)
@@ -218,7 +223,9 @@ class ActionEditor(QWidget):
         return widget
 
     def _connect_widget_changed(self, widget: QWidget) -> None:
-        if isinstance(widget, QLineEdit):
+        if isinstance(widget, HotkeyPicker):
+            widget.changed.connect(self.changed.emit)
+        elif isinstance(widget, QLineEdit):
             widget.editingFinished.connect(lambda: self.changed.emit())
         elif isinstance(widget, QPlainTextEdit):
             widget.textChanged.connect(lambda: self.changed.emit())
