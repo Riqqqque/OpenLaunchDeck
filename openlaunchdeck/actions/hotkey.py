@@ -9,6 +9,49 @@ from .base import ActionResult, BaseAction
 FUNCTION_KEYS = [f"f{index}" for index in range(1, 25)]
 EXTENDED_FUNCTION_KEYS = [f"f{index}" for index in range(13, 25)]
 
+HOTKEY_SUGGESTION_KEYS = [
+    *list("abcdefghijklmnopqrstuvwxyz"),
+    *[str(index) for index in range(10)],
+    *FUNCTION_KEYS,
+    "backspace",
+    "tab",
+    "enter",
+    "escape",
+    "space",
+    "capslock",
+    "pageup",
+    "pagedown",
+    "end",
+    "home",
+    "left",
+    "up",
+    "right",
+    "down",
+    "printscreen",
+    "insert",
+    "delete",
+    "numlock",
+    "scrolllock",
+    "semicolon",
+    "equals",
+    "comma",
+    "minus",
+    "period",
+    "slash",
+    "backtick",
+    "left_bracket",
+    "backslash",
+    "right_bracket",
+    "quote",
+    "volume_mute",
+    "volume_down",
+    "volume_up",
+    "media_previous",
+    "media_play_pause",
+    "media_next",
+    "media_stop",
+]
+
 COMMON_HOTKEYS = [
     "ctrl+c",
     "ctrl+v",
@@ -23,7 +66,7 @@ COMMON_HOTKEYS = [
     "win+l",
 ]
 
-STREAMING_HOTKEY_PREFIXES = [
+MODIFIER_PREFIXES = [
     "",
     "ctrl+",
     "shift+",
@@ -85,6 +128,33 @@ VK_CODES: dict[str, int] = {
     "media_prev": 0xB1,
     "media_stop": 0xB2,
     "media_play_pause": 0xB3,
+    "semicolon": 0xBA,
+    "equals": 0xBB,
+    "comma": 0xBC,
+    "minus": 0xBD,
+    "period": 0xBE,
+    "slash": 0xBF,
+    "backtick": 0xC0,
+    "left_bracket": 0xDB,
+    "backslash": 0xDC,
+    "right_bracket": 0xDD,
+    "quote": 0xDE,
+}
+
+EXTENDED_VK_CODES = {
+    0x21,
+    0x22,
+    0x23,
+    0x24,
+    0x25,
+    0x26,
+    0x27,
+    0x28,
+    0x2D,
+    0x2E,
+    0x5B,
+    0x5C,
+    0x5D,
 }
 
 for _index in range(1, 25):
@@ -97,11 +167,24 @@ for _index, _char in enumerate("abcdefghijklmnopqrstuvwxyz"):
 KEY_ALIASES = {
     "command": "win",
     "option": "alt",
-    "plus": "+",
+    "plus": "equals",
     "pgup": "pageup",
     "pgdn": "pagedown",
     "prior": "pageup",
     "next": "pagedown",
+    "spacebar": "space",
+    "left_arrow": "left",
+    "arrow_left": "left",
+    "leftarrow": "left",
+    "right_arrow": "right",
+    "arrow_right": "right",
+    "rightarrow": "right",
+    "up_arrow": "up",
+    "arrow_up": "up",
+    "uparrow": "up",
+    "down_arrow": "down",
+    "arrow_down": "down",
+    "downarrow": "down",
 }
 
 
@@ -116,10 +199,8 @@ def build_hotkey_suggestions() -> list[str]:
 
     for hotkey in COMMON_HOTKEYS:
         add(hotkey)
-    for key in FUNCTION_KEYS:
-        add(key)
-    for prefix in STREAMING_HOTKEY_PREFIXES:
-        for key in EXTENDED_FUNCTION_KEYS:
+    for prefix in MODIFIER_PREFIXES:
+        for key in HOTKEY_SUGGESTION_KEYS:
             add(f"{prefix}{key}")
     return suggestions
 
@@ -214,7 +295,7 @@ def _send_hotkey_windows(keys: list[str]) -> None:
             return INPUT(type=INPUT_KEYBOARD, ki=KEYBDINPUT(vk_code, 0, flags, 0, 0))
 
         flags = KEYEVENTF_SCANCODE
-        if vk_code in {0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x2D, 0x2E, 0x5B, 0x5C, 0x5D}:
+        if _is_extended_vk_code(vk_code):
             flags |= KEYEVENTF_EXTENDEDKEY
         if key_up:
             flags |= KEYEVENTF_KEYUP
@@ -242,6 +323,10 @@ def _should_send_virtual_key(key: str, scan_code: int) -> bool:
     return normalized in EXTENDED_FUNCTION_KEYS or scan_code == 0
 
 
+def _is_extended_vk_code(vk_code: int) -> bool:
+    return vk_code in EXTENDED_VK_CODES
+
+
 class HotkeyAction(BaseAction):
     type_name = "hotkey"
     display_name = "Hotkey"
@@ -252,6 +337,7 @@ class HotkeyAction(BaseAction):
             "label": "Hotkey",
             "type": "hotkey",
             "suggestions": build_hotkey_suggestions(),
+            "help": "Type any combination, such as shift+left, ctrl+alt+k, or f15.",
         }
     ]
     blocking = True

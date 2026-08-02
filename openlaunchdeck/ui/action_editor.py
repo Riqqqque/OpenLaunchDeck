@@ -111,6 +111,9 @@ class ActionEditor(QWidget):
         for field in action.config_fields:
             name = field["name"]
             widget = self._make_widget(field, self._config.get(name))
+            help_text = str(field.get("help") or "").strip()
+            if help_text:
+                widget.setToolTip(help_text)
             self.field_widgets[name] = widget
             self.form.addRow(field.get("label", name), widget)
             self._connect_widget_changed(widget)

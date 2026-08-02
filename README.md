@@ -28,7 +28,7 @@ The Launchpad Mini MK3 is compact, widely available, and already has 64 RGB pads
 
 - Trigger OBS replay buffer clips, screenshots, source visibility, scene changes, and mute controls
 - Play soundboard clips locally and route selected clips into Discord or in-game voice chat
-- Use F13-F24 and normal hotkeys for game-safe shortcuts
+- Use arbitrary keyboard combinations, arrow/navigation keys, and F13-F24 for app or game shortcuts
 - Build pages of macros with colors, labels, dangerous-action confirmation, and profile backups
 - Configure everything without hardware connected, then plug in the Launchpad when it arrives
 
@@ -71,6 +71,7 @@ The beginner-friendly [GitHub Wiki](https://github.com/Riqqqque/OpenLaunchDeck/w
 - Background MIDI connection health checks with automatic stale-port recovery
 - Page lighting refresh with changed-pad batching
 - Button editor with action-specific settings
+- Searchable hotkey completion for letters, numbers, navigation keys, media keys, and F1-F24 combinations
 - URL actions with automatic HTTPS handling and optional private-window mode
 - Dangerous action double-press confirmation
 - Soundboard playback with stop controls
