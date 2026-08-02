@@ -20,6 +20,8 @@ Use calibration and save the mapping. User mappings are stored in AppData.
 
 OpenLaunchDeck sends hotkeys through a Windows native keyboard path first, which is the best fit for game and OBS shortcuts. Use unused keys such as `F13` through `F24` for game-facing actions so they do not conflict with normal keyboard controls.
 
+The Hotkey field accepts typed combinations as well as searchable suggestions. Examples include `shift+left`, `ctrl+alt+k`, `win+shift+s`, and `f15`. Natural arrow names such as `left arrow` are normalized automatically.
+
 If a pad press works on the desktop but not in a game, check these items:
 
 - Make sure the button action is `Hotkey`, not `No Action`.

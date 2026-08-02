@@ -129,6 +129,24 @@ Recommended key choices:
 
 Extended function keys are useful because most games do not use them by default.
 
+## Load Serato Decks With Arrow Hotkeys
+
+Serato can bind deck loading to arrow-key combinations. Create one button for each deck:
+
+Left deck:
+
+- Label: `Load Left`
+- Action type: `Hotkey`
+- Hotkey: `shift+left`
+
+Right deck:
+
+- Label: `Load Right`
+- Action type: `Hotkey`
+- Hotkey: `shift+right`
+
+The Hotkey field is searchable and editable. You can select a suggestion or type a combination directly. Arrow keys, letters, numbers, navigation/editing keys, media keys, and `F1` through `F24` can be combined with `ctrl`, `shift`, `alt`, and `win`.
+
 ## Discord Deafen Hotkey
 
 - Label: `Deafen`

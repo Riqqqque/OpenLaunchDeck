@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.57
+
+- Added searchable hotkey suggestions for arrow, navigation, editing, media, letter, number, punctuation, and F1-F24 keys.
+- Added natural arrow-key aliases and verified Windows extended-key handling for combinations such as `shift+left` and `shift+right`.
+- Updated the Windows MIDI backend and GitHub workflow dependency floors.
+
 ## 0.1.56
 
 - Prevented local release builds from accumulating outdated installers and portable archives.
