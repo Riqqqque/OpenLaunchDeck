@@ -94,14 +94,20 @@ jobs:
             "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe.sha256"
           )
           $notes = @"
-          OpenLaunchDeck $env:APP_VERSION
+          OpenLaunchDeck $env:APP_VERSION is a ready-to-install Windows release for the Novation Launchpad Mini MK3.
 
-          Release assets:
-          - OpenLaunchDeckSetup-$env:APP_VERSION.exe
-          - OpenLaunchDeck-$env:APP_VERSION-Windows.zip
-          - SHA256 checksum files for both packages
+          ## Install
 
-          Download the installer for normal Windows installs. Use the ZIP for portable testing.
+          Download **OpenLaunchDeckSetup-$env:APP_VERSION.exe** for a normal Windows installation. Existing profiles and settings under `%APPDATA%\OpenLaunchDeck` are preserved during upgrades.
+
+          The portable ZIP is intended for testing or troubleshooting. SHA256 files are included for both packages.
+
+          ## Start Here
+
+          - [Quick Start](https://github.com/$env:GITHUB_REPOSITORY/wiki/Quick-Start)
+          - [Complete Wiki](https://github.com/$env:GITHUB_REPOSITORY/wiki)
+          - [Troubleshooting](https://github.com/$env:GITHUB_REPOSITORY/wiki/Troubleshooting)
+          - [Changelog](https://github.com/$env:GITHUB_REPOSITORY/blob/main/CHANGELOG.md)
           "@
           $notes | Set-Content -Path release-notes.md -Encoding utf8
           gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY *> $null

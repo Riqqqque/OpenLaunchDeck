@@ -1,6 +1,6 @@
 # Native Helper
 
-OpenLaunchDeck does not require the native helper. The Python app is the supported path.
+OpenLaunchDeck does not require the native helper. The standard Python implementation is always available and is the default path.
 
 This folder contains a small PyO3/maturin Rust crate for focused helpers where native code can offer a clear reliability or performance win:
 
@@ -15,3 +15,5 @@ Build from the repository root:
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1 -BuildNative
 ```
+
+Do not enable the helper by default without measuring the affected operation on representative profiles. See [Performance](../docs/performance.md) for timing logs and fallback behavior.

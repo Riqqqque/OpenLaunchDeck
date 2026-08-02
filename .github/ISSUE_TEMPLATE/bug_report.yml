@@ -4,18 +4,38 @@ title: "[Bug]: "
 labels:
   - bug
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Check the [Troubleshooting guide](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Troubleshooting) first. Remove passwords, tokens, and private paths from anything you post.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - App startup or tray
+        - Launchpad connection or MIDI
+        - Pad lighting
+        - Profiles, pages, or button editing
+        - Hotkeys or Windows actions
+        - OBS WebSocket
+        - Soundboard or voice routing
+        - Updates or installer
+        - Performance
+        - Other
+    validations:
+      required: true
   - type: textarea
     id: summary
     attributes:
-      label: Summary
-      description: What happened?
+      label: What Happened?
+      description: Describe the problem in one or two clear sentences.
     validations:
       required: true
   - type: textarea
     id: steps
     attributes:
       label: Steps To Reproduce
-      description: List the shortest steps that reproduce the issue.
       placeholder: |
         1. Open OpenLaunchDeck
         2. Select ...
@@ -25,26 +45,35 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: Expected Behavior
-      description: What should have happened?
+      label: Expected Result
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: OpenLaunchDeck Version
-      placeholder: "0.1.0"
+      placeholder: "Shown in Help > About OpenLaunchDeck"
+    validations:
+      required: true
   - type: dropdown
     id: hardware
     attributes:
-      label: Hardware Mode
+      label: Device State
       options:
         - Simulation mode
         - Launchpad Mini MK3 connected
+        - Launchpad Mini MK3 not detected
         - Other MIDI device
+    validations:
+      required: true
   - type: textarea
     id: diagnostics
     attributes:
       label: Diagnostics
-      description: Paste relevant logs or Help > Copy Diagnostic Info output. Remove secrets before posting.
+      description: Paste relevant logs or Help > Copy Diagnostic Info output after removing sensitive information.
       render: text
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything Else?
+      description: Add screenshots, exact MIDI messages, OBS names, audio devices, or other useful context.

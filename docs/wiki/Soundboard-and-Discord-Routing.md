@@ -1,195 +1,159 @@
-# Soundboard And Voice Chat Routing
+# Soundboard And Voice Chat
 
-This page explains how to make a soundboard clip play for you and for people in Discord, in-game voice chat, or another app that can use a Windows recording device as its microphone input.
+OpenLaunchDeck can play a clip through your normal listening device and optionally send the same clip into Discord, a game, or another voice application through a Windows audio route.
 
-Start with local playback. Do not touch voice chat routing until the sound plays through your own headphones first.
+Set up **local playback first**. Add voice routing only after you can hear the clip yourself.
 
-## What Has To Happen
+## Supported Audio
 
-Voice chat apps and games can only hear a Windows recording device. A normal speaker output is not enough.
+- `.wav` is the most predictable choice for short clips.
+- `.mp3` is supported through QtMultimedia on normal Windows installs.
+- `.ogg` depends on codecs available to QtMultimedia on the computer.
 
-The working route looks like this:
+No copyrighted sounds are bundled.
+
+## 1. Make Local Playback Work
+
+Create a button:
+
+- Action: **Play Sound**
+- Sound File: a local `.wav` or `.mp3`
+- Volume: `60`
+- Route To Voice Chat: off
+- Loop: off
+- Already Playing: `restart`
+
+Click **Test Action**.
+
+If you hear nothing:
+
+1. Confirm the file still exists.
+2. Try a short `.wav` file.
+3. Open **Soundboard > Open Soundboard Panel**.
+4. Set Default Output to **System default** or your actual headphones/interface.
+5. Set global volume to `100` temporarily.
+6. Check the Windows volume mixer.
+
+## 2. Add A Stop Button
+
+Keep this near sound buttons:
+
+- Label: `Stop`
+- Color: `red`
+- Action: **Stop Sound**
+- Scope: `all`
+
+The Soundboard menu and panel also have **Stop All Sounds**.
+
+## 3. Understand Voice Routing
+
+A voice application listens to a Windows **recording input**, not a speaker output. A working route looks like:
 
 ```text
-OpenLaunchDeck soundboard clip
-  -> your headphones or audio interface so you can hear it
-  -> voice route playback device
-  -> matching Windows recording device
-  -> Discord, game chat, or another voice app input device
-  -> your call, party, lobby, or team chat
+Soundboard clip + optional microphone
+  -> voice-route playback endpoint
+  -> matching recording endpoint
+  -> Discord, game chat, or another voice application
 ```
 
-Your microphone also needs to go into that same route if the app or game is listening to the route instead of directly listening to your mic.
+OpenLaunchDeck does not install an audio driver. The endpoint pair must already exist. This can come from compatible external virtual-audio software or a separately installed OpenLaunchDeck Audio Bridge build.
 
-## Supported File Types
+## 4. Configure The Soundboard Panel
 
-Use these first:
+Open **Soundboard > Open Soundboard Panel**.
 
-- `.wav`
-- `.mp3`
+Recommended starting values:
 
-Other formats may work depending on Windows and QtMultimedia, but `.wav` and `.mp3` are the safest choices.
+| Setting | Value |
+| --- | --- |
+| Default Output | Your real headphones/interface or System default |
+| Voice Route Output | Playback side of the route |
+| Monitor Voice Routes | On, so you also hear routed clips |
+| Microphone Input | Your real microphone |
+| Route Microphone | On when the voice app listens to the combined route |
+| Microphone Volume | `100` |
+| Global Volume | `100` |
 
-## Step 1: Make Local Playback Work
+Use **Auto Find Route** when a compatible endpoint pair is already installed. Confirm the displayed recording input before changing Discord or game settings.
 
-1. Select a pad.
-2. Set action type to `Play Sound`.
-3. Choose a local `.wav` or `.mp3` file.
-4. Set volume to `60`.
-5. Set Already Playing to `restart`.
-6. Leave `Route To Voice Chat` off for the first test.
-7. Click **Test Action**.
+## 5. Enable A Button For Voice Chat
 
-If you do not hear it locally:
+On each clip other people should hear:
 
-- Confirm the file exists.
-- Try a different `.wav` or `.mp3`.
-- Check Windows volume mixer.
-- Check OpenLaunchDeck global soundboard volume.
-- Confirm Default Output points to your real headphones, speakers, or audio interface.
+1. Enable **Route To Voice Chat**.
+2. Start button volume around `50` to `70`.
+3. Keep **Monitor Voice Routes** on if you also want local playback.
+4. Click **Test Action**.
 
-## Step 2: Add A Stop Button
+The button and global volume combine into one effective gain used for both monitor and voice-route playback.
 
-Before routing to voice chat, create a stop button:
+## 6. Select The Recording Input
 
-1. Select a nearby pad.
-2. Set label to `Stop`.
-3. Set color to `red`.
-4. Set action type to `Stop Sound`.
-5. Set scope to `all`.
+In Discord or a game:
 
-This makes testing safer if a clip loops or gets loud.
+- Input Device: the **recording side** paired with the voice-route playback output
+- Output Device: your normal headphones or audio interface
 
-## Step 3: Pick The Voice Route
+Do not send the voice application's output back into the voice route. That can duplicate other people's voices, create feedback, or destabilize audio playback.
 
-Open `Soundboard > Open Soundboard Panel`.
+For push-to-talk games, hold push-to-talk while playing the routed clip.
 
-Recommended settings:
+## 7. Test Both Voice And Clips
 
-- **Default Output:** your real headphones, speakers, or audio interface.
-- **Monitor Voice Routes:** on.
-- **Voice Route Output:** the playback side of the route.
-- **Microphone Input:** your real microphone.
-- **Route Microphone:** on.
-- **Microphone Volume:** start at `100`.
-- **Global Volume:** start at `100`.
+1. Open the voice application's microphone test or a private test channel.
+2. Speak into your microphone.
+3. Confirm its input meter moves.
+4. Play a routed clip.
+5. Confirm the same input meter moves.
+6. Confirm you can still hear the clip locally.
 
-For a common cable-style route, Windows may show:
+If the clip works but your voice does not, enable Route Microphone and select the real microphone in the Soundboard panel.
 
-- Playback side: `Speakers (VB-Audio Virtual Cable)`
-- Recording side: `CABLE Output (VB-Audio Virtual Cable)`
+If your voice works but the clip does not, confirm Route To Voice Chat on that button and verify the output/input endpoint pair.
 
-OpenLaunchDeck sends routed clips and the selected microphone to the playback side. Discord or a game listens to the recording side.
+## Volume And Quality
 
-If a dedicated OpenLaunchDeck route endpoint exists, Auto Find Route prefers:
+Good starting values:
 
-- `OpenLaunchDeck Voice Output`
-- `OpenLaunchDeck Voice Input`
-
-## Step 4: Enable Routing On The Button
-
-For each clip voice chat should hear:
-
-1. Select the soundboard pad.
-2. Confirm action type is `Play Sound`.
-3. Enable `Route To Voice Chat`.
-4. Keep `Monitor Voice Routes` enabled in the Soundboard panel if you also want to hear it.
-5. Start button volume around `50` to `70`.
-6. Test again.
-
-OpenLaunchDeck uses the same effective gain for the voice route and monitor route. If it is loud for your friends, it should be loud for you too.
-
-## Step 5: Set The Voice Chat Input
-
-In Discord, open `User Settings > Voice & Video`.
-
-Set:
-
-- **Input Device:** the route recording side, such as `CABLE Output (VB-Audio Virtual Cable)`.
-- **Output Device:** your real headphones, speakers, or audio interface.
-- **Input Profile:** `Custom` or `Studio`.
-- **Noise Suppression:** `None`.
-- **Echo Cancellation:** off.
-- **Automatic Gain Control:** off if clips pump, get quiet, or sound crushed.
-- **Bypass System Audio Input Processing:** on if available.
-
-Do not set Discord output to the same route input. That can create feedback or make other app audio unstable.
-
-Keep OpenLaunchDeck running while Discord or a game is using the route. When Route Microphone is enabled, closing the main window keeps OpenLaunchDeck alive in the tray and the app periodically restarts the microphone route if it is not running. Use `File > Quit` or the tray `Quit` action only when you intentionally want to stop the route.
-
-For games with voice chat, set the game's microphone/input device to the same route recording side. If the game uses push-to-talk, hold push-to-talk while playing the routed soundboard clip. The game transmits whatever is in the route while push-to-talk is active, including your mic and routed soundboard clips.
-
-## Step 6: Test The Route
-
-Discord test:
-
-1. Stay in Discord `Voice & Video`.
-2. Start Mic Test.
-3. Play a routed soundboard clip from OpenLaunchDeck.
-4. Watch Discord's input meter.
-5. Speak into your mic.
-6. Confirm the meter moves for both your voice and the clip.
-
-If the meter moves, Discord is receiving the route.
-
-Game chat test:
-
-1. Set the game's voice input/microphone to the route recording device.
-2. Join a party, custom match, lobby, or other safe test channel.
-3. Hold the game's push-to-talk key if push-to-talk is enabled.
-4. Play a routed soundboard clip.
-5. Ask someone to confirm they hear both your mic and the clip.
-
-If other people still do not hear it, check whether you are muted, server-muted, push-to-talk is enabled, the game has voice chat disabled, or the app/game is using a different input device.
-
-## Good Starting Volumes
-
-Use this as a starting point:
-
-- OpenLaunchDeck global soundboard volume: `100`
-- Sound button volume: `50` to `70`
-- Microphone route volume: `100`
+- Global soundboard volume: `100`
+- Button volume: `50` to `70`
+- Routed microphone volume: `100`
 - Windows route endpoint volume: `100`
-- Voice chat input volume: `100`
 
-If clips distort, lower the button volume first.
+If clips distort, lower the button volume first. If clips are quiet, raise the button volume before adding gain elsewhere.
 
-If clips are too quiet, raise the button volume before raising Windows endpoint volume.
+Voice-processing features can damage music and effects. For a soundboard route, disable aggressive noise suppression, echo cancellation, and automatic gain control when the voice application allows it. Test your real microphone afterward.
 
 ## Repeated Press Behavior
 
-Choose based on the sound:
+| Setting | Best use |
+| --- | --- |
+| `restart` | Short clips that should start over |
+| `toggle_stop` | Long clips, loops, and music beds |
+| `ignore` | Prevent repeated presses while playing |
+| `overlap` | Layer multiple copies; use carefully |
 
-- `restart`: best for short clips and memes.
-- `toggle_stop`: best for music beds, loops, or long sounds.
-- `ignore`: prevents spam when a clip is already playing.
-- `overlap`: allows multiple copies at once. Use carefully.
+## Page And Exit Behavior
 
-## Sound Quality Fixes
+- **Stop On Page Change** ends that button's active sounds when leaving its page.
+- **Stop sounds on exit** ends playback during a complete application exit.
+- Closing to the tray can keep microphone routing active.
+- Use **File > Quit** when you intentionally want all OpenLaunchDeck background behavior to stop.
 
-If friends or teammates say the clip is bad, crushed, or barely audible:
+## Avoid Duplicate Audio
 
-1. Set the app/game input to the route recording device, not your mic.
-2. In Discord, set Noise Suppression to `None`.
-3. In Discord, turn Echo Cancellation off.
-4. In Discord, turn Automatic Gain Control off if volume pumps up and down.
-5. Use a clean `.wav` or high-quality `.mp3`.
-6. Keep button volume below clipping.
-7. Avoid using `overlap` with loud clips.
+- Voice application output must go to your headphones, not the input route.
+- Only one microphone-forwarding path should be active.
+- Do not enable Windows "Listen to this device" for the route unless you understand the extra monitor path.
+- Keep only the intended voice-route playback/recording pair selected.
+- Use OpenLaunchDeck monitoring instead of creating a second Windows monitoring loop.
 
-## Common Mistakes
+## Missing Or Duplicate Devices
 
-- The button does not have `Route To Voice Chat` enabled.
-- The app or game is still using the real microphone directly.
-- OpenLaunchDeck Route Microphone is off.
-- App/game output is accidentally routed into the input route.
-- Noise suppression is set to Krisp or another aggressive mode.
-- Push-to-talk is enabled and no push-to-talk key is being held.
-- The wrong duplicate audio device was selected.
-- The route playback endpoint exists, but the matching recording endpoint does not.
+OpenLaunchDeck hides duplicate output names and advanced mixer buses from normal selectors. A saved but unavailable device appears as unavailable instead of being erased.
 
-## Duplicate Audio Devices
+USB audio devices can receive a new Windows ID after reconnecting or updating. Re-select the device if local or voice-route playback stops after hardware changes.
 
-Windows and audio drivers can expose duplicate output names. OpenLaunchDeck hides duplicate names and advanced mixer buses in the Soundboard and Settings selectors so the list stays usable.
+## Still Not Working?
 
-If a saved device was already selected, OpenLaunchDeck keeps it instead of silently erasing it.
+Use the Soundboard section in [Troubleshooting](Troubleshooting.md). Include the file type, local output, route output, voice input, microphone selection, and whether the input meter moves for voice and clips.

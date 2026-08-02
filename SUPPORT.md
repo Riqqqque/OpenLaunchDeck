@@ -1,24 +1,40 @@
 # Support
 
-Use GitHub Issues for reproducible bugs, feature requests, and hardware compatibility reports.
+Start with the [Troubleshooting wiki page](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Troubleshooting). It covers startup, Launchpad detection, MIDI mapping, OBS, hotkeys, soundboard routing, updates, and performance.
 
-Before opening an issue:
+Use the [GitHub issue chooser](https://github.com/Riqqqque/OpenLaunchDeck/issues/new/choose) when the problem is reproducible or you have a feature request.
 
-- Check the README and troubleshooting guide.
-- Run the app in simulation mode if hardware is not available.
-- Use `Device > MIDI Debug` for mapping or lighting problems.
-- Use `Help > Copy Diagnostic Info` and remove secrets before posting.
+## Before Reporting A Bug
 
-For Launchpad Mini MK3 reports, include:
+1. Install the latest release.
+2. Reproduce the problem once more.
+3. Open **Help > Copy Diagnostic Info**.
+4. Remove passwords, tokens, URLs containing credentials, and private paths.
+5. Include the shortest steps that reproduce the problem.
+
+## Helpful Details
+
+For Launchpad problems:
 
 - Device mode
 - MIDI input and output port names
-- Raw messages from MIDI Debug
+- Raw messages from **Device > MIDI Debug**
 - Whether calibration changes the result
 
-For soundboard reports, include:
+For OBS problems:
 
-- File extension
-- Output device
-- Windows volume mixer state
-- Any error shown in the app
+- OBS version
+- Operation selected in the button editor
+- Exact scene, source, or input name
+- Whether OBS WebSocket is enabled
+- The user-facing error from OpenLaunchDeck
+
+For soundboard problems:
+
+- File type
+- Local and voice-route output devices
+- Whether local playback works
+- Voice application input device
+- Whether microphone routing is enabled
+
+Do not post OBS passwords, SSH keys, webhook secrets, private profile exports, or unedited logs containing sensitive information.

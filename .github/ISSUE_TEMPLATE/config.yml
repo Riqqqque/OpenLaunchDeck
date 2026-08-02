@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: OpenLaunchDeck Wiki
+    url: https://github.com/Riqqqque/OpenLaunchDeck/wiki
+    about: Start here for setup guides, action references, and troubleshooting.
+  - name: Troubleshooting
+    url: https://github.com/Riqqqque/OpenLaunchDeck/wiki/Troubleshooting
+    about: Check common fixes before opening a bug report.
+  - name: Sensitive Security Report
+    url: https://github.com/Riqqqque/OpenLaunchDeck/security/policy
+    about: Do not post vulnerabilities or secrets in a public issue.

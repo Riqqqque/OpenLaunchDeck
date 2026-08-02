@@ -2,7 +2,7 @@
 #define MyAppName "OpenLaunchDeck"
 #endif
 #ifndef MyAppVersion
-#define MyAppVersion "0.1.57"
+#define MyAppVersion "0.1.58"
 #endif
 #define MyAppPublisher "Rique"
 #define MyAppExeName "OpenLaunchDeck.exe"
@@ -19,6 +19,9 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+AppPublisherURL=https://github.com/Riqqqque/OpenLaunchDeck
+AppSupportURL=https://github.com/Riqqqque/OpenLaunchDeck/issues/new/choose
+AppUpdatesURL=https://github.com/Riqqqque/OpenLaunchDeck/releases/latest
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 UsePreviousAppDir=yes
@@ -32,6 +35,7 @@ CloseApplications=yes
 RestartApplications=no
 UninstallDisplayName={#MyAppName}
 UninstallDisplayIcon={app}\OpenLaunchDeck.ico
+VersionInfoDescription=Launchpad Mini MK3 macro deck for Windows
 SetupIconFile=..\openlaunchdeck\resources\icons\openlaunchdeck.ico
 SetupLogging=yes
 

@@ -1,6 +1,6 @@
 # Installer
 
-`openlaunchdeck.iss` is the Inno Setup script for the Windows installer.
+`openlaunchdeck.iss` is the Inno Setup 6 script for the Windows installer.
 
 The installer writes program files to the selected install location and leaves user data in `%APPDATA%\OpenLaunchDeck`. Upgrade installs should replace app files without touching profiles, logs, settings, backups, or MIDI mappings.
 
@@ -11,3 +11,5 @@ Build from the repository root:
 ```powershell
 powershell -ExecutionPolicy Bypass -File build.ps1
 ```
+
+The output is written to `dist\installer\OpenLaunchDeckSetup-<version>.exe` with a matching `.sha256` file. Follow the [release checklist](../docs/release_checklist.md) before publishing it.

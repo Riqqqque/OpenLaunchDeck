@@ -1,15 +1,13 @@
 # Profiles, Pages, And Macros
 
-OpenLaunchDeck is organized like a physical macro deck.
+OpenLaunchDeck organizes the Launchpad like a physical macro deck.
 
-## Main Terms
+## The Four Building Blocks
 
-- **Profile:** a full deck setup, such as Basic PC, OBS Streaming, or Soundboard.
-- **Page:** one 8x8 grid inside a profile.
-- **Button:** one pad on the grid, such as `A1` or `H8`.
-- **Action:** what a button does when pressed.
-
-The Launchpad Mini MK3 grid uses this layout:
+- A **profile** is a complete deck setup, such as Streaming, Gaming, or Editing.
+- A **page** is one 8x8 layout inside a profile.
+- A **button** is one pad from `A1` through `H8` on one page.
+- An **action** is what that button does.
 
 ```text
 A1 A2 A3 A4 A5 A6 A7 A8
@@ -22,71 +20,117 @@ G1 G2 G3 G4 G5 G6 G7 G8
 H1 H2 H3 H4 H5 H6 H7 H8
 ```
 
-## Editing Without Running Buttons
+## Profiles
 
-Clicking a pad in the app selects it for editing. It does not run the button.
-
-Use **Test Action** in the editor when you want to run a button from the app. Physical Launchpad pad presses run actions directly.
-
-## Good Profile Patterns
-
-For streaming:
-
-- Page 1: OBS basics and clips
-- Page 2: scenes and source toggles
-- Page 3: soundboard
-- Page 4: utility shortcuts
-
-For gaming:
-
-- Page 1: OBS replay, screenshot, mute, deafen
-- Page 2: game-specific shortcuts
-- Page 3: soundboard
-- Page 4: server/admin tools
-
-## Recommended Button Choices
-
-Use colors consistently:
-
-- Green: start, enable, open, safe action
-- Red: stop, disable, dangerous action
-- Yellow: warning, armed action, needs attention
-- Blue: utility, navigation, edit-related
-- Purple or cyan: soundboard and streaming
-
-Keep labels short. A good label is usually one or two words:
-
-- `Clip`
-- `Screen`
-- `Mute`
-- `Camera`
-- `BRB`
-- `Sound 1`
-
-## Switch Page Buttons
-
-OpenLaunchDeck pages can be changed with the `Switch Page` action.
-
-The Launchpad Mini MK3 has extra navigation-style buttons around the grid, but the current app uses the 8x8 grid as the reliable macro surface. Extra hardware buttons can be inspected in MIDI Debug and added later when their messages are verified.
-
-## Dangerous Buttons
-
-Mark a button dangerous when a mis-press could cause a problem.
+Use separate profiles when the whole purpose of the deck changes.
 
 Examples:
 
-- Stop server
-- Restart server
-- Shutdown
-- Delete
-- Run destructive command
+- Streaming
+- Everyday PC
+- Soundboard
+- Video editing
+- Server administration
 
-Dangerous buttons require two presses within the arm window. If the timer expires, the button disarms.
+The profile selector changes the active profile. The Profile Manager creates, renames, duplicates, imports, exports, and deletes profiles.
 
-## Profile Files
+## Pages
 
-Profiles are JSON files stored in:
+Use pages to keep one profile organized without duplicating shared setup.
 
-`%APPDATA%\OpenLaunchDeck\profiles`
+A clear streaming profile might use:
 
-The app writes readable JSON so profiles can be backed up, exported, reviewed, and fixed by hand if needed.
+1. **Main** for replay, screenshot, camera, mic, and scenes
+2. **Soundboard** for clips and stop controls
+3. **Utilities** for media, folders, websites, and launchers
+4. **Admin** for guarded commands
+
+Page switching updates the GUI and Launchpad lights together.
+
+## Physical Page Navigation
+
+Assign **Switch Page** to a grid pad:
+
+- Label: `Next`, `Back`, or the destination name
+- Color: `blue`
+- Action: **Switch Page**
+- Page ID: exact destination page ID
+
+The Launchpad's extra side buttons are not OpenLaunchDeck page buttons by default. Use the 8x8 grid until those messages are verified for the active hardware mode.
+
+## Editing A Button
+
+1. Click a grid pad to select it.
+2. Set a short label and clear color.
+3. Choose an action.
+4. Fill in the action fields.
+5. Use **Test Action**.
+6. Press the physical pad after the test succeeds.
+
+Clicking the on-screen grid never runs the action.
+
+## Consistent Labels And Colors
+
+Suggested color language:
+
+| Color | Meaning |
+| --- | --- |
+| Green | Start, enable, open, or safe success action |
+| Red | Stop, disable, destructive, or high-risk action |
+| Yellow | Warning, armed, or attention needed |
+| Blue | Navigation and general utilities |
+| Purple or cyan | OBS, soundboard, and streaming controls |
+
+Keep labels short enough to scan quickly: `Clip`, `Screen`, `Mic`, `Cam`, `BRB`, `Stop`, `Next`.
+
+## Dangerous Buttons
+
+Enable **Dangerous** whenever an accidental press has a serious result.
+
+Good candidates:
+
+- Start streaming
+- Stop or restart a server
+- Shutdown or logoff
+- Delete or overwrite data
+- Run a destructive command
+
+The first press arms the button for five seconds. The second press executes. Timeout, page change, or device disconnect cancels the armed state.
+
+## Copy, Duplicate, And Reuse
+
+- Use **Copy Button Config** and **Paste Button Config** for individual buttons.
+- Duplicate a page before making a variation.
+- Export a profile to move or share a complete setup.
+
+Review exported JSON before sharing it. Profiles can contain OBS passwords, webhook headers, server information, commands, and local file paths.
+
+## Autosave And Backups
+
+Profile edits are debounced so typing does not write the file after every keystroke. Automatic backups can be enabled in Settings.
+
+Profile files are stored in:
+
+```text
+%APPDATA%\OpenLaunchDeck\profiles
+```
+
+Backups are stored in:
+
+```text
+%APPDATA%\OpenLaunchDeck\backups
+```
+
+See [Settings and Data](Settings-And-Data.md) for a complete folder map and manual backup procedure.
+
+## Portable Profile Checklist
+
+Before using a profile on another computer:
+
+- Copy referenced sound files and scripts separately.
+- Replace machine-specific paths.
+- Check MIDI and audio device selections.
+- Re-enter private OBS or service credentials locally.
+- Test every action before live use.
+
+For the JSON structure, see [Profile Format](https://github.com/Riqqqque/OpenLaunchDeck/blob/main/docs/profile_format.md).

@@ -1,15 +1,10 @@
 # Screenshots
 
-Release screenshots live here so the README can show the current desktop UI:
+These images show the current Windows application in the README and release documentation:
 
 - `main-window-dark.png`
 - `main-window-light.png`
 
-Additional screenshots to capture:
+Replace screenshots whenever a release materially changes the interface. Capture the installed build at a readable desktop scale, keep the main workflow visible, and crop unused desktop space.
 
-- `button-editor.png`
-- `midi-debug.png`
-- `soundboard-panel.png`
-- `update-dialog.png`
-
-Use current Windows builds and avoid showing local usernames, private paths, real tokens, private server names, or private network details.
+Before committing an image, check that it contains no usernames, private paths, credentials, server names, IP addresses, or personal profile data.

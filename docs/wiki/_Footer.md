@@ -1,0 +1,1 @@
+[OpenLaunchDeck](https://github.com/Riqqqque/OpenLaunchDeck) · [Download](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest) · [Report a problem](https://github.com/Riqqqque/OpenLaunchDeck/issues/new/choose)

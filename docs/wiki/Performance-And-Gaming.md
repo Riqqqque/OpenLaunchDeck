@@ -1,70 +1,72 @@
 # Performance And Gaming
 
-OpenLaunchDeck is designed to stay light while games, OBS, Discord, and audio routing software are running.
+OpenLaunchDeck is designed to stay responsive without competing with games, OBS, audio, or GPU scheduling.
 
-## What The App Does To Stay Responsive
+## Normal Behavior
 
-- MIDI callbacks do minimal work.
-- Actions run through a worker queue when they may block.
-- Hotkeys, text entry, and media keys use the lightweight Windows input path.
-- OBS and network operations use timeouts.
-- Lighting updates skip pads that did not change.
-- Rapid lighting changes are coalesced and flashes share one scheduler.
-- Sound playback uses QtMultimedia instead of loading whole files into memory.
-- File logging runs through a background queue instead of blocking button dispatch.
-- Profile edits are saved in short batches instead of writing JSON for every keystroke.
-- The Windows process stays at Normal priority so games keep scheduler priority.
-- Hidden or minimized windows skip unnecessary grid/status repaints.
-- Background health checks use coarse, low-frequency timers.
-- Performance logs are quiet by default.
+- The Windows process runs at Normal priority.
+- MIDI callbacks do minimal parsing and queue events.
+- Commands, OBS, HTTP, SSH, updates, and other blocking work use background workers.
+- Hotkeys, text, media controls, and volume controls use focused Windows paths.
+- RGB messages skip unchanged pads and coalesce rapid feedback.
+- Sound files stream through QtMultimedia instead of loading whole files into memory.
+- Profile writes are debounced.
+- File logging uses a queue.
+- Hidden/minimized windows avoid unnecessary grid and status repaints.
+- MIDI Debug updates only while its window is open.
+- Detailed performance logging is off by default.
 
-## Best Settings For Gaming
+## Recommended Gaming Setup
 
-Recommended starting point:
+- Keep Performance logging off unless diagnosing latency.
+- Close MIDI Debug after hardware setup.
+- Minimize the app or use **Focus Launchpad Grid** when the editor is not needed.
+- Use OBS WebSocket for replay clips and screenshots instead of relying on a game to accept a hotkey.
+- Use unused extended keys such as `F13` through `F24` for global bindings.
+- Avoid `overlap` for long soundboard clips unless layering is intentional.
+- Keep one Stop All Sounds button available.
 
-- Keep performance logging off unless troubleshooting.
-- Keep the app minimized or use Focus Grid while playing if you do not need the editor visible.
-- Use OBS WebSocket for clips and screenshots instead of game hotkeys when possible.
-- Use `F13` through `F24` for hotkeys that should not conflict with normal keyboard keys.
-- Avoid huge sound files for short soundboard clips.
-- Keep duplicate or looping sounds under control with `toggle_stop` or `ignore`.
+## Hotkeys In Games
 
-## In-Game Hotkeys
+If a desktop hotkey works but a game ignores it:
 
-Some games block synthetic keyboard input, especially if the game runs elevated or uses strict input handling.
+1. Confirm the physical pad reaches OpenLaunchDeck in MIDI Debug.
+2. Run OpenLaunchDeck and the game at the same privilege level.
+3. Try borderless fullscreen.
+4. Bind an unused key such as `F15` in both places.
+5. Use the target application's direct integration when available.
 
-If a game hotkey is unreliable:
-
-1. Run OpenLaunchDeck and the game at the same privilege level.
-2. Try an extended key such as `F15`.
-3. Bind the game or OBS action to that key.
-4. Prefer OBS WebSocket for replay buffer clips and screenshots.
-
-For OBS replay buffer, use operation `save_replay_buffer`.
-
-For OBS screenshots, use operation `save_screenshot`.
+Some anti-cheat or input systems intentionally reject synthetic keyboard input. OpenLaunchDeck does not bypass those protections.
 
 ## Soundboard Performance
 
-Good soundboard habits:
+- Use short `.wav` clips for predictable low decode latency.
+- Use good-quality `.mp3` files for longer audio.
+- Avoid huge files for short effects.
+- Prefer `restart`, `ignore`, or `toggle_stop` over uncontrolled overlap.
+- Lower the button volume when a clip clips or distorts.
 
-- Use `.wav` for lowest decoding overhead when file size is reasonable.
-- Use high-quality `.mp3` for longer clips.
-- Keep clip volume below clipping.
-- Do not enable `overlap` on long clips unless you really need layered playback.
-- Use Stop All Sounds if a test gets messy.
+## Performance Logging
 
-## When To Enable Performance Logging
+Enable it under **Settings > Settings > Performance logging** only while troubleshooting.
 
-Enable performance logging only while troubleshooting.
+It records timings for:
 
-It helps measure:
-
-- MIDI receive timing
+- Raw MIDI receive and parsed button event
 - Button press to action dispatch
-- Action duration
-- Lighting refresh duration
+- Action execution
+- Lighting feedback
 - Sound trigger latency
-- Update check duration
+- Update checks
 
-After testing, turn it off again so normal logs stay clean.
+Turn it off after collecting the needed log so normal operation stays quiet.
+
+## Check Resource Use
+
+Open Windows Task Manager and observe OpenLaunchDeck while it is idle, while rapidly pressing pads, and while playing a sound. A brief change during an action is expected; sustained CPU, memory growth, repeated child processes, or constant disk activity is worth reporting.
+
+Include diagnostic info, the active action type, and whether MIDI Debug or performance logging was open.
+
+## Optional Native Helper
+
+The optional native module provides focused mapping, hashing, and checksum helpers. It is not required for normal latency or correctness, and no general performance improvement is claimed without workload-specific measurement. Python fallbacks remain active when it is unavailable.
