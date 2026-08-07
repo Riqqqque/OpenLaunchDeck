@@ -97,8 +97,8 @@ def _send_app_command_windows(control: str, user32=None) -> None:
 class MediaControlAction(BaseAction):
     type_name = "media_control"
     display_name = "Media Control"
-    description = "Send a media key."
-    config_fields = [{"name": "control", "label": "Control", "type": "choice", "choices": list(MEDIA_KEYS)}]
+    description = "Control music and video playback in the active Windows media session."
+    config_fields = [{"name": "control", "label": "Control", "type": "choice", "choices": list(MEDIA_KEYS), "default": "play_pause"}]
     blocking = True
     execution_lane = "interactive"
 

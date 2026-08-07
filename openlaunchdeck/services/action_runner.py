@@ -67,6 +67,10 @@ class ActionRunner:
             result = ActionResult.fail("Button is disabled.")
             self._complete(button_id, result)
             return result
+        validation_result = self._validate_action(button)
+        if validation_result is not None:
+            self._complete(button_id, validation_result)
+            return validation_result
         if self._requires_confirmation(button):
             confirmed = self.dangerous_service.arm_or_confirm(button_id)
             if not confirmed:
@@ -132,6 +136,21 @@ class ActionRunner:
         result = self._run_action(button_id, action, context, config)
         return result
 
+    def _validate_action(self, button: ButtonConfig) -> ActionResult | None:
+        action_config = button.action
+        action_type = str(action_config.type if action_config else "noop")
+        if not self.registry.has(action_type):
+            return ActionResult.fail(f"Action type is unavailable: {action_type}")
+        action = self.registry.get(action_type)
+        try:
+            errors = [str(message) for message in action.validate(dict(action_config.config if action_config else {}))]
+        except Exception:
+            if self.logger:
+                self.logger.exception("Action validation failed: %s", action_type)
+            return ActionResult.fail("Action settings could not be validated.")
+        errors = [message for message in errors if message.strip()]
+        return ActionResult.fail(errors[0]) if errors else None
+
     @staticmethod
     def _requires_confirmation(button: ButtonConfig) -> bool:
         if button.dangerous:
@@ -175,7 +194,17 @@ class ActionRunner:
             self._pending_counts[lane] = max(0, self._pending_counts[lane] - 1)
 
     def _execute_nested_action(self, action_type: str, context: ActionContext, config: dict) -> ActionResult:
+        if not self.registry.has(action_type):
+            return ActionResult.fail(f"Action type is unavailable: {action_type}")
         action = self.registry.get(action_type)
+        try:
+            errors = [str(message) for message in action.validate(config) if str(message).strip()]
+        except Exception:
+            if self.logger:
+                self.logger.exception("Nested action validation failed: %s", action_type)
+            return ActionResult.fail("Nested action settings could not be validated.")
+        if errors:
+            return ActionResult.fail(errors[0])
         if action.blocking:
             return action.execute(context, config)
         return self._main_thread.call(lambda: action.execute(context, config))

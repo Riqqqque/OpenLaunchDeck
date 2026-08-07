@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -27,6 +27,8 @@ from ..audio.voice_routing import find_best_voice_route
 
 
 class SoundboardPanel(QDialog):
+    browse_requested = Signal()
+
     def __init__(self, audio_engine, settings_service=None, parent=None) -> None:
         super().__init__(parent)
         self.audio_engine = audio_engine
@@ -37,6 +39,14 @@ class SoundboardPanel(QDialog):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
+        library_row = QHBoxLayout()
+        library_text = QLabel("Add sounds without leaving OpenLaunchDeck.")
+        library_text.setObjectName("MutedText")
+        self.browse_button = QPushButton("Browse Sound Library")
+        self.browse_button.setObjectName("PrimaryButton")
+        library_row.addWidget(library_text, 1)
+        library_row.addWidget(self.browse_button)
+        layout.addLayout(library_row)
         form = QFormLayout()
         form.setSpacing(10)
         self.output_combo = QComboBox()
@@ -130,6 +140,7 @@ class SoundboardPanel(QDialog):
         layout.addWidget(self.refresh_button)
         layout.addWidget(self.docs_button)
         self.stop_all_button.clicked.connect(self._stop_all)
+        self.browse_button.clicked.connect(self.browse_requested.emit)
         self.refresh_button.clicked.connect(self.refresh)
         self.docs_button.clicked.connect(self.open_docs)
         self.auto_route_button.clicked.connect(self.auto_find_route)

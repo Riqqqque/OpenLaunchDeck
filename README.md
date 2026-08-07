@@ -36,7 +36,7 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 | Area | Examples |
 | --- | --- |
 | OBS | Save replay-buffer clips, take screenshots, switch scenes, show or hide sources, mute inputs, start or stop recording |
-| Soundboard | Play local `.wav` and `.mp3` clips, loop or overlap sounds, control volume, stop one page or every sound |
+| Soundboard | Browse, preview, download, import, and assign sounds; loop or overlap clips, control volume, and stop one page or every sound |
 | Voice chat | Send selected clips to a configured Windows voice route while monitoring them locally |
 | Hotkeys | Build shortcuts with modifier controls and a searchable key list covering navigation, media keys, and `F1` through `F24` |
 | Windows | Open websites, apps, folders, files, commands, PowerShell, and typed text |
@@ -50,6 +50,7 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 - Multiple profiles and pages with autosave and backups
 - MIDI auto-detection, manual port selection, live debug logs, and pad calibration
 - Batched RGB lighting with press, success, error, armed, and playing feedback
+- Native Sound Library with popular/new search, preview, license details, safe AppData downloads, and one-click pad assignment
 - Background action execution so commands and network requests do not block the interface
 - Checksum-verified update downloads with user confirmation before installation
 - User data stored outside the install folder in `%APPDATA%\OpenLaunchDeck`
@@ -89,6 +90,7 @@ Continue with the [beginner Quick Start](https://github.com/Riqqqque/OpenLaunchD
 | Copy proven button configurations | [Button Recipes](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Button-Recipes) |
 | Configure OBS | [OBS WebSocket Setup](https://github.com/Riqqqque/OpenLaunchDeck/wiki/OBS-WebSocket-Setup) |
 | Configure the soundboard | [Soundboard and Voice Chat](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Soundboard-and-Discord-Routing) |
+| Find and assign sound effects | [Sound Library](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Sound-Library) |
 | Find settings and data folders | [Settings and Data](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Settings-And-Data) |
 | Keep live controls safe | [Streaming Safety](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Streaming-Safety) |
 | Diagnose a problem | [Troubleshooting](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Troubleshooting) |
@@ -141,6 +143,7 @@ The build creates versioned packages and SHA256 files under `dist`. See [CONTRIB
 - Launchpad mappings and lighting should be verified in MIDI Debug for the device mode in use.
 - The extra Launchpad side and navigation buttons are not assigned to OpenLaunchDeck page changes by default. Use grid pads with the Switch Page action.
 - Voice-chat routing needs a Windows audio route selected in both OpenLaunchDeck and the target chat application. No audio driver is bundled.
+- Online Sound Library search requires a personal Freesound API key. Sound licenses and the provider's API terms still apply; OpenLaunchDeck does not certify third-party uploads.
 - OBS actions require OBS WebSocket. Passwords are masked in the editor but stored in local profile JSON, so exported profiles containing passwords are sensitive.
 - SSH uses key-based authentication and rejects unknown host keys.
 - The Windows installer is currently unsigned, so Windows may show a publisher warning.

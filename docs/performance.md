@@ -12,6 +12,7 @@ Key rules:
 - The action runner limits queued background work so repeated presses cannot build an unlimited backlog.
 - Hotkey, media, and volume actions use a separate latency-sensitive worker lane, so slow OBS, network, command, URL, app-launch, or SSH work cannot hold them up.
 - Windows hotkeys, text entry, and media keys use the native input path without loading a large automation package on first press.
+- Windows release packages omit the unused non-Windows automation and Tcl/Tk fallback stack.
 - GUI updates happen on the Qt thread.
 - Network calls use timeouts.
 - Update checks and verified downloads run on Qt worker threads.
@@ -23,6 +24,7 @@ Key rules:
 - Grid cells skip text and stylesheet updates when their visible state has not changed.
 - File logging is queued so action dispatch and the GUI do not wait for disk writes.
 - Profile autosaves are debounced so editing several fields produces one atomic JSON write.
+- Multi-line action edits are debounced so typing does not trigger page lighting refreshes on every character.
 - Live MIDI debug UI callbacks stay disabled until the MIDI Debug window is opened.
 - On Windows, the app normalizes itself to Normal process priority during startup and checks it occasionally afterward. RealTime, High, and AboveNormal priority are avoided because they can interfere with game, input, audio, and GPU scheduling if the app spikes.
 - Priority checks and microphone route checks use coarse, low-frequency timers so they do not create frequent GUI-thread wakeups.
@@ -76,6 +78,8 @@ Manual and startup update checks use worker threads so startup and the main wind
 ## Soundboard Performance
 
 Sound playback is started through QtMultimedia and does not load entire sound files into Python memory. The audio engine performs lightweight file checks and caches metadata such as name, extension, size, and modified time when a sound is played.
+
+The Sound Library uses Qt's asynchronous network manager for search and downloads. Preview audio streams through QtMultimedia, and downloads stream into a bounded temporary file instead of being buffered in Python memory. The provider credential is decrypted once per dialog service and cached only for that session.
 
 Sound action start latency is logged at debug level, or at info level when performance logging is enabled. The Soundboard panel refreshes the current playback list on a coarse timer only while the panel is visible, and audio state changes refresh it immediately.
 

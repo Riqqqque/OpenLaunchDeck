@@ -13,8 +13,17 @@ class VolumeControlAction(BaseAction):
     display_name = "Volume Control"
     description = "Adjust the default Windows playback volume."
     config_fields = [
-        {"name": "mode", "label": "Mode", "type": "choice", "choices": VOLUME_MODES},
-        {"name": "target_volume", "label": "Target Volume", "type": "number", "min": 0, "max": 100, "default": 50},
+        {"name": "mode", "label": "Control", "type": "choice", "choices": VOLUME_MODES, "default": "volume_up"},
+        {
+            "name": "target_volume",
+            "label": "Set Volume To",
+            "type": "number",
+            "min": 0,
+            "max": 100,
+            "default": 50,
+            "suffix": "%",
+            "visible_if": {"mode": "set_volume"},
+        },
     ]
     blocking = True
     execution_lane = "interactive"

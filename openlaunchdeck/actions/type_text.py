@@ -61,12 +61,21 @@ def _send_text_windows(text: str, interval: float = 0.0) -> None:
 class TypeTextAction(BaseAction):
     type_name = "type_text"
     display_name = "Type Text"
-    description = "Type configured text."
+    description = "Type text into the currently focused app. Keep the key delay at zero unless an app misses characters."
     config_fields = [
-        {"name": "text", "label": "Text", "type": "multiline"},
-        {"name": "interval", "label": "Interval", "type": "number"},
+        {"name": "text", "label": "Text", "type": "multiline", "placeholder": "Text to type"},
+        {"name": "interval", "label": "Key Delay", "type": "decimal", "min": 0.0, "max": 2.0, "default": 0.0, "step": 0.01, "suffix": " seconds"},
     ]
     blocking = True
+
+    def validate(self, config: dict) -> list[str]:
+        if not str(config.get("text") or ""):
+            return ["Enter text to type."]
+        try:
+            interval = float(config.get("interval", 0.0) or 0.0)
+        except (TypeError, ValueError):
+            return ["Key delay must be a number."]
+        return [] if 0.0 <= interval <= 2.0 else ["Key delay must be between 0 and 2 seconds."]
 
     def execute(self, context, config: dict) -> ActionResult:
         text = str(config.get("text") or "")

@@ -6,15 +6,28 @@ from .base import ActionResult, BaseAction
 class SshCommandAction(BaseAction):
     type_name = "ssh_command"
     display_name = "SSH Command"
-    description = "Run a command over SSH using key-based auth."
+    description = "Run a remote command using SSH keys and known-host verification. Passwords are not stored."
     config_fields = [
-        {"name": "host", "label": "Host", "type": "text"},
-        {"name": "port", "label": "Port", "type": "number"},
+        {"name": "host", "label": "Host", "type": "text", "placeholder": "Server hostname or IP address"},
+        {"name": "port", "label": "Port", "type": "number", "min": 1, "max": 65535, "default": 22},
         {"name": "username", "label": "Username", "type": "text"},
         {"name": "key_filename", "label": "Private Key", "type": "file"},
-        {"name": "command", "label": "Command", "type": "text"},
+        {"name": "command", "label": "Command", "type": "text", "placeholder": "Remote command to run"},
     ]
     blocking = True
+
+    def validate(self, config: dict) -> list[str]:
+        if not str(config.get("host") or "").strip():
+            return ["Enter an SSH host."]
+        if not str(config.get("username") or "").strip():
+            return ["Enter an SSH username."]
+        if not str(config.get("command") or "").strip():
+            return ["Enter a remote command."]
+        try:
+            port = int(config.get("port") or 22)
+        except (TypeError, ValueError):
+            return ["SSH port must be a whole number."]
+        return [] if 1 <= port <= 65535 else ["SSH port must be between 1 and 65535."]
 
     def execute(self, context, config: dict) -> ActionResult:
         try:

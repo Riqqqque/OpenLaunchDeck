@@ -14,6 +14,12 @@ Each play sound button supports:
 
 Missing files are reported before playback starts. Unknown file extensions are rejected with a clear error instead of being sent to the audio backend.
 
+## Sound Library
+
+Open **Soundboard > Browse Sound Library** to search, preview, download, import, and assign sounds. You can also click **Library** beside a Play Sound action's file field.
+
+Online search uses a personal Freesound API key and defaults to CC0 results. It includes popular, newest, top-rated, and best-match sorting. The app stores downloads, source metadata, licenses, and an attribution index under AppData. See [sound_library.md](sound_library.md) for setup, licensing notes, and storage behavior.
+
 ## Already Playing Behavior
 
 `behavior_when_already_playing` controls what happens when a sound assigned to the same button is already active:

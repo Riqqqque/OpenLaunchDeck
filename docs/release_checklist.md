@@ -88,6 +88,12 @@
 
 ## Soundboard
 
+- Open the Sound Library without an API key and confirm My Library still works.
+- Search with a disposable Freesound API key and confirm the key is absent from URLs, profiles, and logs.
+- Verify Popular, Newest, Top Rated, category, license, and duration filters.
+- Preview, download, cancel a download, import a local file, and assign from both tabs.
+- Confirm downloaded audio, metadata, and `ATTRIBUTION.txt` stay under AppData.
+- Confirm a failed or oversized download leaves no `.part` file.
 - Assign a local `.wav` file to a button.
 - Assign a local `.mp3` file to a button.
 - Verify missing files show a clear error.

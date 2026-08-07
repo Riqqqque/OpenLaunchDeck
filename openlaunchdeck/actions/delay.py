@@ -9,7 +9,9 @@ class DelayAction(BaseAction):
     type_name = "delay"
     display_name = "Delay"
     description = "Wait for a configured number of milliseconds."
-    config_fields = [{"name": "milliseconds", "label": "Milliseconds", "type": "number", "min": 0, "max": 60000}]
+    config_fields = [
+        {"name": "milliseconds", "label": "Delay", "type": "number", "min": 0, "max": 60000, "default": 250, "suffix": " ms"}
+    ]
     blocking = True
 
     def execute(self, context, config: dict) -> ActionResult:
