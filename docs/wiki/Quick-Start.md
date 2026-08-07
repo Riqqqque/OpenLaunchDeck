@@ -104,6 +104,8 @@ Good next buttons are:
 
 Use [Button Recipes](Button-Recipes.md) for exact field values and [Actions Reference](Actions-Reference.md) for every available action.
 
+For sound effects, open [Sound Library](Sound-Library.md) to search, preview, import, and assign clips from inside the app.
+
 ## 8. Make It Start With Windows
 
 Open **Settings > Settings** and enable:
@@ -128,4 +130,5 @@ Open **Settings > Settings > Config folder** to open it. Back up this folder bef
 - [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md)
 - [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md)
 - [OBS WebSocket Setup](OBS-WebSocket-Setup.md)
+- [Sound Library](Sound-Library.md)
 - [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md)

@@ -15,7 +15,7 @@ class OpenUrlAction(BaseAction):
     display_name = "Open URL"
     description = "Open a website in the default browser, optionally in a private window."
     config_fields = [
-        {"name": "url", "label": "URL", "type": "text"},
+        {"name": "url", "label": "URL", "type": "text", "placeholder": "https://example.com"},
         {"name": "private_window", "label": "Open In Private Window", "type": "bool"},
     ]
     blocking = True
@@ -62,7 +62,7 @@ def normalize_http_url(value: object) -> str | None:
     try:
         parsed = urlparse(candidate)
         hostname = parsed.hostname
-        parsed.port
+        _ = parsed.port
     except ValueError:
         return None
     if parsed.scheme.lower() not in {"http", "https"} or not parsed.netloc or not hostname:

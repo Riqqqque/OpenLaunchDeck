@@ -12,14 +12,37 @@ from .base import ActionResult, BaseAction
 class RunCommandAction(BaseAction):
     type_name = "run_command"
     display_name = "Run Command"
-    description = "Run a local command."
+    description = "Run a local command in the background, optionally waiting for its exit result."
     config_fields = [
-        {"name": "command", "label": "Command", "type": "text"},
-        {"name": "working_directory", "label": "Working Directory", "type": "path"},
-        {"name": "run_hidden", "label": "Run Hidden", "type": "bool"},
-        {"name": "wait", "label": "Wait For Completion", "type": "bool"},
+        {"name": "command", "label": "Command", "type": "text", "placeholder": "Program or command to run"},
+        {"name": "working_directory", "label": "Working Directory", "type": "path", "help": "Optional. Leave empty to use the app's working directory."},
+        {"name": "run_hidden", "label": "Hide Console Window", "type": "bool", "default": True},
+        {"name": "wait", "label": "Wait For Completion", "type": "bool", "default": False},
+        {
+            "name": "timeout",
+            "label": "Wait Timeout",
+            "type": "number",
+            "min": 1,
+            "max": 300,
+            "default": DEFAULT_COMMAND_TIMEOUT_SECONDS,
+            "suffix": " seconds",
+            "visible_if": {"wait": True},
+        },
     ]
     blocking = True
+
+    def validate(self, config: dict) -> list[str]:
+        command = str(config.get("command") or "").strip()
+        if not command:
+            return ["Enter a command to run."]
+        if bool(config.get("wait", False)):
+            try:
+                timeout = int(config.get("timeout", DEFAULT_COMMAND_TIMEOUT_SECONDS))
+            except (TypeError, ValueError):
+                return ["Command timeout must be a whole number of seconds."]
+            if not 1 <= timeout <= 300:
+                return ["Command timeout must be between 1 and 300 seconds."]
+        return []
 
     def execute(self, context, config: dict) -> ActionResult:
         command = str(config.get("command") or "").strip()

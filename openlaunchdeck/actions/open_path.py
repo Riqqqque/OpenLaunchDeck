@@ -12,8 +12,16 @@ class OpenPathAction(BaseAction):
     type_name = "open_path"
     display_name = "Open Path/App"
     description = "Open a file, folder, or application."
-    config_fields = [{"name": "path", "label": "Path", "type": "file_or_directory"}]
+    config_fields = [
+        {"name": "path", "label": "File, Folder, or App", "type": "file_or_directory", "placeholder": "Choose a file, folder, or executable"}
+    ]
     blocking = True
+
+    def validate(self, config: dict) -> list[str]:
+        raw_path = str(config.get("path") or "").strip().strip('"')
+        if not raw_path:
+            return ["Choose a file, folder, or application path."]
+        return []
 
     def execute(self, context, config: dict) -> ActionResult:
         raw_path = str(config.get("path") or "").strip().strip('"')

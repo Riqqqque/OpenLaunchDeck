@@ -6,14 +6,39 @@ from .base import ActionResult, BaseAction
 class MultiAction(BaseAction):
     type_name = "multi_action"
     display_name = "Multi-Action"
-    description = "Run multiple actions in sequence."
+    description = "Run an advanced JSON list of actions in sequence. Add Delay steps when timing between actions matters."
     config_fields = [
-        {"name": "steps", "label": "Steps", "type": "json"},
-        {"name": "continue_on_error", "label": "Continue On Error", "type": "bool"},
+        {
+            "name": "steps",
+            "label": "Action Steps",
+            "type": "json",
+            "default": [{"type": "noop", "config": {}}],
+            "height": 150,
+            "help": "JSON list of action objects. Each item needs a type and config object.",
+        },
+        {"name": "continue_on_error", "label": "Continue After A Failed Step", "type": "bool", "default": False},
     ]
     blocking = True
 
+    def validate(self, config: dict) -> list[str]:
+        steps = config.get("steps")
+        if not isinstance(steps, list):
+            return ["Multi-action steps must be a JSON list."]
+        if len(steps) > 100:
+            return ["Multi-action is limited to 100 steps."]
+        for index, step in enumerate(steps, start=1):
+            if not isinstance(step, dict):
+                return [f"Multi-action step {index} must be an object."]
+            if not str(step.get("type") or "").strip():
+                return [f"Multi-action step {index} needs an action type."]
+            if "config" in step and not isinstance(step.get("config"), dict):
+                return [f"Multi-action step {index} config must be an object."]
+        return []
+
     def execute(self, context, config: dict) -> ActionResult:
+        errors = self.validate(config)
+        if errors:
+            return ActionResult.fail(errors[0])
         steps = config.get("steps")
         if not isinstance(steps, list):
             return ActionResult.fail("Multi-action steps must be a list.")

@@ -28,16 +28,21 @@ class ButtonEditor(QWidget):
     clear_requested = Signal()
     copy_requested = Signal()
     paste_requested = Signal()
+    library_requested = Signal()
 
     def __init__(self, registry) -> None:
         super().__init__()
         self.setMinimumWidth(0)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         self.button: ButtonConfig | None = None
         self._loading = False
         self._notes_timer = QTimer(self)
         self._notes_timer.setSingleShot(True)
         self._notes_timer.timeout.connect(self.apply_changes)
+        self._action_timer = QTimer(self)
+        self._action_timer.setSingleShot(True)
+        self._action_timer.setInterval(180)
+        self._action_timer.timeout.connect(self.apply_changes)
 
         layout = QVBoxLayout(self)
         self.setObjectName("InspectorPanel")
@@ -81,8 +86,8 @@ class ButtonEditor(QWidget):
         buttons = QGridLayout()
         buttons.setHorizontalSpacing(8)
         buttons.setVerticalSpacing(8)
-        self.test_button = QPushButton("Test")
-        self.clear_button = QPushButton("Clear")
+        self.test_button = QPushButton("Test Action")
+        self.clear_button = QPushButton("Clear Pad")
         self.copy_button = QPushButton("Copy")
         self.paste_button = QPushButton("Paste")
         for index, button in enumerate((self.test_button, self.clear_button, self.copy_button, self.paste_button)):
@@ -90,6 +95,10 @@ class ButtonEditor(QWidget):
             button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             buttons.addWidget(button, index // 2, index % 2)
         self.test_button.setObjectName("PrimaryButton")
+        self.test_button.setToolTip("Run this pad through the same action path used by the Launchpad.")
+        self.clear_button.setToolTip("Reset this pad to an empty button.")
+        self.copy_button.setToolTip("Copy the complete pad configuration.")
+        self.paste_button.setToolTip("Paste a copied pad configuration here.")
         layout.addLayout(buttons)
         layout.addStretch(1)
 
@@ -98,8 +107,8 @@ class ButtonEditor(QWidget):
         self.enabled_check.stateChanged.connect(lambda _state: self.apply_changes())
         self.dangerous_check.stateChanged.connect(lambda _state: self.apply_changes())
         self.notes_edit.textChanged.connect(self._queue_notes_change)
-        self.action_editor.action_type_combo.currentIndexChanged.connect(lambda _index: self.apply_changes())
-        self.action_editor.changed.connect(self.apply_changes)
+        self.action_editor.changed.connect(self._queue_action_change)
+        self.action_editor.library_requested.connect(self.library_requested.emit)
         self.test_button.clicked.connect(self._test)
         self.clear_button.clicked.connect(self.clear_requested.emit)
         self.copy_button.clicked.connect(self.copy_requested.emit)
@@ -107,6 +116,7 @@ class ButtonEditor(QWidget):
 
     def set_button(self, button: ButtonConfig) -> None:
         self._notes_timer.stop()
+        self._action_timer.stop()
         self._loading = True
         self.button = button
         self.title.setText(f"Button {button.id}")
@@ -127,6 +137,16 @@ class ButtonEditor(QWidget):
         if not self._loading:
             self._notes_timer.start(350)
 
+    def _queue_action_change(self) -> None:
+        if not self._loading:
+            self._action_timer.start()
+
+    def flush_pending_changes(self) -> None:
+        if self._notes_timer.isActive() or self._action_timer.isActive():
+            self._notes_timer.stop()
+            self._action_timer.stop()
+            self.apply_changes()
+
     def apply_changes(self) -> None:
         if self._loading or self.button is None:
             return
@@ -140,8 +160,11 @@ class ButtonEditor(QWidget):
         self.changed.emit()
 
     def _test(self) -> None:
+        self._notes_timer.stop()
+        self._action_timer.stop()
         self.apply_changes()
-        if self.action_editor.has_validation_errors():
-            QMessageBox.warning(self, "Invalid action settings", "Fix the highlighted action settings before testing this button.")
+        errors = self.action_editor.validation_errors()
+        if errors:
+            QMessageBox.warning(self, "Invalid action settings", "\n".join(errors[:5]))
             return
         self.test_requested.emit()

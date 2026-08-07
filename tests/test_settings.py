@@ -41,3 +41,9 @@ def test_settings_recover_from_wrong_types():
     assert settings.minimize_to_tray is True
     assert settings.soundboard_global_volume == 100
     assert settings.update_channel == "stable"
+
+
+def test_settings_preserve_protected_sound_library_key():
+    settings = Settings.from_dict({"sound_library_api_key_protected": "dpapi:protected-value"})
+
+    assert settings.sound_library_api_key_protected == "dpapi:protected-value"

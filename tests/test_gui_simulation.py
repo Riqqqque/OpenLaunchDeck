@@ -4,7 +4,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QPoint, Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QSystemTrayIcon
+from PySide6.QtWidgets import QApplication
 
 from openlaunchdeck.actions.base import ActionResult
 from openlaunchdeck.app import build_services, show_initial_window_state
@@ -216,6 +216,58 @@ def test_disabled_grid_button_stays_selectable_for_editing():
     window.grid.update_button(page, "A1", services.action_runner.dangerous_service, services.audio_engine)
 
     assert window.grid.cells["A1"].isEnabled()
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_sound_library_assignment_updates_and_saves_selected_pad(tmp_path):
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    sound = tmp_path / "quick-alert.mp3"
+    sound.write_bytes(b"ID3test")
+    saves = []
+    services.profile_service.save_current = lambda: saves.append(True)
+
+    window.select_button("C3")
+    window.assign_sound_to_selected_button(str(sound), "Quick Alert")
+    app.processEvents()
+
+    button = services.profile_service.current_page.get_button("C3")
+    assert button.action.type == "play_sound"
+    assert button.action.config["file_path"] == str(sound.resolve())
+    assert button.label == "Quick Alert"
+    assert button.color == "purple"
+    assert saves == [True]
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_switching_pads_flushes_pending_action_edits():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    window.select_button("A1")
+    window.editor.action_editor.set_action("type_text", {"text": "", "interval": 0})
+    text_editor = window.editor.action_editor.field_widgets["text"]
+    text_editor.setPlainText("saved before switching")
+
+    window.select_button("B2")
+    app.processEvents()
+
+    saved = services.profile_service.current_page.get_button("A1")
+    assert saved.action.type == "type_text"
+    assert saved.action.config["text"] == "saved before switching"
 
     window._force_quit = True
     window.close()

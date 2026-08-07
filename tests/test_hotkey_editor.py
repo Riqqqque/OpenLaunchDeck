@@ -3,7 +3,7 @@ import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtWidgets import QApplication, QComboBox, QSpinBox
+from PySide6.QtWidgets import QApplication, QComboBox, QPushButton, QSpinBox
 
 from openlaunchdeck.actions.hotkey import (
     _is_extended_vk_code,
@@ -227,6 +227,30 @@ def test_play_sound_volume_editor_uses_soundboard_bounds():
     editor.set_action("play_sound", {"volume": 150})
     widget = editor.field_widgets["volume"]
     assert widget.value() == 100
+
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_action_editor_hides_irrelevant_fields_and_exposes_sound_library():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+    editor.set_action("obs_websocket", {"operation": "switch_scene"})
+
+    assert editor.field_widgets["scene_name"].isHidden() is False
+    assert editor.field_widgets["source_name"].isHidden() is True
+    assert editor.field_widgets["input_name"].isHidden() is True
+    operation = editor.field_widgets["operation"]
+    operation.setCurrentIndex(operation.findData("toggle_input_mute"))
+
+    assert editor.field_widgets["scene_name"].isHidden() is True
+    assert editor.field_widgets["input_name"].isHidden() is False
+
+    editor.set_action("play_sound", {})
+    sound_field = editor.field_widgets["file_path"]
+    library_buttons = [button for button in sound_field.findChildren(QPushButton) if button.text() == "Library"]
+    assert len(library_buttons) == 1
+    assert "selected soundboard output" in editor.description_label.text()
 
     editor.deleteLater()
     app.processEvents()

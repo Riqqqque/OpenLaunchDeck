@@ -36,7 +36,7 @@ Every button has:
 
 Disabled buttons stay visible in the editor but do not run. Dangerous buttons need a second press within five seconds.
 
-The Hotkey action uses modifier controls plus a searchable key drop-down. Switch Page lists the pages in the current profile. Names that come from an external system, such as an OBS scene or source, remain text fields because they must match that external application exactly.
+The editor shows a short explanation for the selected action and hides fields that do not apply to the current operation. The Hotkey action uses modifier controls plus a searchable key drop-down. Switch Page lists pages in the current profile. Names that come from an external system, such as an OBS scene or source, remain text fields because they must match that external application exactly.
 
 ### Editor Commands
 
@@ -98,6 +98,7 @@ See [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md) for safe organiz
 
 ### Soundboard
 
+- Browse Sound Library
 - Open Soundboard Panel
 - Stop All Sounds
 
@@ -114,7 +115,7 @@ See [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md) for safe organiz
 
 ## Soundboard Panel
 
-The panel shows active sounds, the selected output route, global volume, and stop controls. Use **Stop All Sounds** when a loop or overlapping clip needs to end immediately.
+The Sound Library searches and organizes clips, while the Soundboard panel manages playback and routing. The panel shows active sounds, the selected output route, global volume, and stop controls. Use **Stop All Sounds** when a loop or overlapping clip needs to end immediately.
 
 ## System Tray And Background Use
 

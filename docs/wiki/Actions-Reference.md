@@ -54,7 +54,7 @@ The action fails clearly when the path does not exist.
 
 ## Run Command
 
-**Fields:** Command, Working Directory, Run Hidden, Wait For Completion
+**Fields:** Command, Working Directory, Run Hidden, Wait For Completion, Wait Timeout
 
 Runs a local command through the Windows shell.
 
@@ -148,7 +148,7 @@ Do not put private API keys or webhook credentials into profiles you plan to exp
 
 ## Play Sound
 
-**Fields:** Sound File, Volume, Route To Voice Chat, Loop, Already Playing, Active Color, Stop On Page Change
+**Fields:** Sound File, Clip Volume, Also Send To Voice Chat, Loop Until Stopped, When Pressed Again, Playing Color, Stop When Page Changes
 
 Supported baseline formats are `.wav` and `.mp3`. `.ogg` depends on the codecs available to QtMultimedia on the computer.
 
@@ -159,11 +159,11 @@ Already Playing choices:
 - `ignore` keeps the existing copy playing.
 - `toggle_stop` stops the sound on the next press.
 
-See [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md) for output routing and quality setup.
+Click **Library** beside Sound File to find, preview, download, import, and assign clips. See [Sound Library](Sound-Library.md) for that workflow and [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md) for output routing and quality setup.
 
 ## Stop Sound
 
-**Fields:** Scope, Fade Out
+**Field:** Sounds To Stop
 
 Scopes:
 
@@ -221,7 +221,7 @@ Passwords are not stored by this action. Test SSH access from a terminal first, 
 
 ## OBS WebSocket
 
-**Common fields:** Operation, Host, Port, Password, Timeout Ms
+**Common fields:** Operation, OBS Host, OBS Port, OBS Password, Connection Timeout
 
 Default connection:
 

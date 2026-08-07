@@ -39,5 +39,7 @@ def test_stop_sound_action_scopes():
     assert action.execute(context, {"scope": "this_button"}).success is True
     assert action.execute(context, {"scope": "current_page"}).success is True
     assert action.execute(context, {"scope": "all"}).success is True
+    assert action.validate({"scope": "not-a-scope"}) == ["Choose which sounds to stop."]
+    assert action.execute(context, {"scope": "not-a-scope"}).success is False
 
     assert audio_engine.calls == [("button", "A1"), ("page", "main"), ("all", None)]

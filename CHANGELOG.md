@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.60
+
+- Added a native Sound Library for searching, previewing, downloading, importing, and assigning sound effects without leaving the app.
+- Added popular, newest, top-rated, category, license, and duration filters with CC0 results selected by default.
+- Protected personal Freesound API keys with Windows account encryption and kept downloads, metadata, and credits under AppData.
+- Simplified action editing with visible guidance, conditional OBS and volume fields, clearer labels, safer defaults, and pre-dispatch validation.
+- Debounced action-form edits, hardened canceled and oversized downloads, and preserved narrow-window editor usability.
+- Removed unused Tcl/Tk and screenshot-automation modules from Windows release packages while keeping native Windows input handling.
+
 ## 0.1.59
 
 - Replaced the hotkey syntax field with modifier controls and a searchable key selector covering F1-F24, navigation, media, letters, numbers, and punctuation.

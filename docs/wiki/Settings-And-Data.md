@@ -98,7 +98,7 @@ Open the folder from the **Config folder** button in Settings:
 | `logs` | Application logs |
 | `backups` | Automatic profile backups |
 | `midi_mappings` | Saved calibration mappings |
-| `imported_assets` | Assets copied into managed user storage |
+| `imported_assets` | Managed assets, including Sound Library audio, metadata, and credits |
 | `updates` | Downloaded update files and metadata |
 
 Program files belong in the install folder. User data never needs to be placed there.

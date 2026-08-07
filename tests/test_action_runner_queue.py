@@ -45,6 +45,16 @@ class InteractiveAction(BaseAction):
         return ActionResult.ok("Interactive action finished.")
 
 
+class InvalidAction(BaseAction):
+    type_name = "invalid"
+
+    def validate(self, config):
+        return ["Required setting is missing."]
+
+    def execute(self, context, config):
+        raise AssertionError("invalid action should not execute")
+
+
 class FakeProfileService:
     def __init__(self, button: ButtonConfig | None = None) -> None:
         page = Page.blank()
@@ -195,4 +205,26 @@ def test_blocking_action_completion_waits_for_actual_result():
         assert completions == [("A1", "Slow action finished.")]
     finally:
         release.set()
+        runner.shutdown()
+
+
+def test_action_runner_validates_before_confirmation_or_execution():
+    button = ButtonConfig(id="A1", dangerous=True, action=ActionConfig("invalid", {}))
+    registry = ActionRegistry()
+    registry.register(NoopAction())
+    registry.register(InvalidAction())
+    dangerous = DangerousConfirmService(confirm_delay_seconds=0)
+    runner = ActionRunner(
+        registry=registry,
+        profile_service=FakeProfileService(button),
+        dangerous_service=dangerous,
+    )
+
+    try:
+        result = runner.handle_button_press("A1")
+
+        assert not result.success
+        assert result.message == "Required setting is missing."
+        assert not dangerous.is_armed("A1")
+    finally:
         runner.shutdown()

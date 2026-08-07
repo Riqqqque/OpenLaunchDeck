@@ -8,16 +8,46 @@ from .base import ActionResult, BaseAction
 class PlaySoundAction(BaseAction):
     type_name = "play_sound"
     display_name = "Play Sound"
-    description = "Play a local sound file."
+    description = "Play a local sound through your selected soundboard output, with optional voice-chat routing."
     config_fields = [
-        {"name": "file_path", "label": "Sound File", "type": "file"},
-        {"name": "volume", "label": "Volume", "type": "number", "min": 0, "max": 100, "default": 80},
-        {"name": "route_to_voice_chat", "label": "Route To Voice Chat", "type": "bool"},
-        {"name": "loop", "label": "Loop", "type": "bool"},
-        {"name": "behavior_when_already_playing", "label": "Already Playing", "type": "choice", "choices": ["restart", "overlap", "ignore", "toggle_stop"]},
-        {"name": "active_color", "label": "Active Color", "type": "color"},
-        {"name": "stop_on_page_change", "label": "Stop On Page Change", "type": "bool"},
+        {
+            "name": "file_path",
+            "label": "Sound File",
+            "type": "sound_file",
+            "placeholder": "Choose a file or open the Sound Library",
+            "help": "WAV, MP3, and OGG files are supported when the Windows media codecs can decode them.",
+        },
+        {"name": "volume", "label": "Clip Volume", "type": "number", "min": 0, "max": 100, "default": 80, "suffix": "%"},
+        {
+            "name": "route_to_voice_chat",
+            "label": "Also Send To Voice Chat",
+            "type": "bool",
+            "default": False,
+            "help": "Requires a working voice route configured in Soundboard settings.",
+        },
+        {"name": "loop", "label": "Loop Until Stopped", "type": "bool", "default": False},
+        {
+            "name": "behavior_when_already_playing",
+            "label": "When Pressed Again",
+            "type": "choice",
+            "choices": ["restart", "overlap", "ignore", "toggle_stop"],
+            "default": "restart",
+        },
+        {"name": "active_color", "label": "Playing Color", "type": "color", "default": "cyan"},
+        {"name": "stop_on_page_change", "label": "Stop When Page Changes", "type": "bool", "default": False},
     ]
+
+    def validate(self, config: dict) -> list[str]:
+        file_path = str(config.get("file_path") or "").strip().strip('"')
+        if not file_path:
+            return ["Choose a sound file or select one from the Sound Library."]
+        path = Path(file_path).expanduser()
+        if path.suffix.casefold() not in {".wav", ".mp3", ".ogg"}:
+            return ["Choose a WAV, MP3, or OGG sound file."]
+        behavior = str(config.get("behavior_when_already_playing") or "restart")
+        if behavior not in {"restart", "overlap", "ignore", "toggle_stop"}:
+            return ["Choose a valid behavior for repeated presses."]
+        return []
 
     def execute(self, context, config: dict) -> ActionResult:
         file_path = str(config.get("file_path") or "").strip().strip('"')

@@ -129,25 +129,110 @@ def build_obs_auth_response(password: str, salt: str, challenge: str) -> str:
 class ObsWebSocketAction(BaseAction):
     type_name = "obs_websocket"
     display_name = "OBS WebSocket"
-    description = "Control OBS through the built-in OBS WebSocket server."
+    description = "Control scenes, sources, audio, recording, replay buffer, screenshots, and streaming through OBS WebSocket."
     config_fields = [
-        {"name": "operation", "label": "Operation", "type": "choice", "choices": OBS_OPERATIONS},
-        {"name": "host", "label": "Host", "type": "text"},
-        {"name": "port", "label": "Port", "type": "number"},
-        {"name": "password", "label": "Password", "type": "password"},
-        {"name": "scene_name", "label": "Scene Name", "type": "text"},
-        {"name": "source_name", "label": "Source Name", "type": "text"},
-        {"name": "input_name", "label": "Input Name", "type": "text"},
-        {"name": "screenshot_source", "label": "Screenshot Source", "type": "text"},
-        {"name": "screenshot_folder", "label": "Screenshot Folder", "type": "path"},
-        {"name": "screenshot_format", "label": "Screenshot Format", "type": "choice", "choices": ["png", "jpg"]},
-        {"name": "start_if_stopped", "label": "Start Replay Buffer If Needed", "type": "bool"},
-        {"name": "replay_verify_timeout_ms", "label": "Replay Verify Timeout Ms", "type": "number"},
-        {"name": "timeout_ms", "label": "Timeout Ms", "type": "number"},
+        {"name": "operation", "label": "Operation", "type": "choice", "choices": OBS_OPERATIONS, "default": "save_replay_buffer"},
+        {"name": "host", "label": "OBS Host", "type": "text", "default": "127.0.0.1", "placeholder": "127.0.0.1"},
+        {"name": "port", "label": "OBS Port", "type": "number", "min": 1, "max": 65535, "default": 4455},
+        {"name": "password", "label": "OBS Password", "type": "password", "help": "Use the password shown in OBS under Tools > WebSocket Server Settings."},
+        {
+            "name": "scene_name",
+            "label": "Scene",
+            "type": "text",
+            "placeholder": "Exact OBS scene name",
+            "visible_if": {"operation": ["switch_scene", "show_source", "hide_source", "toggle_source"]},
+        },
+        {
+            "name": "source_name",
+            "label": "Source",
+            "type": "text",
+            "placeholder": "Exact source name from the scene",
+            "visible_if": {"operation": ["show_source", "hide_source", "toggle_source"]},
+        },
+        {
+            "name": "input_name",
+            "label": "Audio Input",
+            "type": "text",
+            "placeholder": "Exact OBS input name",
+            "visible_if": {"operation": ["mute_input", "unmute_input", "toggle_input_mute"]},
+        },
+        {
+            "name": "screenshot_source",
+            "label": "Screenshot Source",
+            "type": "text",
+            "placeholder": "Optional; current scene is used when empty",
+            "visible_if": {"operation": "save_screenshot"},
+        },
+        {
+            "name": "screenshot_folder",
+            "label": "Screenshot Folder",
+            "type": "path",
+            "help": "Optional. OBS's recording folder is used when empty.",
+            "visible_if": {"operation": "save_screenshot"},
+        },
+        {
+            "name": "screenshot_format",
+            "label": "Image Format",
+            "type": "choice",
+            "choices": ["png", "jpg"],
+            "default": "png",
+            "visible_if": {"operation": "save_screenshot"},
+        },
+        {
+            "name": "start_if_stopped",
+            "label": "Start Replay Buffer If Needed",
+            "type": "bool",
+            "default": True,
+            "visible_if": {"operation": "save_replay_buffer"},
+        },
+        {
+            "name": "replay_verify_timeout_ms",
+            "label": "Replay Save Timeout",
+            "type": "number",
+            "min": 1000,
+            "max": 30000,
+            "default": 10000,
+            "suffix": " ms",
+            "visible_if": {"operation": "save_replay_buffer"},
+        },
+        {"name": "timeout_ms", "label": "Connection Timeout", "type": "number", "min": 500, "max": 30000, "default": 3000, "suffix": " ms"},
     ]
     blocking = True
 
+    def validate(self, config: dict) -> list[str]:
+        operation = str(config.get("operation") or "save_replay_buffer").strip()
+        if operation not in OBS_OPERATIONS:
+            return ["Choose a valid OBS operation."]
+        if not str(config.get("host") or "127.0.0.1").strip():
+            return ["Enter the OBS WebSocket host."]
+        try:
+            port = int(config.get("port") or 4455)
+            timeout_ms = int(config.get("timeout_ms") or 3000)
+        except (TypeError, ValueError):
+            return ["OBS port and timeout must be whole numbers."]
+        if not 1 <= port <= 65535:
+            return ["OBS port must be between 1 and 65535."]
+        if not 500 <= timeout_ms <= 30000:
+            return ["OBS connection timeout must be between 500 and 30000 ms."]
+        if operation == "switch_scene" and not str(config.get("scene_name") or "").strip():
+            return ["Enter the exact OBS scene name."]
+        if operation in {"show_source", "hide_source", "toggle_source"} and not str(config.get("source_name") or "").strip():
+            return ["Enter the exact OBS source name."]
+        if operation in {"mute_input", "unmute_input", "toggle_input_mute"} and not str(config.get("input_name") or "").strip():
+            return ["Enter the exact OBS audio input name."]
+        if operation == "save_replay_buffer":
+            try:
+                verify_timeout = int(config.get("replay_verify_timeout_ms") or 10000)
+            except (TypeError, ValueError):
+                return ["Replay save timeout must be a whole number."]
+            if not 1000 <= verify_timeout <= 30000:
+                return ["Replay save timeout must be between 1000 and 30000 ms."]
+        return []
+
     def execute(self, context, config: dict) -> ActionResult:
+        errors = self.validate(config)
+        if errors:
+            return ActionResult.fail(errors[0])
         operation = str(config.get("operation") or "").strip() or "save_replay_buffer"
         host = str(config.get("host") or "127.0.0.1").strip()
         port = int(config.get("port") or 4455)

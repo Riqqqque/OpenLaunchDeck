@@ -21,6 +21,9 @@ class ActionRegistry:
     def names(self) -> list[str]:
         return sorted(self._actions)
 
+    def has(self, action_type: str) -> bool:
+        return action_type in self._actions
+
 
 def create_default_registry() -> ActionRegistry:
     from .delay import DelayAction
