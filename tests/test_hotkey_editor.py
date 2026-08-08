@@ -15,6 +15,7 @@ from openlaunchdeck.actions.hotkey import (
 )
 from openlaunchdeck.actions.registry import create_default_registry
 from openlaunchdeck.ui.action_editor import ActionEditor, HotkeyPicker
+from openlaunchdeck.ui.action_sequence_editor import ActionSequenceEditor
 
 
 def test_hotkey_suggestions_include_extended_function_keys():
@@ -252,5 +253,31 @@ def test_action_editor_hides_irrelevant_fields_and_exposes_sound_library():
     assert len(library_buttons) == 1
     assert "selected soundboard output" in editor.description_label.text()
 
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_multi_action_uses_visual_sequence_editor_and_preserves_steps():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+    editor.set_action(
+        "multi_action",
+        {
+            "steps": [
+                {"type": "hotkey", "config": {"hotkey": "f15"}},
+                {"type": "delay", "config": {"milliseconds": 250}},
+            ]
+        },
+    )
+    sequence = editor.field_widgets["steps"]
+    assert isinstance(sequence, ActionSequenceEditor)
+    assert sequence.list.count() == 2
+
+    sequence.list.setCurrentRow(1)
+    sequence.move_step(-1)
+    _action_type, config = editor.current_action()
+
+    assert [step["type"] for step in config["steps"]] == ["delay", "hotkey"]
+    assert "250" in sequence.list.item(0).text()
     editor.deleteLater()
     app.processEvents()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QRect, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPalette, QPen
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from ..constants import NAMED_COLORS
@@ -9,10 +9,10 @@ from ..models.button import ButtonConfig
 
 
 CELL_SIZES = {
-    "mini": QSize(68, 62),
-    "compact": QSize(84, 74),
-    "comfortable": QSize(102, 88),
-    "large": QSize(118, 102),
+    "mini": QSize(64, 64),
+    "compact": QSize(80, 80),
+    "comfortable": QSize(96, 96),
+    "large": QSize(112, 112),
 }
 
 ACTION_LABELS = {
@@ -43,8 +43,9 @@ class ButtonCell(QWidget):
         super().__init__()
         self.button_id = button_id
         self._density = "comfortable"
-        self.setMinimumSize(CELL_SIZES[self._density])
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._cell_side = CELL_SIZES[self._density].width()
+        self.setFixedSize(self._cell_side, self._cell_side)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
@@ -91,12 +92,21 @@ class ButtonCell(QWidget):
         if density not in CELL_SIZES:
             density = "comfortable"
         self._density = density
-        self.setMinimumSize(CELL_SIZES[density])
+        self.set_cell_side(CELL_SIZES[density].width())
+        self.updateGeometry()
+        self.update()
+
+    def set_cell_side(self, side: int) -> None:
+        side = max(50, int(side))
+        if side == self._cell_side:
+            return
+        self._cell_side = side
+        self.setFixedSize(side, side)
         self.updateGeometry()
         self.update()
 
     def sizeHint(self) -> QSize:
-        return CELL_SIZES.get(self._density, CELL_SIZES["comfortable"])
+        return QSize(self._cell_side, self._cell_side)
 
     def text(self) -> str:
         return self._text
@@ -153,23 +163,24 @@ class ButtonCell(QWidget):
             color_name = "off"
 
         accent = QColor(NAMED_COLORS.get(color_name, color_name if color_name.startswith("#") else NAMED_COLORS["dim"]))
-        base = QColor("#15191f")
+        palette = self.palette()
+        base = palette.color(QPalette.ColorRole.Base)
         if button.enabled:
             base = self._blend(base, accent, 0.055 if not self._hover else 0.1)
         else:
-            base = QColor("#111419")
+            base = palette.color(QPalette.ColorRole.Window)
         if self._pressed:
             base = self._blend(base, accent, 0.18)
 
-        border = QColor("#303740")
+        border = palette.color(QPalette.ColorRole.Mid)
         if self._selected:
-            border = QColor("#5eead4")
+            border = palette.color(QPalette.ColorRole.Highlight)
         elif self._armed:
             border = QColor("#facc15")
         elif self._playing:
             border = QColor("#67e8f9")
         elif self._hover:
-            border = self._blend(QColor("#737b87"), accent, 0.28)
+            border = self._blend(palette.color(QPalette.ColorRole.Light), accent, 0.28)
 
         painter.setPen(QPen(border, 2.2 if self._selected else 1.4))
         painter.setBrush(base)
@@ -180,8 +191,10 @@ class ButtonCell(QWidget):
         painter.setBrush(accent if button.enabled else QColor("#273244"))
         painter.drawRoundedRect(strip, 3, 3)
 
-        painter.setPen(QColor("#cbd2dc") if button.enabled else QColor("#68707c"))
-        id_font = QFont("Segoe UI", 7 if self._density in {"mini", "compact"} else 8, QFont.Weight.DemiBold)
+        painter.setPen(palette.color(QPalette.ColorRole.Text) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText))
+        id_font = QFont(painter.font())
+        id_font.setPointSize(7 if self._cell_side < 82 else 8)
+        id_font.setWeight(QFont.Weight.DemiBold)
         painter.setFont(id_font)
         painter.drawText(rect.adjusted(11, 14, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
 
@@ -189,29 +202,46 @@ class ButtonCell(QWidget):
         if badge:
             self._draw_badge(painter, rect, badge)
 
-        title_font = QFont("Segoe UI", 8 if self._density in {"mini", "compact"} else 9 if self._density == "comfortable" else 10, QFont.Weight.Bold)
+        if self._cell_side < 70:
+            title_size = 7
+        elif self._cell_side < 90:
+            title_size = 8
+        elif self._cell_side < 108:
+            title_size = 9
+        else:
+            title_size = 10
+        title_font = QFont(painter.font())
+        title_font.setPointSize(title_size)
+        title_font.setWeight(QFont.Weight.Bold)
         title_font.setStretch(94)
         painter.setFont(title_font)
-        title_color = QColor("#f7f8fa") if button.enabled else QColor("#8a929e")
+        title_color = palette.color(QPalette.ColorRole.BrightText) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText)
         painter.setPen(title_color)
-        title_top = {"mini": 25, "compact": 27, "comfortable": 28, "large": 30}.get(self._density, 28)
-        title_bottom_padding = {"mini": 22, "compact": 25, "comfortable": 31, "large": 35}.get(self._density, 31)
+        title_top = 22 if self._cell_side < 60 else 24 if self._cell_side < 76 else 27 if self._cell_side < 100 else 30
+        pill_height = 13 if self._cell_side < 82 else 15 if self._cell_side < 108 else 17
+        pill_bottom_margin = 6
+        show_action = self._cell_side >= 68
+        title_bottom_padding = pill_height + pill_bottom_margin + 3 if show_action else 6
         title_rect = rect.adjusted(7, title_top, -7, -title_bottom_padding)
         self._draw_fitted_center(painter, title_rect, label, minimum_size=6 if self._density == "mini" else 7)
 
+        if not show_action:
+            return
         action_label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
-        action_font = QFont("Segoe UI", 6 if self._density in {"mini", "compact"} else 7, QFont.Weight.DemiBold)
+        action_font = QFont(painter.font())
+        action_font.setPointSize(6 if self._cell_side < 82 else 7)
+        action_font.setWeight(QFont.Weight.DemiBold)
         painter.setFont(action_font)
         action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=6)
         painter.setFont(action_font)
         action_text = metrics.elidedText(action_label, Qt.TextElideMode.ElideRight, max(18, rect.width() - 20))
-        pill_height = 12 if self._density == "mini" else 13 if self._density == "compact" else 14
-        pill_bottom_margin = 4 if self._density == "compact" else 5
         pill = QRect(rect.left() + 8, rect.bottom() - pill_height - pill_bottom_margin, rect.width() - 16, pill_height)
         painter.setPen(Qt.PenStyle.NoPen)
-        painter.setBrush(QColor(9, 11, 14, 210))
+        chip = palette.color(QPalette.ColorRole.Window)
+        chip.setAlpha(225)
+        painter.setBrush(chip)
         painter.drawRoundedRect(pill, 7, 7)
-        painter.setPen(QColor("#bec5ce") if button.enabled else QColor("#68707c"))
+        painter.setPen(palette.color(QPalette.ColorRole.Text) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText))
         painter.drawText(pill, Qt.AlignmentFlag.AlignCenter, action_text)
 
     def _badge_text(self, enabled: bool) -> str:
@@ -224,7 +254,9 @@ class ButtonCell(QWidget):
         return ""
 
     def _draw_badge(self, painter: QPainter, rect: QRect, text: str) -> None:
-        font = QFont("Segoe UI", 7, QFont.Weight.Bold)
+        font = QFont(painter.font())
+        font.setPointSize(7)
+        font.setWeight(QFont.Weight.Bold)
         painter.setFont(font)
         metrics = QFontMetrics(font)
         width = metrics.horizontalAdvance(text) + 10
@@ -240,7 +272,9 @@ class ButtonCell(QWidget):
         base_font = QFont(painter.font())
         text = self._humanize_compact_label(text.strip())
         words = text.split()
-        if len(words) > 1:
+        if self._cell_side < 60:
+            lines = [text]
+        elif len(words) > 1:
             midpoint = (len(words) + 1) // 2
             lines = [" ".join(words[:midpoint]), " ".join(words[midpoint:])]
         else:
@@ -251,7 +285,7 @@ class ButtonCell(QWidget):
             font, metrics = self._fit_font(base_font, line, rect.width(), minimum_size)
             fitted.append((line, font, metrics))
 
-        line_gap = 1 if self._density == "compact" else 2
+        line_gap = 1 if self._cell_side < 86 else 2
         total_height = sum(metrics.height() for _, _, metrics in fitted) + max(0, len(fitted) - 1) * line_gap
         while total_height > rect.height() and any(font.pointSize() > minimum_size for _, font, _ in fitted):
             updated: list[tuple[str, QFont, QFontMetrics]] = []

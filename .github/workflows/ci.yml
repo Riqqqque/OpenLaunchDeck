@@ -46,3 +46,18 @@ jobs:
 
       - name: Compile Python files
         run: python -m compileall openlaunchdeck tests
+
+      - name: Capture responsive UI
+        if: matrix.python-version == '3.11'
+        env:
+          QT_QPA_PLATFORM: windows
+        run: python scripts/capture_ui.py --output build/ui-qa
+
+      - name: Upload UI review images
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v6
+        with:
+          name: openlaunchdeck-ui-review
+          path: build/ui-qa
+          if-no-files-found: error
+          retention-days: 7

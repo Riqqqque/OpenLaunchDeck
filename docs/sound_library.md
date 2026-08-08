@@ -1,73 +1,86 @@
 # Sound Library
 
-The Sound Library provides a native in-app workflow for finding, previewing, downloading, importing, and assigning short sounds. Open it from **Soundboard > Browse Sound Library** or click **Library** beside a Play Sound action.
+The Sound Library is a native card browser for previewing and assigning short sounds. Open it from **Soundboard > Browse Sound Library** or select a Play Sound action and click **Library** beside its file field.
 
-## Online Search
+The selected pad appears in the top-right corner. Each card has two direct controls:
 
-Online search uses the Freesound API. OpenLaunchDeck does not ship a shared API credential. Each user supplies a personal Freesound API key:
+- **Preview** plays a quiet preview without changing the profile.
+- **Use A1** assigns a local sound to the selected pad. An online result uses **Get + Use** until its download finishes.
 
-1. Open **Soundboard > Browse Sound Library**.
-2. Click **Get Key** and sign in to Freesound.
-3. Create or copy an API key.
-4. Paste the key into OpenLaunchDeck and click **Save Key**.
-5. Search by text or choose a category.
-6. Sort by most downloaded, newest, top rated, or best match.
-7. Preview a result, then choose **Download** or **Download & Assign**.
+## Starter Sounds
 
-The saved key is encrypted for the current Windows account. It is sent in the request header, not placed in request URLs, profile files, or logs. **Forget** removes it from settings.
+The first tab opens immediately with **OpenLaunchDeck Essentials**, a small set of original WAV effects included with the app. It covers alerts, reactions, gaming, transitions, stream tools, and utility feedback.
 
-Searches hide results marked explicit and limit clip length. The default license filter shows CC0 sounds. Broader filters are available, but the license displayed for each result still applies.
+1. Select a pad in the main grid.
+2. Open the Sound Library.
+3. Stay on **Starter Sounds**.
+4. Click **Preview** on any card.
+5. Click **Use A1** when it is the sound you want.
 
-## Licensing And Credits
+No account or network request is needed. On first use, the app copies the selected collection into AppData so profile paths never depend on the install folder.
 
-The Sound Library is a search and download tool, not a license guarantee.
+## My Sounds
 
-- **CC0** sounds generally do not require attribution, though credit is still useful.
-- **Attribution** sounds require creator credit.
-- **Attribution-NonCommercial** sounds have additional restrictions and may not fit monetized streams, videos, or other commercial use.
-- A familiar phrase, song, show clip, game clip, or celebrity recording may include rights beyond the uploader's chosen license.
+Use **My Sounds** for files already managed by OpenLaunchDeck:
 
-Review the source page and license before publishing or monetizing content. Freesound also has separate API terms. Open **Provider Terms** from the library before using online search in a commercial product or workflow.
+1. Click **Import Local Sound**.
+2. Choose a `.wav`, `.mp3`, or `.ogg` file up to 25 MB.
+3. Preview the new card.
+4. Click **Use A1**.
 
-OpenLaunchDeck stores source, creator, and license metadata beside each downloaded sound. A combined credit list is maintained at:
+The original file is left alone. The imported copy uses a content hash, so importing the same file again does not create another audio file.
 
-```text
-%APPDATA%\OpenLaunchDeck\imported_assets\sound_library\ATTRIBUTION.txt
-```
-
-Use **Copy Credit** to copy the selected sound's credit line.
-
-## My Library
-
-The **My Library** tab contains sounds downloaded through the browser and files imported with **Import Local Sound**. Supported import types are `.wav`, `.mp3`, and `.ogg`, with a 25 MB per-file limit.
-
-Library files live under:
+Managed files live under:
 
 ```text
 %APPDATA%\OpenLaunchDeck\imported_assets\sound_library
 ```
 
-Importing does not change the original file. OpenLaunchDeck copies it into the library using a content hash, so importing the same file again does not create another audio copy.
+## Online Search
 
-## Assigning A Sound
+Online search is optional and uses Freesound. OpenLaunchDeck does not ship a shared provider credential.
 
-1. Select a grid pad in the main window.
-2. Open the Sound Library.
-3. Select a downloaded or imported sound.
-4. Click **Assign to Pad**.
+1. Open **Online Search**.
+2. Click **Connect Provider**.
+3. Click **Get a Key**, sign in to Freesound, and create or copy a personal API key.
+4. Paste the key and click **Save Key**.
+5. Choose a category or enter a search.
+6. Sort by **Popular**, **Newest**, **Top rated**, or **Best match**.
+7. Preview a card, then click **Get + Use**.
 
-For an online result that is not downloaded yet, click **Download & Assign**. The pad becomes enabled, uses the Play Sound action, and receives a short label when it does not already have one. Existing Play Sound volume, routing, loop, repeat, color, and page-change settings are preserved.
+The key is encrypted for the current Windows account. It is sent in an authorization header and is not placed in request URLs, profiles, or logs. **Manage Provider > Forget** removes it.
 
-The app saves the profile immediately after assignment. Clicking a grid pad still only selects it; it does not play the sound. Use **Test** or press the physical pad when ready.
+Search hides results marked explicit and limits clip length. CC0 is the default license filter. Broader filters are available, but every result still shows its creator and license.
 
-## Network And Storage Behavior
+## Assignment Behavior
 
-- Search and download requests are asynchronous and do not block the main window.
-- Requests have timeouts and downloads can be canceled by closing the dialog.
+Assignment enables the selected pad, sets its action to Play Sound, and adds a short label when the pad has no label. Existing Play Sound volume, voice-route, loop, repeat, playing-color, and page-change values are preserved.
+
+The profile saves immediately. Clicking the on-screen pad still only selects it; use **Test Action** or the physical Launchpad to play it intentionally.
+
+## Licensing And Credits
+
+The online browser is a search and download tool, not a license guarantee.
+
+- CC0 is the simplest starting point.
+- Attribution licenses require creator credit.
+- NonCommercial terms may not fit monetized streams or videos.
+- Familiar music, shows, games, voices, and catchphrases can involve rights beyond an uploader's selected license.
+
+Use **Source** to inspect the original page and **Copy Credit** to copy the selected credit line. A combined index is kept at:
+
+```text
+%APPDATA%\OpenLaunchDeck\imported_assets\sound_library\ATTRIBUTION.txt
+```
+
+The original starter effects are distributed with OpenLaunchDeck under the project license. No copyrighted media clips or third-party audio drivers are included.
+
+## Responsiveness And Storage
+
+- Search and downloads use Qt's asynchronous network APIs.
 - Preview audio streams through QtMultimedia.
-- Downloads stream to a temporary `.part` file instead of loading the whole clip into memory.
+- Downloads stream into bounded `.part` files instead of Python memory.
 - Files larger than 25 MB are rejected.
-- Partial files are removed after cancellation or failure.
-- Only HTTPS Freesound source and preview URLs are accepted.
-
-No sounds or third-party audio drivers are bundled with OpenLaunchDeck.
+- Canceled and failed downloads remove partial files.
+- Only trusted HTTPS Freesound URLs are accepted.
+- Card layout reflows after resize without polling in the background.

@@ -183,31 +183,9 @@ Waits from 0 through 60,000 milliseconds. Delay is primarily intended for Multi-
 
 **Fields:** Steps, Continue On Error
 
-Runs action objects in order. Example:
+Runs actions in order. Use **Add Step** to choose an action through the normal guided editor. Double-click a step or use **Edit** to change it. **Move Up**, **Move Down**, and **Remove** organize the sequence without editing profile JSON.
 
-```json
-[
-  {
-    "type": "hotkey",
-    "config": {
-      "hotkey": "ctrl+shift+s"
-    }
-  },
-  {
-    "type": "delay",
-    "config": {
-      "milliseconds": 500
-    }
-  },
-  {
-    "type": "play_sound",
-    "config": {
-      "file_path": "C:\\Sounds\\done.wav",
-      "volume": 60
-    }
-  }
-]
-```
+A common sequence is Hotkey, Delay, then Play Sound. Add a Delay step when the receiving application needs time before the next action.
 
 When **Continue On Error** is off, the sequence stops at the first failed step. Nested multi-actions are limited to prevent runaway recursion.
 

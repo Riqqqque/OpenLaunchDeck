@@ -39,7 +39,9 @@ The app works without hardware in **Simulation mode**. Clicking a grid pad selec
 - MIDI auto-detection, manual connection, live debug, and calibration
 - Hotkeys, media keys, typed text, websites, apps, files, folders, and commands
 - OBS replay clips, screenshots, recording, scenes, sources, and mute controls
-- Sound Library search, preview, safe AppData downloads, local imports, and pad assignment
+- Account-free starter sounds, local imports, optional public sound search, previews, and one-click pad assignment
+- Seven complete themes and responsive wide, compact, focus, and single-pane layouts
+- Searchable guided action setup and visual Multi-Action sequences
 - Local soundboard playback and optional voice-route playback
 - HTTP requests, key-based SSH commands, delays, and action sequences
 - Dangerous-action double-press confirmation

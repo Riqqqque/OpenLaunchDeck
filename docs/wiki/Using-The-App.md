@@ -36,7 +36,7 @@ Every button has:
 
 Disabled buttons stay visible in the editor but do not run. Dangerous buttons need a second press within five seconds.
 
-The editor shows a short explanation for the selected action and hides fields that do not apply to the current operation. The Hotkey action uses modifier controls plus a searchable key drop-down. Switch Page lists pages in the current profile. Names that come from an external system, such as an OBS scene or source, remain text fields because they must match that external application exactly.
+The action picker is searchable and labels actions by purpose, such as Essentials, Windows, Media, Soundboard, Streaming, and Network. The editor shows field guidance and hides settings that do not apply to the current operation. The Hotkey action uses modifier controls plus a searchable key drop-down. Switch Page lists pages in the current profile. Multi-Action uses a step list with Add, Edit, Move, and Remove controls. Names that come from an external system, such as an OBS scene or source, remain text fields because they must match that external application exactly.
 
 ### Editor Commands
 
@@ -49,13 +49,27 @@ The editor shows a short explanation for the selected action and hides fields th
 
 Each pad can show its ID, label, action name, configured color, disabled state, dangerous armed state, and sound-playing state.
 
-Choose a grid density in Settings:
+Pads remain square and resize as one grid. Choose the largest grid density in Settings:
 
 - **Compact** for smaller windows
 - **Comfortable** for normal editing
 - **Large** for a bigger second-monitor view
 
 Use **View > Focus Launchpad Grid** to hide the editor and sidebar and give the grid more room. This is an in-app focus view, not exclusive monitor fullscreen.
+
+At narrow window sizes, OpenLaunchDeck shows one workspace at a time instead of squeezing the grid beside the editor. Select a pad, click **Edit A1**, make the change in the full-width editor, then use **Back to Grid**.
+
+### Themes
+
+Open **Settings > Settings > Appearance** to choose:
+
+- **Midnight** for balanced charcoal and teal
+- **OLED Black** for true-black displays
+- **Galaxy OLED** for black, violet, and cyan
+- **Arctic White** for a bright workspace
+- **Graphite** for neutral gray and lime
+- **Broadcast** for studio charcoal and signal red
+- **High Contrast** for maximum control separation
 
 ## Profiles And Pages
 

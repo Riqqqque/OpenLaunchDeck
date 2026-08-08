@@ -6,15 +6,14 @@ from .base import ActionResult, BaseAction
 class MultiAction(BaseAction):
     type_name = "multi_action"
     display_name = "Multi-Action"
-    description = "Run an advanced JSON list of actions in sequence. Add Delay steps when timing between actions matters."
+    description = "Run several actions in order. Add Delay steps when timing between actions matters."
     config_fields = [
         {
             "name": "steps",
             "label": "Action Steps",
-            "type": "json",
+            "type": "action_list",
             "default": [{"type": "noop", "config": {}}],
-            "height": 150,
-            "help": "JSON list of action objects. Each item needs a type and config object.",
+            "help": "Add, edit, remove, and reorder each step. Every step uses the same guided action editor.",
         },
         {"name": "continue_on_error", "label": "Continue After A Failed Step", "type": "bool", "default": False},
     ]
@@ -23,7 +22,7 @@ class MultiAction(BaseAction):
     def validate(self, config: dict) -> list[str]:
         steps = config.get("steps")
         if not isinstance(steps, list):
-            return ["Multi-action steps must be a JSON list."]
+            return ["Multi-action steps must be a list."]
         if len(steps) > 100:
             return ["Multi-action is limited to 100 steps."]
         for index, step in enumerate(steps, start=1):

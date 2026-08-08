@@ -10,7 +10,7 @@ def test_corrupt_settings_are_backed_up_and_replaced(tmp_path, monkeypatch):
 
     service = settings_service.SettingsService()
 
-    assert service.settings.theme == "dark"
+    assert service.settings.theme == "midnight"
     assert "defaults were loaded" in service.load_warning
     assert len(list(backups_path.glob("settings-corrupt-*.json"))) == 1
     assert "broken" not in settings_path.read_text(encoding="utf-8")

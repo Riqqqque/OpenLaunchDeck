@@ -36,7 +36,7 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 | Area | Examples |
 | --- | --- |
 | OBS | Save replay-buffer clips, take screenshots, switch scenes, show or hide sources, mute inputs, start or stop recording |
-| Soundboard | Browse, preview, download, import, and assign sounds; loop or overlap clips, control volume, and stop one page or every sound |
+| Soundboard | Use included original effects, import local files, or search public sounds; preview and assign in one click, then control looping, overlap, volume, and stopping |
 | Voice chat | Send selected clips to a configured Windows voice route while monitoring them locally |
 | Hotkeys | Build shortcuts with modifier controls and a searchable key list covering navigation, media keys, and `F1` through `F24` |
 | Windows | Open websites, apps, folders, files, commands, PowerShell, and typed text |
@@ -46,11 +46,13 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 ## Highlights
 
 - Native Windows desktop application with a system tray
-- Editable 8x8 grid that mirrors the Launchpad layout
+- Responsive 8x8 grid with square pads that stays readable in wide, compact, and single-pane windows
 - Multiple profiles and pages with autosave and backups
 - MIDI auto-detection, manual port selection, live debug logs, and pad calibration
 - Batched RGB lighting with press, success, error, armed, and playing feedback
-- Native Sound Library with popular/new search, preview, license details, safe AppData downloads, and one-click pad assignment
+- Card-based Sound Library with an account-free starter collection, local imports, optional popular/new search, previews, license details, and one-click pad assignment
+- Seven complete themes: Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, and High Contrast
+- Searchable action picker, visible field guidance, color swatches, and a visual Multi-Action sequence editor
 - Background action execution so commands and network requests do not block the interface
 - Checksum-verified update downloads with user confirmation before installation
 - User data stored outside the install folder in `%APPDATA%\OpenLaunchDeck`
@@ -79,6 +81,14 @@ The Launchpad is optional for editing and testing. Tests and Simulation mode do 
 Clicking a grid pad in the app selects it for editing. It does **not** run the assigned action. Actions run from the physical Launchpad or from **Test Action**.
 
 Continue with the [beginner Quick Start](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Quick-Start).
+
+## Make It Yours
+
+Open **Settings > Settings > Appearance** to choose a theme and pad density. The grid automatically keeps every pad square; at narrow widths, **Edit A1** opens the selected pad editor as a full-width view and **Back to Grid** returns to the deck.
+
+Open **Soundboard > Browse Sound Library** for immediately usable original starter effects. Every sound card has **Preview** and **Use** controls. **My Sounds** accepts local WAV, MP3, and OGG files, while **Online Search** can be connected later when you want public popular or recent sounds.
+
+![OpenLaunchDeck Sound Library](docs/screenshots/sound-library.png)
 
 ## Guides
 
@@ -143,7 +153,7 @@ The build creates versioned packages and SHA256 files under `dist`. See [CONTRIB
 - Launchpad mappings and lighting should be verified in MIDI Debug for the device mode in use.
 - The extra Launchpad side and navigation buttons are not assigned to OpenLaunchDeck page changes by default. Use grid pads with the Switch Page action.
 - Voice-chat routing needs a Windows audio route selected in both OpenLaunchDeck and the target chat application. No audio driver is bundled.
-- Online Sound Library search requires a personal Freesound API key. Sound licenses and the provider's API terms still apply; OpenLaunchDeck does not certify third-party uploads.
+- Optional online Sound Library search requires a personal Freesound API key. Included starter sounds and local imports do not. Sound licenses and the provider's API terms still apply to public results; OpenLaunchDeck does not certify third-party uploads.
 - OBS actions require OBS WebSocket. Passwords are masked in the editor but stored in local profile JSON, so exported profiles containing passwords are sensitive.
 - SSH uses key-based authentication and rejects unknown host keys.
 - The Windows installer is currently unsigned, so Windows may show a publisher warning.

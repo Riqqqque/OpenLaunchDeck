@@ -1,0 +1,424 @@
+QMainWindow, QDialog {
+  background: @BACKGROUND@;
+  color: @TEXT@;
+  font-size: 10pt;
+}
+
+QWidget {
+  color: @TEXT@;
+  font-size: 10pt;
+}
+
+QWidget:disabled {
+  color: @PLACEHOLDER@;
+}
+
+QLabel {
+  background: transparent;
+}
+
+QWidget#MainSurface {
+  background: @BACKGROUND@;
+}
+
+QFrame#AppHeader, QFrame#SettingsSection, QFrame#SoundCard, QFrame#LibraryHero {
+  background: @SURFACE@;
+  border: 1px solid @BORDER@;
+  border-radius: 7px;
+}
+
+QFrame#SoundCard[selected="true"] {
+  border: 2px solid @ACCENT@;
+}
+
+QWidget#HeaderBrand, QWidget#HeaderMeta, QWidget#HeaderContext, QFrame#HeaderActions {
+  background: transparent;
+  border: none;
+}
+
+QWidget#SidebarPanel, QFrame#DeckPanel, QWidget#InspectorPanel {
+  background: @SURFACE@;
+  border: 1px solid @BORDER@;
+  border-radius: 7px;
+}
+
+QScrollArea, QScrollArea#InspectorScroll, QScrollArea#SidebarScroll, QScrollArea#GridScroll,
+QScrollArea#SoundCardScroll, QScrollArea#SettingsScroll {
+  background: transparent;
+  border: none;
+}
+
+QScrollArea#InspectorScroll > QWidget > QWidget {
+  background: @SURFACE@;
+}
+
+QScrollArea#SidebarScroll > QWidget > QWidget, QScrollArea#SoundCardScroll > QWidget > QWidget,
+QScrollArea#SettingsScroll > QWidget > QWidget {
+  background: transparent;
+}
+
+QSplitter#WorkspaceSplitter::handle {
+  background: transparent;
+  width: 8px;
+}
+
+QSplitter#WorkspaceSplitter::handle:hover {
+  background: @BORDER_STRONG@;
+  border-radius: 4px;
+}
+
+QLabel#HeaderTitle {
+  color: @TEXT_STRONG@;
+  font-size: 14pt;
+  font-weight: 700;
+}
+
+QLabel#HeaderSubtitle, QLabel#PanelHint, QLabel#ThemeDescription, QLabel#SettingsDescription,
+QLabel#SoundMeta, QLabel#SoundLicense, QLabel#ActionDescription, QLabel#MutedText {
+  color: @MUTED@;
+  font-size: 9pt;
+}
+
+QLabel#HeaderActiveDeck {
+  color: @TEXT@;
+  font-size: 9pt;
+  font-weight: 700;
+}
+
+QLabel#HeaderModeChip, QLabel#LibraryTarget, QLabel#ProviderStatus, QLabel#CategoryChip {
+  background: @CHIP@;
+  border: 1px solid @BORDER_STRONG@;
+  border-radius: 6px;
+  color: @TEXT@;
+  font-size: 8pt;
+  font-weight: 700;
+  padding: 4px 9px;
+}
+
+QLabel#HeaderModeChip[state="simulation"] {
+  border-color: @WARNING@;
+  color: @WARNING@;
+}
+
+QLabel#HeaderModeChip[state="connected"], QLabel#ProviderStatus[connected="true"] {
+  border-color: @SUCCESS@;
+  color: @SUCCESS@;
+}
+
+QLabel#PanelTitle, QLabel#LibraryTitle, QLabel#SettingsTitle {
+  color: @TEXT_STRONG@;
+  font-size: 13pt;
+  font-weight: 700;
+}
+
+QLabel#SoundTitle {
+  color: @TEXT_STRONG@;
+  font-size: 11pt;
+  font-weight: 700;
+}
+
+QLabel#SectionTitle {
+  color: @ACCENT@;
+  font-size: 9pt;
+  font-weight: 700;
+  margin-top: 8px;
+}
+
+QLabel#FieldLabel {
+  color: @TEXT@;
+  font-size: 9pt;
+  font-weight: 600;
+}
+
+QLabel#HotkeyPreview {
+  color: @ACCENT@;
+  font-size: 9pt;
+  font-weight: 700;
+  padding: 1px 2px 0 2px;
+}
+
+QMenuBar {
+  background: @BACKGROUND@;
+  color: @TEXT@;
+  border-bottom: 1px solid @BORDER@;
+  padding: 3px 8px;
+}
+
+QMenuBar::item {
+  background: transparent;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+QMenuBar::item:selected, QMenu::item:selected {
+  background: @HOVER@;
+}
+
+QMenu {
+  background: @MENU@;
+  color: @TEXT@;
+  border: 1px solid @BORDER_STRONG@;
+  padding: 6px;
+}
+
+QMenu::item {
+  border-radius: 5px;
+  padding: 7px 24px;
+}
+
+QMenu::separator {
+  background: @BORDER@;
+  height: 1px;
+  margin: 5px 8px;
+}
+
+QLineEdit, QPlainTextEdit, QTextEdit, QComboBox, QSpinBox, QDoubleSpinBox,
+QListWidget, QTableWidget {
+  background: @INPUT@;
+  color: @TEXT@;
+  border: 1px solid @BORDER@;
+  border-radius: 6px;
+  min-height: 20px;
+  padding: 7px 9px;
+  selection-background-color: @ACCENT@;
+  selection-color: @ACCENT_TEXT@;
+}
+
+QComboBox#HeaderContextCombo {
+  min-height: 18px;
+  padding: 5px 28px 5px 9px;
+}
+
+QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus,
+QSpinBox:focus, QDoubleSpinBox:focus, QListWidget:focus, QTableWidget:focus {
+  border: 1px solid @ACCENT@;
+}
+
+QPlainTextEdit[invalid="true"], QLineEdit[invalid="true"] {
+  border: 1px solid @ERROR@;
+}
+
+QComboBox::drop-down {
+  border: none;
+  width: 24px;
+}
+
+QComboBox QAbstractItemView {
+  background: @MENU@;
+  color: @TEXT@;
+  border: 1px solid @BORDER_STRONG@;
+  outline: none;
+  selection-background-color: @HOVER@;
+  selection-color: @TEXT_STRONG@;
+  padding: 4px;
+}
+
+QListWidget#ThemeList::item {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  margin: 2px;
+  padding: 9px;
+}
+
+QListWidget#ThemeList::item:hover {
+  background: @HOVER@;
+}
+
+QListWidget#ThemeList::item:selected {
+  background: @CHIP@;
+  border-color: @ACCENT@;
+  color: @TEXT_STRONG@;
+}
+
+QFrame#LibraryDetails {
+  background: @PANEL@;
+  border: 1px solid @BORDER@;
+  border-radius: 6px;
+}
+
+QTabWidget::pane {
+  background: @SURFACE@;
+  border: 1px solid @BORDER@;
+  border-radius: 6px;
+  top: -1px;
+}
+
+QTabBar::tab {
+  background: @PANEL@;
+  border: 1px solid @BORDER@;
+  color: @MUTED@;
+  min-width: 92px;
+  padding: 9px 16px;
+}
+
+QTabBar::tab:first {
+  border-top-left-radius: 6px;
+}
+
+QTabBar::tab:last {
+  border-top-right-radius: 6px;
+}
+
+QTabBar::tab:selected {
+  background: @SURFACE@;
+  color: @TEXT_STRONG@;
+  border-bottom-color: @SURFACE@;
+}
+
+QTableWidget {
+  gridline-color: @BORDER@;
+  alternate-background-color: @PANEL@;
+}
+
+QHeaderView::section {
+  background: @PANEL@;
+  border: none;
+  border-bottom: 1px solid @BORDER@;
+  color: @TEXT@;
+  font-weight: 700;
+  padding: 7px 8px;
+}
+
+QPushButton {
+  background: @PANEL@;
+  border: 1px solid @BORDER_STRONG@;
+  border-radius: 6px;
+  color: @TEXT@;
+  font-weight: 600;
+  min-height: 20px;
+  padding: 7px 12px;
+}
+
+QPushButton:hover {
+  background: @HOVER@;
+  border-color: @ACCENT@;
+}
+
+QPushButton:pressed {
+  background: @PRESSED@;
+}
+
+QPushButton:disabled {
+  background: @SURFACE@;
+  border-color: @BORDER@;
+  color: @PLACEHOLDER@;
+}
+
+QPushButton#PrimaryButton, QPushButton#HeaderPrimaryButton {
+  background: @ACCENT@;
+  border-color: @ACCENT@;
+  color: @ACCENT_TEXT@;
+  font-weight: 700;
+}
+
+QPushButton#PrimaryButton:hover, QPushButton#HeaderPrimaryButton:hover {
+  background: @ACCENT_HOVER@;
+  border-color: @ACCENT_HOVER@;
+}
+
+QPushButton#SecondaryButton, QPushButton#HeaderButton, QPushButton#CategoryButton {
+  background: @PANEL@;
+  border-color: @BORDER@;
+  color: @TEXT@;
+}
+
+QPushButton#HeaderButton, QPushButton#HeaderPrimaryButton {
+  min-height: 18px;
+  padding: 6px 9px;
+}
+
+QPushButton#CategoryButton {
+  border-radius: 6px;
+  min-height: 18px;
+  padding: 5px 10px;
+}
+
+QPushButton#CategoryButton:checked {
+  background: @ACCENT@;
+  border-color: @ACCENT@;
+  color: @ACCENT_TEXT@;
+}
+
+QCheckBox {
+  spacing: 8px;
+}
+
+QCheckBox::indicator {
+  background: @INPUT@;
+  border: 1px solid @BORDER_STRONG@;
+  border-radius: 4px;
+  width: 17px;
+  height: 17px;
+}
+
+QCheckBox::indicator:checked {
+  background: @ACCENT@;
+  border-color: @ACCENT_HOVER@;
+}
+
+QSlider::groove:horizontal {
+  background: @BORDER@;
+  border-radius: 3px;
+  height: 6px;
+}
+
+QSlider::sub-page:horizontal {
+  background: @ACCENT@;
+  border-radius: 3px;
+}
+
+QSlider::handle:horizontal {
+  background: @TEXT_STRONG@;
+  border: 2px solid @ACCENT@;
+  border-radius: 7px;
+  margin: -5px 0;
+  width: 14px;
+}
+
+QStatusBar {
+  background: @BACKGROUND@;
+  color: @MUTED@;
+  border-top: 1px solid @BORDER@;
+}
+
+QStatusBar QLabel {
+  background: transparent;
+  color: @MUTED@;
+  padding: 0 6px;
+}
+
+QScrollBar:vertical, QScrollBar:horizontal {
+  background: transparent;
+  border: none;
+  margin: 0;
+}
+
+QScrollBar:vertical { width: 10px; }
+QScrollBar:horizontal { height: 10px; }
+
+QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
+  background: @SCROLL@;
+  border-radius: 5px;
+  min-height: 24px;
+  min-width: 24px;
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+  background: @ACCENT@;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+  width: 0;
+  height: 0;
+}
+
+QScrollBar::add-page, QScrollBar::sub-page {
+  background: transparent;
+}
+
+QToolTip {
+  background: @MENU@;
+  color: @TEXT_STRONG@;
+  border: 1px solid @BORDER_STRONG@;
+  padding: 5px 7px;
+}

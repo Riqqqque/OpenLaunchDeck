@@ -1,0 +1,124 @@
+{
+  "sounds": [
+    {
+      "id": "alert_chime",
+      "name": "Alert Chime",
+      "file": "alert_chime.wav",
+      "category": "Alerts",
+      "tags": [
+        "alert",
+        "stream",
+        "notification"
+      ],
+      "description": "Original alerts sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "notification_pop",
+      "name": "Notification Pop",
+      "file": "notification_pop.wav",
+      "category": "Alerts",
+      "tags": [
+        "notification",
+        "pop",
+        "short"
+      ],
+      "description": "Original alerts sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "success",
+      "name": "Success",
+      "file": "success.wav",
+      "category": "Utility",
+      "tags": [
+        "success",
+        "confirm",
+        "positive"
+      ],
+      "description": "Original utility sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "error",
+      "name": "Error",
+      "file": "error.wav",
+      "category": "Utility",
+      "tags": [
+        "error",
+        "warning",
+        "negative"
+      ],
+      "description": "Original utility sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "censor_beep",
+      "name": "Censor Beep",
+      "file": "censor_beep.wav",
+      "category": "Reactions",
+      "tags": [
+        "censor",
+        "beep",
+        "reaction"
+      ],
+      "description": "Original reactions sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "transition_whoosh",
+      "name": "Transition Whoosh",
+      "file": "transition_whoosh.wav",
+      "category": "Transitions",
+      "tags": [
+        "whoosh",
+        "transition",
+        "sweep"
+      ],
+      "description": "Original transitions sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "dramatic_hit",
+      "name": "Dramatic Hit",
+      "file": "dramatic_hit.wav",
+      "category": "Reactions",
+      "tags": [
+        "impact",
+        "dramatic",
+        "reaction"
+      ],
+      "description": "Original reactions sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "level_up",
+      "name": "Level Up",
+      "file": "level_up.wav",
+      "category": "Gaming",
+      "tags": [
+        "game",
+        "level",
+        "achievement"
+      ],
+      "description": "Original gaming sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "camera_shutter",
+      "name": "Camera Shutter",
+      "file": "camera_shutter.wav",
+      "category": "Stream Tools",
+      "tags": [
+        "camera",
+        "photo",
+        "screenshot"
+      ],
+      "description": "Original stream tools sound included with OpenLaunchDeck."
+    },
+    {
+      "id": "button_click",
+      "name": "Button Click",
+      "file": "button_click.wav",
+      "category": "Utility",
+      "tags": [
+        "click",
+        "button",
+        "interface"
+      ],
+      "description": "Original utility sound included with OpenLaunchDeck."
+    }
+  ]
+}

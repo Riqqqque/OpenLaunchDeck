@@ -43,6 +43,7 @@ def test_sound_library_assigns_an_existing_download(tmp_path, monkeypatch):
     downloaded = dialog.service.downloaded_path(item)
     downloaded.write_bytes(b"ID3test")
     dialog._online_items = [item]
+    dialog.tabs.setCurrentWidget(dialog.online_page)
     dialog._populate_online_table()
     assignments = []
     dialog.assign_requested.connect(lambda path, name: assignments.append((path, name)))
@@ -64,6 +65,7 @@ def test_sound_library_requires_a_selected_pad_for_assignment(tmp_path, monkeypa
     downloaded = dialog.service.downloaded_path(item)
     downloaded.write_bytes(b"ID3test")
     dialog._online_items = [item]
+    dialog.tabs.setCurrentWidget(dialog.online_page)
     dialog._populate_online_table()
     assignments = []
     dialog.assign_requested.connect(lambda path, name: assignments.append((path, name)))
@@ -72,6 +74,37 @@ def test_sound_library_requires_a_selected_pad_for_assignment(tmp_path, monkeypa
 
     assert assignments == []
     assert "Select a Launchpad pad" in dialog.status_label.text()
+    dialog.close()
+    dialog.deleteLater()
+    app.processEvents()
+
+
+def test_sound_library_cards_keep_controls_inside_their_frames(tmp_path, monkeypatch):
+    app = QApplication.instance() or QApplication([])
+    monkeypatch.setattr(library_module, "SOUND_LIBRARY_DIR", tmp_path)
+    dialog = SoundLibraryDialog(SettingsServiceDouble(), selected_button_provider=lambda: "A1")
+    dialog.resize(720, 540)
+    dialog.show()
+    app.processEvents()
+
+    cards = dialog._cards["starter"]
+    assert cards
+    for card in cards:
+        card.layout().activate()
+        assert card.height() == 206
+        assert card.preview_button.geometry().bottom() < card.height()
+        assert card.use_button.geometry().bottom() < card.height()
+
+    columns = dialog._gallery_columns(dialog.starter_scroll)
+    rows = (len(cards) + columns - 1) // columns
+    margins = dialog.starter_grid.contentsMargins()
+    expected_height = rows * 206 + max(0, rows - 1) * dialog.starter_grid.verticalSpacing()
+    expected_height += margins.top() + margins.bottom()
+    assert dialog.starter_cards.minimumHeight() == expected_height
+    for index in range(len(cards)):
+        row, column, row_span, column_span = dialog.starter_grid.getItemPosition(index)
+        assert (row, column, row_span, column_span) == (index // columns, index % columns, 1, 1)
+
     dialog.close()
     dialog.deleteLater()
     app.processEvents()

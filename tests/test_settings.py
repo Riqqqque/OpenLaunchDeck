@@ -36,7 +36,7 @@ def test_settings_recover_from_wrong_types():
         }
     )
 
-    assert settings.theme == "dark"
+    assert settings.theme == "midnight"
     assert settings.auto_connect is False
     assert settings.minimize_to_tray is True
     assert settings.soundboard_global_volume == 100
@@ -47,3 +47,9 @@ def test_settings_preserve_protected_sound_library_key():
     settings = Settings.from_dict({"sound_library_api_key_protected": "dpapi:protected-value"})
 
     assert settings.sound_library_api_key_protected == "dpapi:protected-value"
+
+
+def test_settings_migrate_legacy_theme_names_and_keep_new_themes():
+    assert Settings.from_dict({"theme": "dark"}).theme == "midnight"
+    assert Settings.from_dict({"theme": "light"}).theme == "arctic_white"
+    assert Settings.from_dict({"theme": "galaxy_oled"}).theme == "galaxy_oled"

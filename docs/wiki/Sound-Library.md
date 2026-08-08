@@ -1,93 +1,93 @@
 # Sound Library
 
-The Sound Library lets you find, preview, download, import, and assign short sounds without leaving OpenLaunchDeck.
+The Sound Library lets you preview a sound and put it on the selected Launchpad pad without managing paths by hand.
 
-Open it in either place:
+Open it from either place:
 
 - **Soundboard > Browse Sound Library**
 - Select a pad, choose **Play Sound**, then click **Library** beside **Sound File**
 
-## First-Time Setup
+The top-right label shows the current target, such as **Selected pad: A1**. If it says `none`, close the library, select a grid pad, and reopen it.
 
-Online search uses Freesound and your own API key.
+## Fastest First Sound
 
-1. Open the Sound Library.
-2. Click **Get Key**.
-3. Sign in to Freesound and create or copy an API key.
-4. Paste the key into OpenLaunchDeck.
-5. Click **Save Key**.
+Use the first tab when you just want something that works:
 
-The key is encrypted for your current Windows account. It is not stored in profiles, placed in request URLs, or written to logs. Use **Forget** to remove it.
+1. Select a pad in the main grid.
+2. Open the Sound Library.
+3. Stay on **Starter Sounds**.
+4. Click **Preview** on an alert, reaction, transition, gaming, camera, or utility card.
+5. Click **Use A1** on the sound you want.
+6. Close the library and click **Test Action**.
 
-You do not need an API key to import and organize your own local files in **My Library**.
+Starter Sounds are original lightweight WAV effects included with OpenLaunchDeck. They need no account or internet connection.
 
-## Find A Sound
+## Import A Sound You Already Have
 
-1. Choose a category such as **Reaction / meme**, **Gaming**, **Alerts**, or **Transitions**.
-2. Change the search text when you want something more specific.
-3. Choose a sort:
-   - **Most downloaded** for popular results
-   - **Newest** for recent uploads
-   - **Top rated** for highly rated results
-   - **Best match** for the closest text match
-4. Leave **License** on **CC0 only** for the simplest starting point.
-5. Pick a maximum clip length.
-6. Click **Search**.
-7. Select a row and click **Preview**.
-
-Double-clicking a result also previews it. Use **Stop** to end the preview.
-
-## Download And Assign
-
-To download first:
-
-1. Select a result.
-2. Click **Download**.
-3. Open **My Library** to find it later.
-
-To put it directly on a pad:
-
-1. Select the target pad in the main window.
-2. Select the sound in the library.
-3. Click **Download & Assign**.
-
-For an existing item in **My Library**, use **Assign to Pad**. The profile is saved immediately. Existing Play Sound settings on that pad are preserved.
-
-Clicking an on-screen grid pad only selects it. Use **Test** or the physical Launchpad pad when you intentionally want to play the sound.
-
-## Import Your Own Files
-
-1. Open **My Library**.
+1. Open **My Sounds**.
 2. Click **Import Local Sound**.
 3. Choose a `.wav`, `.mp3`, or `.ogg` file up to 25 MB.
-4. Select the imported sound and click **Assign to Pad**.
+4. Click **Preview** on the imported card.
+5. Click **Use A1**.
 
-OpenLaunchDeck copies the file into its AppData library. Importing the same file again reuses the existing copy.
+OpenLaunchDeck copies the file into AppData and leaves the original untouched. Importing the same file again reuses the managed copy.
+
+## Search Public Sounds
+
+Online Search is optional and uses Freesound with your own API key.
+
+### Connect Once
+
+1. Open **Online Search**.
+2. Click **Connect Provider**.
+3. Click **Get a Key**.
+4. Sign in to Freesound and create or copy an API key.
+5. Paste it into OpenLaunchDeck and click **Save Key**.
+
+The key is encrypted for your Windows account. It is not stored in profiles, placed in request URLs, or written to logs. Use **Manage Provider > Forget** to remove it.
+
+### Find And Use A Result
+
+1. Choose a category or type a search.
+2. Choose **Popular**, **Newest**, **Top rated**, or **Best match**.
+3. Keep **CC0 only** selected for the simplest license starting point.
+4. Choose a maximum length.
+5. Click **Search**.
+6. Preview cards until you find the right sound.
+7. Click **Get + Use**.
+
+The download streams into AppData, its source and license are recorded, and the pad is assigned after the download passes validation.
+
+## What Assignment Changes
+
+The selected pad becomes enabled and uses the Play Sound action. A short label is added only when the pad was unlabeled. Existing Play Sound volume, voice routing, loop, repeat, playing color, and page-change settings are preserved.
+
+Clicking an on-screen pad only selects it. It never plays the sound. Use **Test Action** or the physical Launchpad when you are ready.
 
 ## Licenses And Credits
 
-Every online result shows its creator and license. The default search shows CC0 sounds, but you are responsible for checking whether a sound is appropriate for your use.
+Every public result shows its creator and license. OpenLaunchDeck helps retain that information, but it cannot guarantee that an upload is legally usable in every stream or video.
 
-- CC0 is the simplest option.
-- Attribution licenses require credit.
-- NonCommercial licenses may not fit monetized streams or videos.
-- Familiar music, show clips, game clips, voices, or catchphrases can involve rights beyond the upload license.
+- CC0 is the simplest starting point.
+- Attribution licenses require creator credit.
+- NonCommercial terms may not fit monetized content.
+- Music, shows, games, celebrity voices, and familiar catchphrases may involve rights beyond the selected upload license.
 
-Use **View Source** to inspect the original page and **Copy Credit** to copy a credit line. Open **Provider Terms** before using the online API in a commercial workflow.
-
-OpenLaunchDeck keeps a combined credit file at:
+Use **Source** to inspect the original page and **Copy Credit** to copy a credit line. The combined credit file is:
 
 ```text
 %APPDATA%\OpenLaunchDeck\imported_assets\sound_library\ATTRIBUTION.txt
 ```
 
-## Safety And Performance
+## Storage And Performance
 
+- Managed audio and metadata stay in `%APPDATA%\OpenLaunchDeck\imported_assets\sound_library`.
 - Search and downloads run asynchronously.
-- Preview audio streams instead of loading the full file into memory.
-- Downloads use temporary files and have a 25 MB limit.
-- Canceled and failed downloads remove partial files.
+- Previews stream through QtMultimedia.
+- Downloads have timeouts and a 25 MB limit.
+- Partial files are removed after cancellation or failure.
 - Results marked explicit are hidden.
-- No audio clips or audio drivers are bundled.
+- The included starter collection is about 0.3 MB.
+- No copyrighted media clips or third-party audio drivers are included.
 
-For playback volume, looping, repeated presses, output devices, and voice chat, continue to [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md).
+For volume, looping, output devices, microphone mixing, Discord, and in-game voice chat, continue to [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md).

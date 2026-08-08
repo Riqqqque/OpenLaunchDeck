@@ -32,6 +32,7 @@ PACKAGE_DIR = Path(__file__).resolve().parent
 RESOURCES_DIR = PACKAGE_DIR / "resources"
 ICONS_DIR = RESOURCES_DIR / "icons"
 STARTER_PROFILES_DIR = RESOURCES_DIR / "starter_profiles"
+STARTER_SOUNDS_DIR = RESOURCES_DIR / "starter_sounds"
 THEMES_DIR = RESOURCES_DIR / "themes"
 
 

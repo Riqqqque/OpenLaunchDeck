@@ -165,6 +165,32 @@ def test_api_key_is_protected_and_never_saved_as_plain_text(tmp_path, monkeypatc
     assert service.api_key() == ""
 
 
+def test_starter_collection_is_copied_once_and_readable(tmp_path, monkeypatch):
+    library = tmp_path / "library"
+    starters = tmp_path / "starters"
+    starters.mkdir()
+    (starters / "click.wav").write_bytes(
+        b"RIFF" + (36).to_bytes(4, "little") + b"WAVEfmt " + (16).to_bytes(4, "little")
+        + (1).to_bytes(2, "little") + (1).to_bytes(2, "little") + (8000).to_bytes(4, "little")
+        + (16000).to_bytes(4, "little") + (2).to_bytes(2, "little") + (16).to_bytes(2, "little")
+        + b"data" + (0).to_bytes(4, "little")
+    )
+    (starters / "manifest.json").write_text(
+        json.dumps({"sounds": [{"id": "click", "name": "Click", "file": "click.wav", "category": "Utility"}]}),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(library_module, "SOUND_LIBRARY_DIR", library)
+    monkeypatch.setattr(library_module, "STARTER_SOUNDS_DIR", starters)
+    service = SoundLibraryService()
+
+    first = service.ensure_starter_collection()
+    second = service.ensure_starter_collection()
+
+    assert [item.name for item in first] == ["Click"]
+    assert [item.name for item in second] == ["Click"]
+    assert len(list(library.glob("starter-*.wav"))) == 1
+
+
 @pytest.mark.skipif(sys.platform != "win32", reason="Windows credential encryption")
 def test_windows_secret_storage_round_trip():
     protected = protect_secret("sound-library-test-key")

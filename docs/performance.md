@@ -22,6 +22,7 @@ Key rules:
 - Lighting refreshes skip redundant pad updates when the page state has not changed.
 - Pad flashes and blinking states share one waiting scheduler instead of creating timer threads for each pad or cycle.
 - Grid cells skip text and stylesheet updates when their visible state has not changed.
+- Grid resizing calculates one square pad size per breakpoint and updates geometry only after the resize settles.
 - File logging is queued so action dispatch and the GUI do not wait for disk writes.
 - Profile autosaves are debounced so editing several fields produces one atomic JSON write.
 - Multi-line action edits are debounced so typing does not trigger page lighting refreshes on every character.
@@ -79,7 +80,7 @@ Manual and startup update checks use worker threads so startup and the main wind
 
 Sound playback is started through QtMultimedia and does not load entire sound files into Python memory. The audio engine performs lightweight file checks and caches metadata such as name, extension, size, and modified time when a sound is played.
 
-The Sound Library uses Qt's asynchronous network manager for search and downloads. Preview audio streams through QtMultimedia, and downloads stream into a bounded temporary file instead of being buffered in Python memory. The provider credential is decrypted once per dialog service and cached only for that session.
+The Sound Library uses Qt's asynchronous network manager for search and downloads. Preview audio streams through QtMultimedia, and downloads stream into a bounded temporary file instead of being buffered in Python memory. Its card grid reflows through one short single-shot resize timer while the dialog is visible. The included starter collection is about 0.3 MB and is copied only when the library is first opened. The provider credential is decrypted once per dialog service and cached only for that session.
 
 Sound action start latency is logged at debug level, or at info level when performance logging is enabled. The Soundboard panel refreshes the current playback list on a coarse timer only while the panel is visible, and audio state changes refresh it immediately.
 

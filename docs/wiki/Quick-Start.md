@@ -104,7 +104,7 @@ Good next buttons are:
 
 Use [Button Recipes](Button-Recipes.md) for exact field values and [Actions Reference](Actions-Reference.md) for every available action.
 
-For sound effects, open [Sound Library](Sound-Library.md) to search, preview, import, and assign clips from inside the app.
+For sound effects, open [Sound Library](Sound-Library.md), preview an included Starter Sound, and click **Use**. No account is needed. Local imports and optional public sound search are available in the other tabs.
 
 ## 8. Make It Start With Windows
 

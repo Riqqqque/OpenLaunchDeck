@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.61
+
+- Rebuilt the main workspace around square pads and wide, compact, focus, and single-pane layouts so the grid and editor stay usable at every supported window size.
+- Added Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, and High Contrast themes with immediate previews and a tabbed Settings window.
+- Replaced the Sound Library tables with a responsive card browser, direct Preview and Use controls, local filtering, and a small account-free collection of original starter effects.
+- Added searchable action categories, visible field guidance, color swatches, and a visual Multi-Action step editor.
+- Replaced the app mark and rebuilt every PNG and Windows ICO size from one SVG source for consistent installer, shortcut, title-bar, taskbar, and repository branding.
+- Added exact-size native Windows visual capture coverage for every theme at narrow, compact, and wide breakpoints, plus Focus Grid, Settings, and Sound Library views.
+- Prevented sound card row overlap, enforced readable theme contrast, fit all 64 pads in the minimum-size Focus Grid view, and coalesced resize work.
+
 ## 0.1.60
 
 - Added a native Sound Library for searching, previewing, downloading, importing, and assigning sound effects without leaving the app.

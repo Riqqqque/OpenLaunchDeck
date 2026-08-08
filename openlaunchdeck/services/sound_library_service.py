@@ -14,7 +14,7 @@ from urllib.parse import urlencode, urlparse
 
 from ..config_store import read_json, write_json
 from ..models.sound_library import SoundLibraryItem, SoundSearchPage
-from ..paths import SOUND_LIBRARY_DIR
+from ..paths import SOUND_LIBRARY_DIR, STARTER_SOUNDS_DIR
 from .secret_store import SecretStorageError, protect_secret, unprotect_secret
 
 
@@ -220,6 +220,64 @@ class SoundLibraryService:
         self._refresh_attribution_index()
         return destination
 
+    def ensure_starter_collection(self) -> list[SoundLibraryItem]:
+        manifest_path = STARTER_SOUNDS_DIR / "manifest.json"
+        try:
+            manifest = read_json(manifest_path, {})
+        except (OSError, ValueError):
+            if self.logger:
+                self.logger.warning("The included sound manifest could not be read.", exc_info=True)
+            return []
+        entries = manifest.get("sounds") if isinstance(manifest, dict) else None
+        if not isinstance(entries, list):
+            return []
+        SOUND_LIBRARY_DIR.mkdir(parents=True, exist_ok=True)
+        for entry in entries:
+            if not isinstance(entry, dict):
+                continue
+            starter_id = _safe_stem(str(entry.get("id") or ""))
+            source_name = Path(str(entry.get("file") or "")).name
+            source = STARTER_SOUNDS_DIR / source_name
+            if not starter_id or source.suffix.casefold() != ".wav" or not source.is_file():
+                continue
+            destination = SOUND_LIBRARY_DIR / f"starter-{starter_id}.wav"
+            metadata_path = destination.with_suffix(".json")
+            try:
+                if not destination.exists():
+                    temporary = destination.with_suffix(".wav.part")
+                    shutil.copy2(source, temporary)
+                    os.replace(temporary, destination)
+                if not metadata_path.exists():
+                    category = " ".join(str(entry.get("category") or "Essentials").split())[:40]
+                    raw_tags = entry.get("tags")
+                    tags = [category.casefold()]
+                    if isinstance(raw_tags, list):
+                        tags.extend(str(tag)[:40] for tag in raw_tags)
+                    item = SoundLibraryItem(
+                        provider="OpenLaunchDeck Essentials",
+                        sound_id=_stable_sound_id(starter_id),
+                        name=" ".join(str(entry.get("name") or starter_id).split())[:120],
+                        creator="OpenLaunchDeck",
+                        license_name="MIT",
+                        duration=_wave_duration(destination),
+                        preview_url="",
+                        source_url="",
+                        tags=tuple(dict.fromkeys(tags)),
+                        local_path=str(destination),
+                    )
+                    metadata = item.to_metadata(destination.name)
+                    metadata["category"] = category
+                    metadata["description"] = " ".join(str(entry.get("description") or "").split())[:240]
+                    write_json(metadata_path, metadata)
+            except OSError:
+                if self.logger:
+                    self.logger.warning("An included sound could not be prepared: %s", source_name, exc_info=True)
+        self._refresh_attribution_index()
+        return self.starter_items()
+
+    def starter_items(self) -> list[SoundLibraryItem]:
+        return [item for item in self.local_items() if item.provider == "OpenLaunchDeck Essentials"]
+
     def local_items(self) -> list[SoundLibraryItem]:
         items: list[SoundLibraryItem] = []
         for metadata_path in sorted(SOUND_LIBRARY_DIR.glob("*.json"), key=_modified_time, reverse=True):
@@ -351,6 +409,20 @@ def _sha256_file(path: Path) -> str:
         for chunk in iter(lambda: file.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _stable_sound_id(value: str) -> int:
+    return int.from_bytes(hashlib.sha256(value.encode("utf-8")).digest()[:4], "big") & 0x7FFFFFFF
+
+
+def _wave_duration(path: Path) -> float:
+    try:
+        import wave
+
+        with wave.open(str(path), "rb") as sound:
+            return sound.getnframes() / max(1, sound.getframerate())
+    except (OSError, wave.Error):
+        return 0.0
 
 
 def _modified_time(path: Path) -> float:
