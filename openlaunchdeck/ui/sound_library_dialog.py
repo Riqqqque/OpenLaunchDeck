@@ -159,6 +159,7 @@ class SoundLibraryDialog(QDialog):
         self._download_and_assign = False
         self._download_failure_message = ""
         self._initial_search_started = False
+        self._provider_setup_expanded = False
         self._cards: dict[str, list[SoundCard]] = {"starter": [], "online": [], "local": []}
         self._reflow_timer = QTimer(self)
         self._reflow_timer.setSingleShot(True)
@@ -168,7 +169,7 @@ class SoundLibraryDialog(QDialog):
         self.setWindowTitle("Sound Library")
         self.setObjectName("SoundLibraryDialog")
         self.resize(1100, 760)
-        self.setMinimumSize(720, 540)
+        self.setMinimumSize(720, 620)
         self._build_ui()
 
         self.network = QNetworkAccessManager(self)
@@ -501,7 +502,7 @@ class SoundLibraryDialog(QDialog):
             QMessageBox.warning(self, "API key not saved", str(exc))
             return
         self.key_edit.clear()
-        self.provider_credentials.hide()
+        self._provider_setup_expanded = False
         self._refresh_key_state()
         self.status_label.setText("Online search is connected for this Windows account.")
         self._initial_search_started = True
@@ -516,12 +517,13 @@ class SoundLibraryDialog(QDialog):
         self.key_edit.clear()
         self._online_items.clear()
         self._populate_online_table()
-        self.provider_credentials.show()
+        self._provider_setup_expanded = True
         self._refresh_key_state()
         self.status_label.setText("Online search disconnected. Starter and local sounds are still available.")
 
     def _toggle_provider_setup(self) -> None:
-        self.provider_credentials.setVisible(not self.provider_credentials.isVisible())
+        self._provider_setup_expanded = not self._provider_setup_expanded
+        self.provider_credentials.setVisible(self._provider_setup_expanded)
 
     def _refresh_key_state(self) -> None:
         connected = bool(self.service.api_key())
@@ -530,7 +532,7 @@ class SoundLibraryDialog(QDialog):
         self.key_status.style().unpolish(self.key_status)
         self.key_status.style().polish(self.key_status)
         self.provider_setup_button.setText("Manage Provider" if connected else "Connect Provider")
-        self.provider_credentials.setVisible(not connected)
+        self.provider_credentials.setVisible(self._provider_setup_expanded)
         self.forget_key_button.setEnabled(connected)
         self.search_button.setEnabled(connected and self._active_reply is None)
         self.previous_button.setEnabled(bool(connected and self._search_result and self._search_result.has_previous))
@@ -544,6 +546,7 @@ class SoundLibraryDialog(QDialog):
     def search(self, page: int) -> None:
         api_key = self.service.api_key()
         if not api_key:
+            self._provider_setup_expanded = True
             self.provider_credentials.show()
             self.status_label.setText("Connect online search first, or use the included Starter Sounds tab.")
             return
@@ -609,8 +612,9 @@ class SoundLibraryDialog(QDialog):
         self._render_cards("local", items)
 
     def refresh_local_items(self) -> None:
-        self._local_items = self.service.local_items()
-        self._starter_items = [item for item in self._local_items if item.provider == "OpenLaunchDeck Essentials"]
+        all_items = self.service.local_items()
+        self._starter_items = [item for item in all_items if item.provider == "OpenLaunchDeck Essentials"]
+        self._local_items = [item for item in all_items if item.provider != "OpenLaunchDeck Essentials"]
         if hasattr(self, "local_grid"):
             self._populate_local_cards()
         if hasattr(self, "starter_grid"):

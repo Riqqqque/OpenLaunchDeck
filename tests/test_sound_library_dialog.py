@@ -83,7 +83,7 @@ def test_sound_library_cards_keep_controls_inside_their_frames(tmp_path, monkeyp
     app = QApplication.instance() or QApplication([])
     monkeypatch.setattr(library_module, "SOUND_LIBRARY_DIR", tmp_path)
     dialog = SoundLibraryDialog(SettingsServiceDouble(), selected_button_provider=lambda: "A1")
-    dialog.resize(720, 540)
+    dialog.resize(720, 620)
     dialog.show()
     app.processEvents()
 
@@ -104,6 +104,21 @@ def test_sound_library_cards_keep_controls_inside_their_frames(tmp_path, monkeyp
     for index in range(len(cards)):
         row, column, row_span, column_span = dialog.starter_grid.getItemPosition(index)
         assert (row, column, row_span, column_span) == (index // columns, index % columns, 1, 1)
+
+    dialog.close()
+    dialog.deleteLater()
+    app.processEvents()
+
+
+def test_sound_library_separates_starter_and_user_sounds(tmp_path, monkeypatch):
+    app = QApplication.instance() or QApplication([])
+    monkeypatch.setattr(library_module, "SOUND_LIBRARY_DIR", tmp_path)
+    dialog = SoundLibraryDialog(SettingsServiceDouble(), selected_button_provider=lambda: "A1")
+
+    assert dialog._starter_items
+    assert all(item.provider == "OpenLaunchDeck Essentials" for item in dialog._starter_items)
+    assert all(item.provider != "OpenLaunchDeck Essentials" for item in dialog._local_items)
+    assert dialog.provider_credentials.isHidden()
 
     dialog.close()
     dialog.deleteLater()
