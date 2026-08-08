@@ -16,9 +16,9 @@ Missing files are reported before playback starts. Unknown file extensions are r
 
 ## Sound Library
 
-Open **Soundboard > Browse Sound Library** to search, preview, download, import, and assign sounds. You can also click **Library** beside a Play Sound action's file field.
+Open **Soundboard > Browse Sound Library** to preview and assign sounds. You can also click **Library** beside a Play Sound action's file field.
 
-Online search uses a personal Freesound API key and defaults to CC0 results. It includes popular, newest, top-rated, and best-match sorting. The app stores downloads, source metadata, licenses, and an attribution index under AppData. See [sound_library.md](sound_library.md) for setup, licensing notes, and storage behavior.
+**Starter Sounds** contains original lightweight effects that work without an account. **My Sounds** imports local files. Optional **Online Search** uses a personal Freesound API key and defaults to CC0 results, with popular, newest, top-rated, and best-match sorting. The app stores managed audio, source metadata, licenses, and an attribution index under AppData. See [sound_library.md](sound_library.md) for the complete workflow.
 
 ## Already Playing Behavior
 

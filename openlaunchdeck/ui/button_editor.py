@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QTimer, Signal
+from PySide6.QtCore import QSize, QTimer, Signal
+from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -29,6 +30,7 @@ class ButtonEditor(QWidget):
     copy_requested = Signal()
     paste_requested = Signal()
     library_requested = Signal()
+    back_requested = Signal()
 
     def __init__(self, registry) -> None:
         super().__init__()
@@ -48,9 +50,17 @@ class ButtonEditor(QWidget):
         self.setObjectName("InspectorPanel")
         layout.setContentsMargins(18, 18, 18, 18)
         layout.setSpacing(12)
+        heading = QGridLayout()
+        heading.setColumnStretch(0, 1)
         self.title = QLabel("A1")
         self.title.setObjectName("PanelTitle")
-        layout.addWidget(self.title)
+        self.back_button = QPushButton("Back to Grid")
+        self.back_button.setObjectName("HeaderButton")
+        self.back_button.setVisible(False)
+        self.back_button.setToolTip("Return to the Launchpad grid.")
+        heading.addWidget(self.title, 0, 0)
+        heading.addWidget(self.back_button, 0, 1)
+        layout.addLayout(heading)
         self.subtitle = QLabel("Selected pad settings")
         self.subtitle.setObjectName("PanelHint")
         layout.addWidget(self.subtitle)
@@ -64,8 +74,10 @@ class ButtonEditor(QWidget):
         form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self.label_edit = QLineEdit()
         self.color_combo = QComboBox()
-        for color in NAMED_COLORS:
-            self.color_combo.addItem(color, color)
+        for color, value in NAMED_COLORS.items():
+            swatch = QPixmap(QSize(14, 14))
+            swatch.fill(QColor(value))
+            self.color_combo.addItem(QIcon(swatch), color.title(), color)
         self.enabled_check = QCheckBox()
         self.dangerous_check = QCheckBox()
         self.notes_edit = QPlainTextEdit()
@@ -113,6 +125,10 @@ class ButtonEditor(QWidget):
         self.clear_button.clicked.connect(self.clear_requested.emit)
         self.copy_button.clicked.connect(self.copy_requested.emit)
         self.paste_button.clicked.connect(self.paste_requested.emit)
+        self.back_button.clicked.connect(self.back_requested.emit)
+
+    def set_compact_navigation(self, enabled: bool) -> None:
+        self.back_button.setVisible(enabled)
 
     def set_button(self, button: ButtonConfig) -> None:
         self._notes_timer.stop()

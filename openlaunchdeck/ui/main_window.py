@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QFileDialog,
     QFrame,
+    QComboBox,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -48,7 +49,7 @@ from .settings_dialog import SettingsDialog
 from .setup_wizard import SetupWizard
 from .soundboard_panel import SoundboardPanel
 from .sound_library_dialog import SoundLibraryDialog
-from .theme import load_theme
+from .theme import apply_theme
 from ..services.update_service import UpdateService
 from .tray import TrayController
 from .update_dialog import UpdateCheckWorker, UpdateDialog
@@ -97,6 +98,7 @@ class MainWindow(QMainWindow):
         self._startup_update_worker: UpdateCheckWorker | None = None
         self._grid_focus_mode = False
         self._responsive_mode = ""
+        self._compact_workspace_view = "grid"
         self._midi_debug_callbacks_active = False
         self._force_next_action_ui_update = False
         self._last_voice_route_guard_message = ""
@@ -110,11 +112,14 @@ class MainWindow(QMainWindow):
         self._profile_autosave_timer.setSingleShot(True)
         self._profile_autosave_timer.setInterval(450)
         self._profile_autosave_timer.timeout.connect(self._save_current_profile)
+        self._grid_fit_timer = QTimer(self)
+        self._grid_fit_timer.setSingleShot(True)
+        self._grid_fit_timer.timeout.connect(self._fit_grid_to_viewport)
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
         self.resize(1480, 920)
-        self.setMinimumSize(980, 640)
-        self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
+        self.setMinimumSize(760, 520)
+        apply_theme(self.services.settings_service.settings.theme, self)
 
         self.services.action_runner.completion_callback = lambda button_id, result: self.action_finished.emit(button_id, result)
         self.services.device.button_callback = lambda button_id, pressed, raw: self.hardware_button.emit(button_id, pressed, raw)
@@ -153,32 +158,47 @@ class MainWindow(QMainWindow):
         self.app_header = header
         header.setObjectName("AppHeader")
         header_layout = QHBoxLayout(header)
-        header_layout.setContentsMargins(14, 10, 12, 10)
+        header_layout.setContentsMargins(12, 7, 10, 7)
         header_layout.setSpacing(10)
 
-        brand = QWidget()
-        brand.setObjectName("HeaderBrand")
-        brand_layout = QVBoxLayout(brand)
+        self.header_brand = QWidget()
+        self.header_brand.setObjectName("HeaderBrand")
+        brand_layout = QVBoxLayout(self.header_brand)
         brand_layout.setContentsMargins(0, 0, 0, 0)
         brand_layout.setSpacing(0)
         title = QLabel(APP_NAME)
         title.setObjectName("HeaderTitle")
-        subtitle = QLabel("Launchpad Mini MK3 workspace")
-        subtitle.setObjectName("HeaderSubtitle")
+        self.header_subtitle = QLabel("Launchpad Mini MK3 workspace")
+        self.header_subtitle.setObjectName("HeaderSubtitle")
         brand_layout.addWidget(title)
-        brand_layout.addWidget(subtitle)
-        header_layout.addWidget(brand, 1)
+        brand_layout.addWidget(self.header_subtitle)
+        header_layout.addWidget(self.header_brand, 1)
 
         header_meta = QWidget()
         header_meta.setObjectName("HeaderMeta")
         header_meta_layout = QHBoxLayout(header_meta)
         header_meta_layout.setContentsMargins(0, 0, 0, 0)
         header_meta_layout.setSpacing(8)
-        self.header_profile = QLabel("")
-        self.header_profile.setObjectName("HeaderActiveDeck")
+        self.header_context = QWidget()
+        self.header_context.setObjectName("HeaderContext")
+        context_layout = QHBoxLayout(self.header_context)
+        context_layout.setContentsMargins(0, 0, 0, 0)
+        context_layout.setSpacing(6)
+        self.header_profile_combo = QComboBox()
+        self.header_profile_combo.setObjectName("HeaderContextCombo")
+        self.header_profile_combo.setMinimumContentsLength(10)
+        self.header_profile_combo.setMaximumWidth(190)
+        self.header_profile_combo.setToolTip("Current profile")
+        self.header_page_combo = QComboBox()
+        self.header_page_combo.setObjectName("HeaderContextCombo")
+        self.header_page_combo.setMinimumContentsLength(8)
+        self.header_page_combo.setMaximumWidth(160)
+        self.header_page_combo.setToolTip("Current page")
+        context_layout.addWidget(self.header_profile_combo)
+        context_layout.addWidget(self.header_page_combo)
         self.header_mode = QLabel("Simulation")
         self.header_mode.setObjectName("HeaderModeChip")
-        header_meta_layout.addWidget(self.header_profile, 0, Qt.AlignmentFlag.AlignVCenter)
+        header_meta_layout.addWidget(self.header_context, 0, Qt.AlignmentFlag.AlignVCenter)
         header_meta_layout.addWidget(self.header_mode, 0, Qt.AlignmentFlag.AlignVCenter)
         header_layout.addWidget(header_meta)
 
@@ -254,11 +274,16 @@ class MainWindow(QMainWindow):
         deck_header.addWidget(deck_title)
         deck_header.addStretch(1)
         deck_header.addWidget(self.deck_hint)
+        self.edit_selected_button = QPushButton("Edit A1")
+        self.edit_selected_button.setObjectName("PrimaryButton")
+        self.edit_selected_button.setVisible(False)
+        self.edit_selected_button.setToolTip("Open the selected pad settings.")
+        deck_header.addWidget(self.edit_selected_button)
         deck_header.addWidget(self.grid_focus_button)
         deck_layout.addLayout(deck_header)
         self.grid_scroll = QScrollArea()
         self.grid_scroll.setObjectName("GridScroll")
-        self.grid_scroll.setWidgetResizable(True)
+        self.grid_scroll.setWidgetResizable(False)
         self.grid_scroll.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.grid_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self.grid_scroll.setMinimumSize(0, 0)
@@ -284,6 +309,9 @@ class MainWindow(QMainWindow):
         self.header_soundboard_button.clicked.connect(self.show_sound_library)
         self.header_update_button.clicked.connect(self.check_updates)
         self.grid_focus_button.clicked.connect(self.toggle_grid_focus_mode)
+        self.edit_selected_button.clicked.connect(self.show_compact_editor)
+        self.header_profile_combo.currentIndexChanged.connect(self._header_profile_changed)
+        self.header_page_combo.currentIndexChanged.connect(self._header_page_changed)
 
     def _build_menu(self) -> None:
         menu_bar = self.menuBar()
@@ -386,6 +414,7 @@ class MainWindow(QMainWindow):
         self.editor.copy_requested.connect(self.copy_button_config)
         self.editor.paste_requested.connect(self.paste_button_config)
         self.editor.library_requested.connect(self.show_sound_library)
+        self.editor.back_requested.connect(self.show_compact_grid)
         self.sidebar.profile_changed.connect(self.change_profile)
         self.sidebar.page_changed.connect(self.change_page)
         self.sidebar.add_page_requested.connect(self.add_page)
@@ -405,6 +434,7 @@ class MainWindow(QMainWindow):
         profile_service = self.services.profile_service
         current_page = profile_service.current_page
         self.sidebar.refresh(profile_service)
+        self._refresh_header_context()
         self.editor.set_page_choices([(page.name, page.id) for page in profile_service.current_profile.pages])
         if self.grid.selected_button_id not in BUTTON_IDS:
             self.grid.select("A1")
@@ -414,8 +444,8 @@ class MainWindow(QMainWindow):
         self.page_status.setText(f"Page: {current_page.name}")
         self.mode_status.setText("Connected mode" if self.services.device.connected else "Simulation mode")
         self.device_status.setText("Device: Connected" if self.services.device.connected else "Device: Simulation")
-        self.header_profile.setText(f"{profile_service.current_profile.name} / {current_page.name}")
         self._set_header_mode(self.services.device.connected)
+        self._schedule_grid_fit()
 
     def _set_header_mode(self, connected: bool) -> None:
         self.header_mode.setText("Connected mode" if connected else "Simulation mode")
@@ -469,6 +499,48 @@ class MainWindow(QMainWindow):
             self.services.action_runner.dangerous_service,
             self.services.audio_engine,
         )
+        self.edit_selected_button.setText(f"Edit {button_id}")
+
+    def _refresh_header_context(self) -> None:
+        profile_service = self.services.profile_service
+        self.header_profile_combo.blockSignals(True)
+        self.header_page_combo.blockSignals(True)
+        self.header_profile_combo.clear()
+        for profile in profile_service.profiles.values():
+            self.header_profile_combo.addItem(profile.name, profile.id)
+        self.header_profile_combo.setCurrentIndex(max(0, self.header_profile_combo.findData(profile_service.current_profile_id)))
+        self.header_page_combo.clear()
+        for page in profile_service.current_profile.pages:
+            self.header_page_combo.addItem(page.name, page.id)
+        self.header_page_combo.setCurrentIndex(max(0, self.header_page_combo.findData(profile_service.current_page_id)))
+        self.header_profile_combo.blockSignals(False)
+        self.header_page_combo.blockSignals(False)
+
+    def _header_profile_changed(self) -> None:
+        profile_id = str(self.header_profile_combo.currentData() or "")
+        if profile_id and profile_id != self.services.profile_service.current_profile_id:
+            self.change_profile(profile_id)
+
+    def _header_page_changed(self) -> None:
+        page_id = str(self.header_page_combo.currentData() or "")
+        if page_id and page_id != self.services.profile_service.current_page_id:
+            self.change_page(page_id)
+
+    def show_compact_editor(self) -> None:
+        self._compact_workspace_view = "editor"
+        self._apply_responsive_layout(force=True)
+
+    def show_compact_grid(self) -> None:
+        self.editor.flush_pending_changes()
+        self._compact_workspace_view = "grid"
+        self._apply_responsive_layout(force=True)
+
+    def _fit_grid_to_viewport(self) -> None:
+        if self.grid_scroll.isVisible():
+            self.grid.fit_to_viewport(self.grid_scroll.viewport().size())
+
+    def _schedule_grid_fit(self) -> None:
+        self._grid_fit_timer.start(0)
 
     def save_button_changes(self) -> None:
         if self.services.settings_service.settings.profile_autosave:
@@ -773,7 +845,7 @@ class MainWindow(QMainWindow):
         self._flush_profile_autosave()
         dialog = SettingsDialog(self.services.settings_service, self, self.services.startup_service)
         if dialog.exec():
-            self.setStyleSheet(load_theme(self.services.settings_service.settings.theme))
+            apply_theme(self.services.settings_service.settings.theme, self)
             self._apply_responsive_layout()
             self.services.audio_engine.set_global_volume(self.services.settings_service.settings.soundboard_global_volume)
             self.services.audio_engine.set_default_output_device(self.services.settings_service.settings.soundboard_default_output_device)
@@ -814,7 +886,7 @@ class MainWindow(QMainWindow):
         if hasattr(self, "workspace_splitter"):
             self._apply_responsive_layout()
 
-    def _apply_responsive_layout(self) -> None:
+    def _apply_responsive_layout(self, force: bool = False) -> None:
         width = self.width()
         base_density = self.services.settings_service.settings.grid_density
         if self._grid_focus_mode:
@@ -836,7 +908,8 @@ class MainWindow(QMainWindow):
 
         compact_header = width < 1300
         narrow_header = width < 1050
-        compact_workspace = width < 1350
+        compact_workspace = width < 1370
+        narrow_workspace = width < 1080
         self.app_header.setVisible(not self._grid_focus_mode)
         if self._grid_focus_mode:
             self.main_root_layout.setContentsMargins(8, 8, 8, 8)
@@ -850,7 +923,8 @@ class MainWindow(QMainWindow):
             self.deck_layout.setSpacing(10)
 
         self.deck_hint.setVisible(not compact_header and not self._grid_focus_mode)
-        self.header_profile.setVisible(not narrow_header)
+        self.header_subtitle.setVisible(width >= 1280)
+        self.header_context.setVisible(width >= 900)
         self.header_mode.setVisible(not narrow_header)
         self.header_soundboard_button.setText("Sounds" if compact_header else "Sound Library")
         self.header_reconnect_button.setText("Reconnect" if not narrow_header else "Link")
@@ -858,19 +932,24 @@ class MainWindow(QMainWindow):
         self.header_soundboard_button.setVisible(width >= 1080)
         self.header_update_button.setVisible(width >= 1080)
         self.sidebar_scroll.setVisible(not compact_workspace and not self._grid_focus_mode)
-        self.editor_scroll.setVisible(not self._grid_focus_mode)
         self.mode_status.setVisible(width >= 1320)
         self.profile_status.setVisible(width >= 1120)
         self.page_status.setVisible(width >= 1120)
+        self.statusBar().setVisible(not self._grid_focus_mode)
 
-        responsive_mode = "focus" if self._grid_focus_mode else "compact" if compact_workspace else "wide"
+        responsive_mode = "focus" if self._grid_focus_mode else "narrow" if narrow_workspace else "compact" if compact_workspace else "wide"
+        editor_only = responsive_mode == "narrow" and self._compact_workspace_view == "editor"
+        self.deck_panel.setVisible(not editor_only)
+        self.editor_scroll.setVisible(not self._grid_focus_mode and (responsive_mode != "narrow" or editor_only))
+        self.edit_selected_button.setVisible(responsive_mode == "narrow" and not editor_only)
+        self.editor.set_compact_navigation(responsive_mode == "narrow")
         if self._grid_focus_mode:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
-            self.grid_scroll.setWidgetResizable(True)
+            self.grid_scroll.setWidgetResizable(False)
             self.deck_panel.setMinimumWidth(360)
         elif compact_workspace:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
-            self.grid_scroll.setWidgetResizable(True)
+            self.grid_scroll.setWidgetResizable(False)
             self.sidebar_scroll.setMinimumWidth(0)
             self.editor_scroll.setMinimumWidth(300)
             self.editor_scroll.setMinimumHeight(0)
@@ -878,23 +957,27 @@ class MainWindow(QMainWindow):
             self.deck_panel.setMinimumHeight(0)
         else:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
-            self.grid_scroll.setWidgetResizable(True)
+            self.grid_scroll.setWidgetResizable(False)
             self.sidebar_scroll.setMinimumWidth(210)
             self.editor_scroll.setMinimumHeight(0)
             self.deck_panel.setMinimumHeight(0)
             self.editor_scroll.setMinimumWidth(300)
             self.deck_panel.setMinimumWidth(520)
 
-        if responsive_mode == self._responsive_mode:
+        if responsive_mode == self._responsive_mode and not force:
+            self._schedule_grid_fit()
             return
         self._responsive_mode = responsive_mode
         if responsive_mode == "focus":
             self.workspace_splitter.setSizes([0, max(760, width - 48), 0])
         elif responsive_mode == "compact":
-            editor_width = 340 if width >= 1120 else 310
+            editor_width = 370
             self.workspace_splitter.setSizes([0, max(560, width - editor_width - 44), editor_width])
+        elif responsive_mode == "narrow":
+            self.workspace_splitter.setSizes([0, 0 if editor_only else max(560, width - 32), max(560, width - 32) if editor_only else 0])
         else:
             self.workspace_splitter.setSizes([238, max(620, width - 660), 360])
+        self._schedule_grid_fit()
 
     def show_first_run(self) -> None:
         dialog = SetupWizard(self.services.profile_service, self.services.settings_service, self)

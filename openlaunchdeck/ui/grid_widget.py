@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import QGridLayout, QWidget
 
 from ..constants import BUTTON_COLUMNS, BUTTON_ROWS
@@ -15,6 +15,8 @@ class GridWidget(QWidget):
         self.setObjectName("LaunchpadGrid")
         self.cells: dict[str, ButtonCell] = {}
         self.selected_button_id = "A1"
+        self._density = "comfortable"
+        self._spacing = 10
         layout = QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
@@ -28,10 +30,22 @@ class GridWidget(QWidget):
 
     def set_density(self, density: str) -> None:
         spacing = {"mini": 5, "compact": 7, "comfortable": 10, "large": 12}.get(density, 10)
+        self._density = density
+        self._spacing = spacing
         if self.layout() is not None:
             self.layout().setSpacing(spacing)
         for cell in self.cells.values():
             cell.set_density(density)
+        self.adjustSize()
+
+    def fit_to_viewport(self, viewport_size: QSize) -> None:
+        maximum = {"mini": 72, "compact": 88, "comfortable": 106, "large": 124}.get(self._density, 106)
+        available = max(0, min(viewport_size.width(), viewport_size.height()) - 4)
+        side = min(maximum, max(50, (available - self._spacing * 7) // 8))
+        for cell in self.cells.values():
+            cell.set_cell_side(side)
+        total = side * 8 + self._spacing * 7
+        self.setFixedSize(total, total)
 
     def select(self, button_id: str) -> str:
         previous = self.selected_button_id

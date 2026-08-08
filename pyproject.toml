@@ -45,6 +45,8 @@ openlaunchdeck = [
   "resources/icons/*.png",
   "resources/icons/*.svg",
   "resources/starter_profiles/*.json",
+  "resources/starter_sounds/*.json",
+  "resources/starter_sounds/*.wav",
   "resources/themes/*.qss"
 ]
 

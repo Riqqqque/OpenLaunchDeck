@@ -24,6 +24,16 @@ PERCENT_FIELDS = {
     "soundboard_voice_route_microphone_volume",
     "soundboard_global_volume",
 }
+THEME_KEYS = {
+    "midnight",
+    "oled_black",
+    "galaxy_oled",
+    "arctic_white",
+    "graphite",
+    "broadcast",
+    "high_contrast",
+    "system",
+}
 
 
 def _coerce_bool(value: Any, default: bool) -> bool:
@@ -49,7 +59,7 @@ def _coerce_percent(value: Any, default: int) -> int:
 
 @dataclass(slots=True)
 class Settings:
-    theme: str = "dark"
+    theme: str = "midnight"
     grid_density: str = "comfortable"
     auto_connect: bool = True
     start_minimized: bool = False
@@ -97,8 +107,9 @@ class Settings:
             else:
                 values[key] = value
         settings = cls(**values)
-        if settings.theme not in {"dark", "light", "system"}:
-            settings.theme = "dark"
+        settings.theme = {"dark": "midnight", "light": "arctic_white"}.get(settings.theme, settings.theme)
+        if settings.theme not in THEME_KEYS:
+            settings.theme = "midnight"
         if settings.grid_density not in {"compact", "comfortable", "large"}:
             settings.grid_density = "comfortable"
         if settings.update_channel not in {"stable", "beta"}:

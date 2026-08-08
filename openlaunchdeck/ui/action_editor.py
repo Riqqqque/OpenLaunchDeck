@@ -4,7 +4,8 @@ import json
 from collections.abc import Collection
 from typing import Any
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QColor, QIcon, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -22,6 +23,7 @@ from PySide6.QtWidgets import (
 )
 
 from ..constants import NAMED_COLORS
+from .action_sequence_editor import ActionSequenceEditor
 from .hotkey_picker import HotkeyPicker
 
 
@@ -31,12 +33,32 @@ CHOICE_DISPLAY_LABELS = {
     "jpg": "JPG",
 }
 
+ACTION_CATEGORIES = {
+    "noop": "Essentials",
+    "switch_page": "Essentials",
+    "multi_action": "Essentials",
+    "delay": "Essentials",
+    "hotkey": "Windows",
+    "type_text": "Windows",
+    "open_url": "Windows",
+    "open_path": "Windows",
+    "run_command": "Windows",
+    "powershell": "Windows",
+    "media_control": "Media",
+    "volume_control": "Media",
+    "play_sound": "Soundboard",
+    "stop_sound": "Soundboard",
+    "obs_websocket": "Streaming",
+    "http_request": "Network",
+    "ssh_command": "Network",
+}
+
 
 class ActionEditor(QWidget):
     changed = Signal()
     library_requested = Signal()
 
-    def __init__(self, registry) -> None:
+    def __init__(self, registry, allow_multi_action: bool = True) -> None:
         super().__init__()
         self.setObjectName("ActionEditor")
         self.setMinimumWidth(0)
@@ -47,14 +69,26 @@ class ActionEditor(QWidget):
         self._config: dict[str, Any] = {}
         self._configs_by_type: dict[str, dict[str, Any]] = {}
         self._field_definitions: dict[str, dict[str, Any]] = {}
+        self._help_labels: dict[str, QLabel] = {}
         self._dynamic_choices: dict[tuple[str, str], list[tuple[str, Any]]] = {}
+        self._action_search_dirty = False
 
         self.action_type_combo = QComboBox()
         self.action_type_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.action_type_combo.setMinimumContentsLength(8)
         self.action_type_combo.setMaxVisibleItems(20)
-        for action in sorted(registry.all(), key=lambda item: item.display_name):
-            self.action_type_combo.addItem(action.display_name, action.type_name)
+        self.action_type_combo.setEditable(True)
+        self.action_type_combo.setInsertPolicy(QComboBox.InsertPolicy.NoInsert)
+        self.action_type_combo.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
+        self.action_type_combo.completer().setFilterMode(Qt.MatchFlag.MatchContains)
+        if self.action_type_combo.lineEdit() is not None:
+            self.action_type_combo.lineEdit().setPlaceholderText("Search actions")
+            self.action_type_combo.lineEdit().textEdited.connect(self._mark_action_search_dirty)
+            self.action_type_combo.lineEdit().editingFinished.connect(self._commit_action_search)
+        actions = [action for action in registry.all() if allow_multi_action or action.type_name != "multi_action"]
+        for action in sorted(actions, key=lambda item: (ACTION_CATEGORIES.get(item.type_name, "Other"), item.display_name)):
+            category = ACTION_CATEGORIES.get(action.type_name, "Other")
+            self.action_type_combo.addItem(f"{category}  |  {action.display_name}", action.type_name)
 
         self.form = QFormLayout(self)
         self.form.setContentsMargins(0, 0, 0, 0)
@@ -119,13 +153,33 @@ class ActionEditor(QWidget):
         action_type = str(self.action_type_combo.currentData() or "noop")
         self._config = dict(self._configs_by_type.get(action_type, {}))
         self._rebuild_fields()
+        self._action_search_dirty = False
         self.changed.emit()
+
+    def _mark_action_search_dirty(self, _text: str) -> None:
+        self._action_search_dirty = True
+
+    def _commit_action_search(self) -> None:
+        if not self._action_search_dirty:
+            return
+        typed = self.action_type_combo.currentText().strip().casefold()
+        matches = [
+            index
+            for index in range(self.action_type_combo.count())
+            if typed and typed in self.action_type_combo.itemText(index).casefold()
+        ]
+        if len(matches) == 1:
+            self.action_type_combo.setCurrentIndex(matches[0])
+        elif self._rendered_action_type:
+            self.action_type_combo.setCurrentIndex(max(0, self.action_type_combo.findData(self._rendered_action_type)))
+        self._action_search_dirty = False
 
     def _clear_dynamic_rows(self) -> None:
         while self.form.rowCount() > 2:
             self.form.removeRow(2)
         self.field_widgets.clear()
         self._field_definitions.clear()
+        self._help_labels.clear()
 
     @staticmethod
     def _set_invalid(widget: QWidget, invalid: bool) -> None:
@@ -153,6 +207,12 @@ class ActionEditor(QWidget):
             self.field_widgets[name] = widget
             self._field_definitions[name] = field
             self.form.addRow(field.get("label", name), widget)
+            if help_text:
+                help_label = QLabel(help_text)
+                help_label.setObjectName("MutedText")
+                help_label.setWordWrap(True)
+                self.form.addRow("", help_label)
+                self._help_labels[name] = help_label
             self._connect_widget_changed(widget)
         self._apply_field_visibility()
 
@@ -216,12 +276,16 @@ class ActionEditor(QWidget):
         if field_type == "hotkey":
             keys = [str(item) for item in field.get("keys", []) if str(item).strip()]
             return HotkeyPicker(keys, value)
+        if field_type == "action_list":
+            return ActionSequenceEditor(self.registry, value if value is not None else field.get("default", []))
         if field_type == "color":
             widget = QComboBox()
             widget.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             widget.setMinimumContentsLength(8)
-            for color in NAMED_COLORS:
-                widget.addItem(color.title(), color)
+            for color, color_value in NAMED_COLORS.items():
+                swatch = QPixmap(14, 14)
+                swatch.fill(QColor(color_value))
+                widget.addItem(QIcon(swatch), color.title(), color)
             selected_value = field.get("default") if value in (None, "") else value
             index = widget.findData(selected_value)
             widget.setCurrentIndex(index if index >= 0 else 0)
@@ -280,6 +344,8 @@ class ActionEditor(QWidget):
     def _connect_widget_changed(self, widget: QWidget) -> None:
         if isinstance(widget, HotkeyPicker):
             widget.changed.connect(self._widget_changed)
+        elif isinstance(widget, ActionSequenceEditor):
+            widget.changed.connect(self._widget_changed)
         elif isinstance(widget, QLineEdit):
             widget.editingFinished.connect(self._widget_changed)
         elif isinstance(widget, QPlainTextEdit):
@@ -308,6 +374,8 @@ class ActionEditor(QWidget):
             field = self._field_definitions.get(name, {})
             if isinstance(widget, HotkeyPicker):
                 config[name] = widget.value()
+            elif isinstance(widget, ActionSequenceEditor):
+                config[name] = widget.steps()
             elif isinstance(widget, QLineEdit):
                 config[name] = widget.text()
             elif hasattr(widget, "value_widget") and isinstance(widget.value_widget, QLineEdit):
@@ -342,6 +410,9 @@ class ActionEditor(QWidget):
             label = self.form.labelForField(widget)
             if label is not None:
                 label.setVisible(visible)
+            help_label = self._help_labels.get(name)
+            if help_label is not None:
+                help_label.setVisible(visible)
 
     def _field_is_visible(self, field: dict[str, Any]) -> bool:
         conditions = field.get("visible_if")

@@ -6,10 +6,12 @@ Open **Settings > Settings** to change application, MIDI, soundboard, update, an
 
 | Setting | Meaning |
 | --- | --- |
-| Theme | Dark, light, or the system theme |
+| Theme | Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, High Contrast, or Follow Windows |
 | Grid density | Compact, comfortable, or large pad sizing |
 
-Use Compact for a narrow utility window and Large when the grid is the main second-monitor view.
+Theme changes preview immediately and revert when Settings is canceled. Use Compact for a narrow utility window and Large when the grid is the main second-monitor view. The grid still scales down as needed to keep all pads square.
+
+Settings are organized into **Appearance**, **Launchpad**, **Soundboard**, **App**, and **Advanced** tabs so unrelated controls do not compete for space.
 
 ## Window And Startup
 

@@ -287,7 +287,10 @@ def test_simulation_tooltip_and_grid_focus_mode():
     assert "no Launchpad Mini MK3 MIDI connection is active" in window.header_mode.toolTip()
     assert window.mode_status.toolTip() == window.header_mode.toolTip()
 
+    window.resize(760, 560)
     window.set_grid_focus_mode(True)
+    app.processEvents()
+    window._fit_grid_to_viewport()
     app.processEvents()
 
     assert window.grid_focus_action.isChecked()
@@ -295,6 +298,8 @@ def test_simulation_tooltip_and_grid_focus_mode():
     assert not window.app_header.isVisible()
     assert not window.editor_scroll.isVisible()
     assert not window.sidebar_scroll.isVisible()
+    assert not window.statusBar().isVisible()
+    assert window.grid_scroll.verticalScrollBar().maximum() == 0
 
     window.set_grid_focus_mode(False)
     app.processEvents()
@@ -302,7 +307,10 @@ def test_simulation_tooltip_and_grid_focus_mode():
     assert not window.grid_focus_action.isChecked()
     assert window.grid_focus_button.text() == "Focus Grid"
     assert window.app_header.isVisible()
-    assert window.editor_scroll.isVisible()
+    assert window.deck_panel.isVisible()
+    assert window.edit_selected_button.isVisible()
+    assert not window.editor_scroll.isVisible()
+    assert window.statusBar().isVisible()
 
     window._force_quit = True
     window.close()
@@ -324,7 +332,7 @@ def test_button_editor_remains_accessible_in_narrow_window():
         action=ActionConfig(
             "play_sound",
             {
-                "file_path": r"C:\Users\Example\Music\soundboard\very-long-folder-name\very-long-file-name.mp3",
+                "file_path": r"C:\Audio\soundboard\very-long-folder-name\very-long-file-name.mp3",
                 "volume": 80,
             },
         ),
@@ -337,19 +345,55 @@ def test_button_editor_remains_accessible_in_narrow_window():
     window.select_button("A1")
     app.processEvents()
 
-    for width in (980, 1180):
-        window.resize(width, 640)
-        app.processEvents()
+    assert window.deck_panel.isVisible()
+    assert window.edit_selected_button.isVisible()
+    assert not window.editor_scroll.isVisible()
 
-        assert window.editor_scroll.isVisible()
-        assert window.workspace_splitter.orientation() == Qt.Orientation.Horizontal
-        assert window.editor_scroll.viewport().width() > 0
-        assert window.editor_scroll.height() >= 400
-        assert window.editor_scroll.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAsNeeded
-        assert window.editor_scroll.geometry().right() <= window.workspace_splitter.contentsRect().right()
-        assert window.editor.action_editor.width() <= window.editor_scroll.viewport().width() + 2
-        file_widget = window.editor.action_editor.field_widgets["file_path"]
-        assert file_widget.width() <= window.editor.action_editor.width()
+    window.show_compact_editor()
+    app.processEvents()
+
+    assert not window.deck_panel.isVisible()
+    assert window.editor_scroll.isVisible()
+    assert window.editor.back_button.isVisible()
+    assert window.editor_scroll.viewport().width() > 0
+    assert window.editor_scroll.height() >= 400
+    assert window.editor_scroll.horizontalScrollBarPolicy() == Qt.ScrollBarPolicy.ScrollBarAsNeeded
+    assert window.editor.action_editor.width() <= window.editor_scroll.viewport().width() + 2
+    file_widget = window.editor.action_editor.field_widgets["file_path"]
+    assert file_widget.width() <= window.editor.action_editor.width()
+
+    window.show_compact_grid()
+    window.resize(1180, 640)
+    app.processEvents()
+
+    assert window.deck_panel.isVisible()
+    assert window.editor_scroll.isVisible()
+    assert not window.editor.back_button.isVisible()
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_grid_cells_stay_square_across_window_sizes():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    window.show()
+
+    for width, height in ((760, 560), (1100, 700), (1600, 900)):
+        window.resize(width, height)
+        app.processEvents()
+        window._fit_grid_to_viewport()
+        app.processEvents()
+        sizes = {(cell.width(), cell.height()) for cell in window.grid.cells.values()}
+        assert len(sizes) == 1
+        cell_width, cell_height = sizes.pop()
+        assert cell_width == cell_height
+        assert cell_width >= 50
 
     window._force_quit = True
     window.close()
