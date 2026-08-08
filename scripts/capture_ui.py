@@ -106,6 +106,14 @@ def main() -> int:
         capture(library, args.output / "sound-library.png", app, (1100, 760))
         if args.docs:
             capture(library, Path("docs/screenshots/sound-library.png"), app, (1100, 760))
+        library_tabs = (
+            (library.starter_page, "starter"),
+            (library.online_page, "online"),
+            (library.local_page, "local"),
+        )
+        for page, label in library_tabs:
+            library.tabs.setCurrentWidget(page)
+            capture(library, args.output / f"sound-library-{label}-narrow.png", app, (720, 540))
         library.close()
 
         settings = SettingsDialog(services.settings_service, window, services.startup_service)
@@ -113,6 +121,10 @@ def main() -> int:
         capture(settings, args.output / "settings-appearance.png", app, (800, 680))
         if args.docs:
             capture(settings, Path("docs/screenshots/settings-themes.png"), app, (800, 680))
+        for index in range(settings.tabs.count()):
+            settings.tabs.setCurrentIndex(index)
+            label = settings.tabs.tabText(index).casefold().replace(" ", "-")
+            capture(settings, args.output / f"settings-{label}-narrow.png", app, (680, 540))
         settings.reject()
     finally:
         window._force_quit = True
