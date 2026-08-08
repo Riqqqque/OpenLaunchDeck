@@ -28,7 +28,7 @@ from openlaunchdeck.ui.sound_library_dialog import SoundLibraryDialog
 from openlaunchdeck.ui.theme import apply_theme, theme_definitions
 
 
-def settle(app: QApplication, milliseconds: int = 80) -> None:
+def settle(app: QApplication, milliseconds: int = 180) -> None:
     deadline = time.monotonic() + milliseconds / 1000
     while time.monotonic() < deadline:
         app.processEvents()
@@ -113,7 +113,10 @@ def main() -> int:
         )
         for page, label in library_tabs:
             library.tabs.setCurrentWidget(page)
-            capture(library, args.output / f"sound-library-{label}-narrow.png", app, (720, 540))
+            capture(library, args.output / f"sound-library-{label}-narrow.png", app, (720, 620))
+        library.tabs.setCurrentWidget(library.online_page)
+        library._toggle_provider_setup()
+        capture(library, args.output / "sound-library-online-setup-narrow.png", app, (720, 620))
         library.close()
 
         settings = SettingsDialog(services.settings_service, window, services.startup_service)
