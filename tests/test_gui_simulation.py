@@ -256,6 +256,10 @@ def test_simulation_tooltip_and_grid_focus_mode():
     window.show()
     app.processEvents()
 
+    margins = window.main_root_layout.contentsMargins()
+    assert (margins.left(), margins.top(), margins.right(), margins.bottom()) == (0, 0, 0, 0)
+    assert window.main_root_layout.spacing() == 0
+    assert window.workspace_splitter.handleWidth() == 5
     assert "no Launchpad Mini MK3 MIDI connection is active" in window.header_mode.toolTip()
     assert window.mode_status.toolTip() == window.header_mode.toolTip()
 
@@ -378,6 +382,7 @@ def test_grid_cells_fit_without_scrollbars_across_window_sizes():
     assert window.deck_panel.isVisible()
     assert window.edit_selected_button.isVisible()
     assert not window.editor_scroll.isVisible()
+    assert not window.deck_title.isVisible()
 
     window._force_quit = True
     window.close()
