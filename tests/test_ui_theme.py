@@ -27,6 +27,18 @@ def test_public_themes_render_without_unresolved_tokens():
         assert definition.colors["BACKGROUND"] in stylesheet
 
 
+def test_main_workspace_uses_flat_edge_aligned_surfaces():
+    stylesheet = load_theme("midnight")
+    assert "QFrame#AppHeader" in stylesheet
+    assert "border-bottom: 1px solid" in stylesheet
+    assert "QFrame#DeckPanel" in stylesheet
+    assert "QFrame#DeckPanel {\n  background:" in stylesheet
+    assert "QWidget#SidebarPanel" in stylesheet
+    assert "border-right: 1px solid" in stylesheet
+    assert "QWidget#InspectorPanel" in stylesheet
+    assert "border-left: 1px solid" in stylesheet
+
+
 def test_legacy_theme_names_are_normalized():
     assert normalize_theme_key("dark") == "midnight"
     assert normalize_theme_key("light") == "arctic_white"
