@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.63
+
+- Replaced the nested card-style workspace with a flat command bar, edge-aligned side rails, and an unframed Launchpad canvas.
+- Simplified pad action labels, reduced visual nesting, tightened grid spacing, and increased usable pad size.
+- Reclaimed vertical space in short windows while keeping editing and Focus Grid controls accessible.
+
 ## 0.1.62
 
 - Fixed short-window grid sizing so all 64 pads remain visible without horizontal or vertical scrollbars.

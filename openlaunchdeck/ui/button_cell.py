@@ -183,7 +183,7 @@ class ButtonCell(QWidget):
         elif self._hover:
             border = self._blend(palette.color(QPalette.ColorRole.Light), accent, 0.28)
 
-        painter.setPen(QPen(border, 2.2 if self._selected else 1.4))
+        painter.setPen(QPen(border, 2.0 if self._selected else 1.0))
         painter.setBrush(base)
         radius = 5 if self._cell_side < 54 else 7
         painter.drawRoundedRect(rect, radius, radius)
@@ -233,10 +233,10 @@ class ButtonCell(QWidget):
         title_color = palette.color(QPalette.ColorRole.BrightText) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText)
         painter.setPen(title_color)
         title_top = 18 if self._cell_side < 54 else 22 if self._cell_side < 60 else 24 if self._cell_side < 76 else 27 if self._cell_side < 100 else 30
-        pill_height = 13 if self._cell_side < 82 else 15 if self._cell_side < 108 else 17
-        pill_bottom_margin = 6
+        action_height = 13 if self._cell_side < 82 else 15 if self._cell_side < 108 else 17
+        action_bottom_margin = 5
         show_action = self._cell_side >= 66
-        title_bottom_padding = pill_height + pill_bottom_margin + 3 if show_action else 6
+        title_bottom_padding = action_height + action_bottom_margin + 4 if show_action else 6
         horizontal_padding = 4 if self._cell_side < 54 else 7
         title_rect = rect.adjusted(horizontal_padding, title_top, -horizontal_padding, -title_bottom_padding)
         self._draw_fitted_center(
@@ -256,14 +256,16 @@ class ButtonCell(QWidget):
         action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=6)
         painter.setFont(action_font)
         action_text = metrics.elidedText(action_label, Qt.TextElideMode.ElideRight, max(18, rect.width() - 20))
-        pill = QRect(rect.left() + 8, rect.bottom() - pill_height - pill_bottom_margin, rect.width() - 16, pill_height)
-        painter.setPen(Qt.PenStyle.NoPen)
-        chip = palette.color(QPalette.ColorRole.Window)
-        chip.setAlpha(225)
-        painter.setBrush(chip)
-        painter.drawRoundedRect(pill, 7, 7)
-        painter.setPen(palette.color(QPalette.ColorRole.Text) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText))
-        painter.drawText(pill, Qt.AlignmentFlag.AlignCenter, action_text)
+        action_rect = QRect(
+            rect.left() + 7,
+            rect.bottom() - action_height - action_bottom_margin,
+            rect.width() - 14,
+            action_height,
+        )
+        action_color = palette.color(QPalette.ColorRole.Text if button.enabled else QPalette.ColorRole.PlaceholderText)
+        action_color.setAlpha(185 if button.enabled else 150)
+        painter.setPen(action_color)
+        painter.drawText(action_rect, Qt.AlignmentFlag.AlignCenter, action_text)
 
     def _badge_text(self, enabled: bool) -> str:
         if self._armed:

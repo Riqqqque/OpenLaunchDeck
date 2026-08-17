@@ -16,10 +16,10 @@ class GridWidget(QWidget):
         self.cells: dict[str, ButtonCell] = {}
         self.selected_button_id = "A1"
         self._density = "comfortable"
-        self._spacing = 10
+        self._spacing = 7
         layout = QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(10)
+        layout.setSpacing(self._spacing)
         for row_index, row in enumerate(BUTTON_ROWS):
             for col_index, column in enumerate(BUTTON_COLUMNS):
                 button_id = f"{row}{column}"
@@ -29,7 +29,7 @@ class GridWidget(QWidget):
                 self.cells[button_id] = cell
 
     def set_density(self, density: str) -> None:
-        spacing = {"mini": 5, "compact": 7, "comfortable": 10, "large": 12}.get(density, 10)
+        spacing = {"mini": 4, "compact": 5, "comfortable": 7, "large": 8}.get(density, 7)
         self._density = density
         self._spacing = spacing
         if self.layout() is not None:

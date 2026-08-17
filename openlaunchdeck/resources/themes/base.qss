@@ -21,7 +21,14 @@ QWidget#MainSurface {
   background: @BACKGROUND@;
 }
 
-QFrame#AppHeader, QFrame#SettingsSection {
+QFrame#AppHeader {
+  background: @SURFACE@;
+  border: none;
+  border-bottom: 1px solid @BORDER@;
+  border-radius: 0;
+}
+
+QFrame#SettingsSection {
   background: @SURFACE@;
   border: 1px solid @BORDER@;
   border-radius: 7px;
@@ -32,10 +39,24 @@ QWidget#HeaderBrand, QWidget#HeaderMeta, QWidget#HeaderContext, QFrame#HeaderAct
   border: none;
 }
 
-QWidget#SidebarPanel, QFrame#DeckPanel, QWidget#InspectorPanel {
+QWidget#SidebarPanel {
   background: @SURFACE@;
-  border: 1px solid @BORDER@;
-  border-radius: 7px;
+  border: none;
+  border-right: 1px solid @BORDER@;
+  border-radius: 0;
+}
+
+QFrame#DeckPanel {
+  background: @BACKGROUND@;
+  border: none;
+  border-radius: 0;
+}
+
+QWidget#InspectorPanel {
+  background: @SURFACE@;
+  border: none;
+  border-left: 1px solid @BORDER@;
+  border-radius: 0;
 }
 
 QScrollArea, QScrollArea#InspectorScroll, QScrollArea#SidebarScroll, QScrollArea#GridScroll,
@@ -54,12 +75,12 @@ QScrollArea#SidebarScroll > QWidget > QWidget, QScrollArea#SettingsScroll > QWid
 
 QSplitter#WorkspaceSplitter::handle {
   background: transparent;
-  width: 8px;
+  width: 5px;
 }
 
 QSplitter#WorkspaceSplitter::handle:hover {
-  background: @BORDER_STRONG@;
-  border-radius: 4px;
+  background: @ACCENT_DARK@;
+  border-radius: 0;
 }
 
 QLabel#HeaderTitle {
