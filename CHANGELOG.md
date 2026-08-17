@@ -3,7 +3,7 @@
 ## 0.1.62
 
 - Fixed short-window grid sizing so all 64 pads remain visible without horizontal or vertical scrollbars.
-- Added height-aware single-pane editing, tighter short-window chrome, and more legible compact pad typography for second-monitor layouts.
+- Added height-aware single-pane editing, tighter short-window chrome, legible compact pad typography, and unclipped profile controls for second-monitor layouts.
 - Removed the in-app sound search, download, import, credential, and bundled starter-sound feature while keeping local-file soundboard playback and routing.
 - Reduced release size by removing the retired sound assets and related feature modules.
 - Expanded visual checks to cover the 1280x640 layout that exposed the clipped bottom row.
