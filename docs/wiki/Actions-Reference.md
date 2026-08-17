@@ -159,7 +159,7 @@ Already Playing choices:
 - `ignore` keeps the existing copy playing.
 - `toggle_stop` stops the sound on the next press.
 
-Click **Library** beside Sound File to find, preview, download, import, and assign clips. See [Sound Library](Sound-Library.md) for that workflow and [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md) for output routing and quality setup.
+Click **Browse** beside Sound File to select a local clip. OpenLaunchDeck keeps the path in the profile, so keep the file in a stable location. See [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md) for output routing and quality setup.
 
 ## Stop Sound
 

@@ -21,14 +21,10 @@ QWidget#MainSurface {
   background: @BACKGROUND@;
 }
 
-QFrame#AppHeader, QFrame#SettingsSection, QFrame#SoundCard, QFrame#LibraryHero {
+QFrame#AppHeader, QFrame#SettingsSection {
   background: @SURFACE@;
   border: 1px solid @BORDER@;
   border-radius: 7px;
-}
-
-QFrame#SoundCard[selected="true"] {
-  border: 2px solid @ACCENT@;
 }
 
 QWidget#HeaderBrand, QWidget#HeaderMeta, QWidget#HeaderContext, QFrame#HeaderActions {
@@ -43,7 +39,7 @@ QWidget#SidebarPanel, QFrame#DeckPanel, QWidget#InspectorPanel {
 }
 
 QScrollArea, QScrollArea#InspectorScroll, QScrollArea#SidebarScroll, QScrollArea#GridScroll,
-QScrollArea#SoundCardScroll, QScrollArea#SettingsScroll {
+QScrollArea#SettingsScroll {
   background: transparent;
   border: none;
 }
@@ -52,8 +48,7 @@ QScrollArea#InspectorScroll > QWidget > QWidget {
   background: @SURFACE@;
 }
 
-QScrollArea#SidebarScroll > QWidget > QWidget, QScrollArea#SoundCardScroll > QWidget > QWidget,
-QScrollArea#SettingsScroll > QWidget > QWidget {
+QScrollArea#SidebarScroll > QWidget > QWidget, QScrollArea#SettingsScroll > QWidget > QWidget {
   background: transparent;
 }
 
@@ -74,7 +69,7 @@ QLabel#HeaderTitle {
 }
 
 QLabel#HeaderSubtitle, QLabel#PanelHint, QLabel#ThemeDescription, QLabel#SettingsDescription,
-QLabel#SoundMeta, QLabel#SoundLicense, QLabel#ActionDescription, QLabel#MutedText {
+QLabel#ActionDescription, QLabel#MutedText {
   color: @MUTED@;
   font-size: 9pt;
 }
@@ -85,7 +80,7 @@ QLabel#HeaderActiveDeck {
   font-weight: 700;
 }
 
-QLabel#HeaderModeChip, QLabel#LibraryTarget, QLabel#ProviderStatus, QLabel#CategoryChip {
+QLabel#HeaderModeChip {
   background: @CHIP@;
   border: 1px solid @BORDER_STRONG@;
   border-radius: 6px;
@@ -100,20 +95,14 @@ QLabel#HeaderModeChip[state="simulation"] {
   color: @WARNING@;
 }
 
-QLabel#HeaderModeChip[state="connected"], QLabel#ProviderStatus[connected="true"] {
+QLabel#HeaderModeChip[state="connected"] {
   border-color: @SUCCESS@;
   color: @SUCCESS@;
 }
 
-QLabel#PanelTitle, QLabel#LibraryTitle, QLabel#SettingsTitle {
+QLabel#PanelTitle, QLabel#SettingsTitle {
   color: @TEXT_STRONG@;
   font-size: 13pt;
-  font-weight: 700;
-}
-
-QLabel#SoundTitle {
-  color: @TEXT_STRONG@;
-  font-size: 11pt;
   font-weight: 700;
 }
 
@@ -228,12 +217,6 @@ QListWidget#ThemeList::item:selected {
   background: @CHIP@;
   border-color: @ACCENT@;
   color: @TEXT_STRONG@;
-}
-
-QFrame#LibraryDetails {
-  background: @PANEL@;
-  border: 1px solid @BORDER@;
-  border-radius: 6px;
 }
 
 QTabWidget::pane {

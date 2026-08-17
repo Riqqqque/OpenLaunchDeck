@@ -14,7 +14,7 @@ class PlaySoundAction(BaseAction):
             "name": "file_path",
             "label": "Sound File",
             "type": "sound_file",
-            "placeholder": "Choose a file or open the Sound Library",
+            "placeholder": "Choose a local WAV, MP3, or OGG file",
             "help": "WAV, MP3, and OGG files are supported when the Windows media codecs can decode them.",
         },
         {"name": "volume", "label": "Clip Volume", "type": "number", "min": 0, "max": 100, "default": 80, "suffix": "%"},
@@ -40,7 +40,7 @@ class PlaySoundAction(BaseAction):
     def validate(self, config: dict) -> list[str]:
         file_path = str(config.get("file_path") or "").strip().strip('"')
         if not file_path:
-            return ["Choose a sound file or select one from the Sound Library."]
+            return ["Choose a local sound file."]
         path = Path(file_path).expanduser()
         if path.suffix.casefold() not in {".wav", ".mp3", ".ogg"}:
             return ["Choose a WAV, MP3, or OGG sound file."]

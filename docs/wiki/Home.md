@@ -23,7 +23,6 @@ The app works without hardware in **Simulation mode**. Clicking a grid pad selec
 | Learn what every action does | [Actions Reference](Actions-Reference.md) |
 | Copy a proven button setup | [Button Recipes](Button-Recipes.md) |
 | Save clips, take screenshots, or control OBS | [OBS WebSocket Setup](OBS-WebSocket-Setup.md) |
-| Find, preview, and assign sound effects | [Sound Library](Sound-Library.md) |
 | Play sounds locally or into voice chat | [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md) |
 | Prevent accidental live actions | [Streaming Safety](Streaming-Safety.md) |
 | Keep the app light while gaming | [Performance and Gaming](Performance-And-Gaming.md) |
@@ -39,7 +38,7 @@ The app works without hardware in **Simulation mode**. Clicking a grid pad selec
 - MIDI auto-detection, manual connection, live debug, and calibration
 - Hotkeys, media keys, typed text, websites, apps, files, folders, and commands
 - OBS replay clips, screenshots, recording, scenes, sources, and mute controls
-- Account-free starter sounds, local imports, optional public sound search, previews, and one-click pad assignment
+- Local-file soundboard playback with per-pad volume, looping, stopping, and optional voice routing
 - Seven complete themes and responsive wide, compact, focus, and single-pane layouts
 - Searchable guided action setup and visual Multi-Action sequences
 - Local soundboard playback and optional voice-route playback

@@ -79,7 +79,6 @@ class Settings:
     soundboard_voice_route_microphone_volume: int = 100
     soundboard_global_volume: int = 100
     soundboard_stop_sounds_on_exit: bool = True
-    sound_library_api_key_protected: str = ""
     check_updates_on_startup: bool = False
     update_channel: str = "stable"
     update_manifest_url: str = ""

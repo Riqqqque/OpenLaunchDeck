@@ -14,11 +14,15 @@ Each play sound button supports:
 
 Missing files are reported before playback starts. Unknown file extensions are rejected with a clear error instead of being sent to the audio backend.
 
-## Sound Library
+## Assign A Local Sound
 
-Open **Soundboard > Browse Sound Library** to preview and assign sounds. You can also click **Library** beside a Play Sound action's file field.
+1. Select a pad in the grid.
+2. Choose **Play Sound** in the Action selector.
+3. Click **Browse** beside **Sound File**.
+4. Select a local WAV, MP3, or OGG file.
+5. Click **Test Action**.
 
-**Starter Sounds** contains original lightweight effects that work without an account. **My Sounds** imports local files. Optional **Online Search** uses a personal Freesound API key and defaults to CC0 results, with popular, newest, top-rated, and best-match sorting. The app stores managed audio, source metadata, licenses, and an attribution index under AppData. See [sound_library.md](sound_library.md) for the complete workflow.
+OpenLaunchDeck references the selected file from its current location. Keep the file there, or update the pad after moving it. No sound files are bundled or downloaded by the app.
 
 ## Already Playing Behavior
 

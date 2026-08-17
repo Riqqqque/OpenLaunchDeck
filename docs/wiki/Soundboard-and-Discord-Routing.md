@@ -12,14 +12,14 @@ Set up **local playback first**. Add voice routing only after you can hear the c
 
 No copyrighted sounds are bundled.
 
-Use [Sound Library](Sound-Library.md) to find, preview, import, and assign clips. Return here after local playback works when you want output routing or voice-chat setup.
+Select a pad, choose **Play Sound**, and click **Browse** beside **Sound File** to assign a local clip. Set up local playback before adding voice-chat routing.
 
 ## 1. Make Local Playback Work
 
 Create a button:
 
 - Action: **Play Sound**
-- Sound File: a local `.wav` or `.mp3`, or a downloaded library sound
+- Sound File: a local `.wav` or `.mp3`
 - Clip Volume: `60`
 - Also Send To Voice Chat: off
 - Loop Until Stopped: off

@@ -80,8 +80,6 @@ Manual and startup update checks use worker threads so startup and the main wind
 
 Sound playback is started through QtMultimedia and does not load entire sound files into Python memory. The audio engine performs lightweight file checks and caches metadata such as name, extension, size, and modified time when a sound is played.
 
-The Sound Library uses Qt's asynchronous network manager for search and downloads. Preview audio streams through QtMultimedia, and downloads stream into a bounded temporary file instead of being buffered in Python memory. Its card grid reflows through one short single-shot resize timer while the dialog is visible. The included starter collection is about 0.3 MB and is copied only when the library is first opened. The provider credential is decrypted once per dialog service and cached only for that session.
-
 Sound action start latency is logged at debug level, or at info level when performance logging is enabled. The Soundboard panel refreshes the current playback list on a coarse timer only while the panel is visible, and audio state changes refresh it immediately.
 
 Per-sound volume and global soundboard volume are combined, clamped to 0-100, and converted to a quieter playback gain before playback starts. Existing playback instances are tracked by button and page so Stop Sound can stop one button, one page, or all sounds without scanning profile files. Voice-chat routing starts a second playback instance only for sounds that explicitly enable `Route To Voice Chat`, and both routed outputs receive the same gain.
