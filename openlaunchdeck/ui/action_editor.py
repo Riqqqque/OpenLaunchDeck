@@ -56,7 +56,6 @@ ACTION_CATEGORIES = {
 
 class ActionEditor(QWidget):
     changed = Signal()
-    library_requested = Signal()
 
     def __init__(self, registry, allow_multi_action: bool = True) -> None:
         super().__init__()
@@ -326,13 +325,6 @@ class ActionEditor(QWidget):
                 folder.setMinimumWidth(64)
                 layout.addWidget(folder)
                 folder.clicked.connect(lambda _checked=False, target=edit: self._browse(target, "path"))
-            if field_type == "sound_file":
-                library = QPushButton("Library")
-                library.setObjectName("SecondaryButton")
-                library.setToolTip("Browse downloaded and online sounds.")
-                library.setMinimumWidth(58)
-                layout.addWidget(library)
-                library.clicked.connect(self.library_requested.emit)
             container.value_widget = edit
             return container
         widget = QLineEdit(str(field.get("default", "") if value is None else value))

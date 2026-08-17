@@ -29,7 +29,6 @@ class ButtonEditor(QWidget):
     clear_requested = Signal()
     copy_requested = Signal()
     paste_requested = Signal()
-    library_requested = Signal()
     back_requested = Signal()
 
     def __init__(self, registry) -> None:
@@ -120,7 +119,6 @@ class ButtonEditor(QWidget):
         self.dangerous_check.stateChanged.connect(lambda _state: self.apply_changes())
         self.notes_edit.textChanged.connect(self._queue_notes_change)
         self.action_editor.changed.connect(self._queue_action_change)
-        self.action_editor.library_requested.connect(self.library_requested.emit)
         self.test_button.clicked.connect(self._test)
         self.clear_button.clicked.connect(self.clear_requested.emit)
         self.copy_button.clicked.connect(self.copy_requested.emit)

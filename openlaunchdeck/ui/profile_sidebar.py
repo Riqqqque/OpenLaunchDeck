@@ -74,7 +74,7 @@ class ProfileSidebar(QWidget):
         for button in (self.import_button, self.export_button):
             button.setObjectName("SecondaryButton")
         profile_buttons.addWidget(self.import_button, 0, 0)
-        profile_buttons.addWidget(self.export_button, 0, 1)
+        profile_buttons.addWidget(self.export_button, 1, 0)
         layout.addLayout(profile_buttons)
 
         layout.addStretch(1)

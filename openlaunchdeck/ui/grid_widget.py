@@ -40,8 +40,8 @@ class GridWidget(QWidget):
 
     def fit_to_viewport(self, viewport_size: QSize) -> None:
         maximum = {"mini": 72, "compact": 88, "comfortable": 106, "large": 124}.get(self._density, 106)
-        available = max(0, min(viewport_size.width(), viewport_size.height()) - 4)
-        side = min(maximum, max(50, (available - self._spacing * 7) // 8))
+        available = max(0, min(viewport_size.width(), viewport_size.height()) - 8)
+        side = min(maximum, max(34, (available - self._spacing * 7) // 8))
         for cell in self.cells.values():
             cell.set_cell_side(side)
         total = side * 8 + self._spacing * 7

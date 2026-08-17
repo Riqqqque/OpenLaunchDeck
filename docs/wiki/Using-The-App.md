@@ -112,7 +112,6 @@ See [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md) for safe organiz
 
 ### Soundboard
 
-- Browse Sound Library
 - Open Soundboard Panel
 - Stop All Sounds
 
@@ -129,7 +128,7 @@ See [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md) for safe organiz
 
 ## Soundboard Panel
 
-The Sound Library searches and organizes clips, while the Soundboard panel manages playback and routing. The panel shows active sounds, the selected output route, global volume, and stop controls. Use **Stop All Sounds** when a loop or overlapping clip needs to end immediately.
+The Soundboard panel manages playback and routing. It shows active sounds, the selected output route, global volume, and stop controls. Assign a local clip through the Play Sound action's **Browse** button. Use **Stop All Sounds** when a loop or overlapping clip needs to end immediately.
 
 ## System Tray And Background Use
 

@@ -25,14 +25,12 @@ LOGS_DIR = APP_DATA_DIR / "logs"
 BACKUPS_DIR = APP_DATA_DIR / "backups"
 MIDI_MAPPINGS_DIR = APP_DATA_DIR / "midi_mappings"
 IMPORTED_ASSETS_DIR = APP_DATA_DIR / "imported_assets"
-SOUND_LIBRARY_DIR = IMPORTED_ASSETS_DIR / "sound_library"
 UPDATES_DIR = APP_DATA_DIR / "updates"
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 RESOURCES_DIR = PACKAGE_DIR / "resources"
 ICONS_DIR = RESOURCES_DIR / "icons"
 STARTER_PROFILES_DIR = RESOURCES_DIR / "starter_profiles"
-STARTER_SOUNDS_DIR = RESOURCES_DIR / "starter_sounds"
 THEMES_DIR = RESOURCES_DIR / "themes"
 
 
@@ -44,7 +42,6 @@ def ensure_user_dirs() -> None:
         BACKUPS_DIR,
         MIDI_MAPPINGS_DIR,
         IMPORTED_ASSETS_DIR,
-        SOUND_LIBRARY_DIR,
         UPDATES_DIR,
     ):
         path.mkdir(parents=True, exist_ok=True)

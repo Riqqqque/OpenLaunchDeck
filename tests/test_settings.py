@@ -43,10 +43,10 @@ def test_settings_recover_from_wrong_types():
     assert settings.update_channel == "stable"
 
 
-def test_settings_preserve_protected_sound_library_key():
-    settings = Settings.from_dict({"sound_library_api_key_protected": "dpapi:protected-value"})
+def test_settings_ignore_retired_fields():
+    settings = Settings.from_dict({"retired_setting": "retired-value"})
 
-    assert settings.sound_library_api_key_protected == "dpapi:protected-value"
+    assert "retired_setting" not in settings.to_dict()
 
 
 def test_settings_migrate_legacy_theme_names_and_keep_new_themes():

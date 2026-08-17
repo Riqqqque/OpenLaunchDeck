@@ -97,7 +97,7 @@ class ButtonCell(QWidget):
         self.update()
 
     def set_cell_side(self, side: int) -> None:
-        side = max(50, int(side))
+        side = max(34, int(side))
         if side == self._cell_side:
             return
         self._cell_side = side
@@ -152,7 +152,8 @@ class ButtonCell(QWidget):
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect().adjusted(3, 3, -3, -3)
+        inset = 2 if self._cell_side < 54 else 3
+        rect = self.rect().adjusted(inset, inset, -inset, -inset)
         button = self._button
         action_type = button.action.type if button.action else "noop"
         label = button.label or "Empty"
@@ -184,19 +185,33 @@ class ButtonCell(QWidget):
 
         painter.setPen(QPen(border, 2.2 if self._selected else 1.4))
         painter.setBrush(base)
-        painter.drawRoundedRect(rect, 7, 7)
+        radius = 5 if self._cell_side < 54 else 7
+        painter.drawRoundedRect(rect, radius, radius)
 
-        strip = QRect(rect.left() + 9, rect.top() + 8, max(18, rect.width() - 18), 4)
+        strip_margin = 6 if self._cell_side < 54 else 9
+        strip_height = 3 if self._cell_side < 54 else 4
+        strip = QRect(
+            rect.left() + strip_margin,
+            rect.top() + (6 if self._cell_side < 54 else 8),
+            max(14, rect.width() - strip_margin * 2),
+            strip_height,
+        )
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(accent if button.enabled else QColor("#273244"))
         painter.drawRoundedRect(strip, 3, 3)
 
         painter.setPen(palette.color(QPalette.ColorRole.Text) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText))
         id_font = QFont(painter.font())
-        id_font.setPointSize(7 if self._cell_side < 82 else 8)
+        id_font.setPointSize(6 if self._cell_side < 54 else 7 if self._cell_side < 82 else 8)
         id_font.setWeight(QFont.Weight.DemiBold)
         painter.setFont(id_font)
-        painter.drawText(rect.adjusted(11, 14, -10, -10), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
+        id_left = 7 if self._cell_side < 54 else 11
+        id_top = 10 if self._cell_side < 54 else 14
+        painter.drawText(
+            rect.adjusted(id_left, id_top, -6, -6),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
+            button.id,
+        )
 
         badge = self._badge_text(button.enabled)
         if badge:
@@ -217,13 +232,19 @@ class ButtonCell(QWidget):
         painter.setFont(title_font)
         title_color = palette.color(QPalette.ColorRole.BrightText) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText)
         painter.setPen(title_color)
-        title_top = 22 if self._cell_side < 60 else 24 if self._cell_side < 76 else 27 if self._cell_side < 100 else 30
+        title_top = 18 if self._cell_side < 54 else 22 if self._cell_side < 60 else 24 if self._cell_side < 76 else 27 if self._cell_side < 100 else 30
         pill_height = 13 if self._cell_side < 82 else 15 if self._cell_side < 108 else 17
         pill_bottom_margin = 6
-        show_action = self._cell_side >= 68
+        show_action = self._cell_side >= 66
         title_bottom_padding = pill_height + pill_bottom_margin + 3 if show_action else 6
-        title_rect = rect.adjusted(7, title_top, -7, -title_bottom_padding)
-        self._draw_fitted_center(painter, title_rect, label, minimum_size=6 if self._density == "mini" else 7)
+        horizontal_padding = 4 if self._cell_side < 54 else 7
+        title_rect = rect.adjusted(horizontal_padding, title_top, -horizontal_padding, -title_bottom_padding)
+        self._draw_fitted_center(
+            painter,
+            title_rect,
+            label,
+            minimum_size=5 if self._cell_side < 54 else 6 if self._density == "mini" else 7,
+        )
 
         if not show_action:
             return
@@ -254,6 +275,8 @@ class ButtonCell(QWidget):
         return ""
 
     def _draw_badge(self, painter: QPainter, rect: QRect, text: str) -> None:
+        if self._cell_side < 54:
+            return
         font = QFont(painter.font())
         font.setPointSize(7)
         font.setWeight(QFont.Weight.Bold)
