@@ -36,7 +36,6 @@ from .. import native_acceleration
 from ..constants import BUTTON_IDS
 from ..devices.midi_manager import MidiManager
 from ..models.button import ButtonConfig
-from ..models.action_config import ActionConfig
 from ..paths import LOGS_DIR, PROFILES_DIR
 from ..version import APP_NAME, __version__
 from .button_editor import ButtonEditor
@@ -48,7 +47,6 @@ from .profile_sidebar import ProfileSidebar
 from .settings_dialog import SettingsDialog
 from .setup_wizard import SetupWizard
 from .soundboard_panel import SoundboardPanel
-from .sound_library_dialog import SoundLibraryDialog
 from .theme import apply_theme
 from ..services.update_service import UpdateService
 from .tray import TrayController
@@ -91,7 +89,6 @@ class MainWindow(QMainWindow):
         self.clipboard_button: dict | None = None
         self.midi_debug_window: MidiDebugWindow | None = None
         self.soundboard_panel: SoundboardPanel | None = None
-        self.sound_library_dialog: SoundLibraryDialog | None = None
         self._connect_thread: QThread | None = None
         self._connect_worker: MidiConnectionWorker | None = None
         self._startup_update_thread: QThread | None = None
@@ -226,7 +223,7 @@ class MainWindow(QMainWindow):
         self.header_update_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
         self.header_reconnect_button.setToolTip("Reconnect the Launchpad MIDI ports.")
         self.header_debug_button.setToolTip("Open MIDI diagnostics and calibration.")
-        self.header_soundboard_button.setToolTip("Browse, preview, download, and assign sounds.")
+        self.header_soundboard_button.setToolTip("Open soundboard playback and routing controls.")
         self.header_update_button.setToolTip("Check for a newer OpenLaunchDeck release.")
         self.header_update_button.setObjectName("HeaderPrimaryButton")
         header_layout.addWidget(actions_frame)
@@ -286,6 +283,8 @@ class MainWindow(QMainWindow):
         self.grid_scroll.setWidgetResizable(False)
         self.grid_scroll.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.grid_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.grid_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.grid_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.grid_scroll.setMinimumSize(0, 0)
         self.grid_scroll.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
         self.grid_scroll.setWidget(self.grid)
@@ -306,7 +305,7 @@ class MainWindow(QMainWindow):
 
         self.header_reconnect_button.clicked.connect(self.reconnect_device)
         self.header_debug_button.clicked.connect(self.show_midi_debug)
-        self.header_soundboard_button.clicked.connect(self.show_sound_library)
+        self.header_soundboard_button.clicked.connect(self.show_soundboard_panel)
         self.header_update_button.clicked.connect(self.check_updates)
         self.grid_focus_button.clicked.connect(self.toggle_grid_focus_mode)
         self.edit_selected_button.clicked.connect(self.show_compact_editor)
@@ -361,13 +360,11 @@ class MainWindow(QMainWindow):
         profiles_menu.addAction(manager_action)
 
         soundboard_menu = menu_bar.addMenu("Soundboard")
-        library_action = QAction("Browse Sound Library", self)
         panel_action = QAction("Open Soundboard Panel", self)
         stop_all_action = QAction("Stop All Sounds", self)
-        library_action.triggered.connect(self.show_sound_library)
         panel_action.triggered.connect(self.show_soundboard_panel)
         stop_all_action.triggered.connect(self.stop_all_sounds)
-        soundboard_menu.addActions([library_action, panel_action])
+        soundboard_menu.addAction(panel_action)
         soundboard_menu.addSeparator()
         soundboard_menu.addAction(stop_all_action)
 
@@ -413,7 +410,6 @@ class MainWindow(QMainWindow):
         self.editor.clear_requested.connect(self.clear_selected_button)
         self.editor.copy_requested.connect(self.copy_button_config)
         self.editor.paste_requested.connect(self.paste_button_config)
-        self.editor.library_requested.connect(self.show_sound_library)
         self.editor.back_requested.connect(self.show_compact_grid)
         self.sidebar.profile_changed.connect(self.change_profile)
         self.sidebar.page_changed.connect(self.change_page)
@@ -777,64 +773,10 @@ class MainWindow(QMainWindow):
     def show_soundboard_panel(self) -> None:
         if self.soundboard_panel is None:
             self.soundboard_panel = SoundboardPanel(self.services.audio_engine, self.services.settings_service, self)
-            self.soundboard_panel.browse_requested.connect(self.show_sound_library)
         self.soundboard_panel.refresh()
         self.soundboard_panel.show()
         self.soundboard_panel.raise_()
         self.soundboard_panel.activateWindow()
-
-    def show_sound_library(self) -> None:
-        self.editor.flush_pending_changes()
-        if self.sound_library_dialog is None:
-            self.sound_library_dialog = SoundLibraryDialog(
-                self.services.settings_service,
-                self.services.logger,
-                selected_button_provider=lambda: self.grid.selected_button_id,
-                parent=self,
-            )
-            self.sound_library_dialog.assign_requested.connect(self.assign_sound_to_selected_button)
-        self.sound_library_dialog.show()
-        self.sound_library_dialog.raise_()
-        self.sound_library_dialog.activateWindow()
-
-    def assign_sound_to_selected_button(self, file_path: str, sound_name: str) -> None:
-        path = Path(file_path).expanduser()
-        if not path.is_file():
-            QMessageBox.warning(self, APP_NAME, "The selected sound file is no longer available.")
-            return
-        button_id = self.grid.selected_button_id
-        if button_id not in BUTTON_IDS:
-            QMessageBox.information(self, APP_NAME, "Select a Launchpad pad before assigning a sound.")
-            return
-        button = self.services.profile_service.current_page.get_button(button_id)
-        existing_config = dict(button.action.config) if button.action and button.action.type == "play_sound" else {}
-        defaults = {
-            "volume": 80,
-            "route_to_voice_chat": False,
-            "loop": False,
-            "behavior_when_already_playing": "restart",
-            "active_color": "cyan",
-            "stop_on_page_change": False,
-        }
-        defaults.update(existing_config)
-        defaults["file_path"] = str(path.resolve())
-        button.action = ActionConfig("play_sound", defaults)
-        button.enabled = True
-        if not button.label:
-            button.label = _sound_button_label(sound_name or path.stem)
-        if button.color in {"off", "dim"}:
-            button.color = "purple"
-        self._profile_autosave_timer.stop()
-        self.editor.set_button(button)
-        self._save_current_profile()
-        self.grid.update_button(
-            self.services.profile_service.current_page,
-            button_id,
-            self.services.action_runner.dangerous_service,
-            self.services.audio_engine,
-        )
-        self.refresh_lighting()
-        self.statusBar().showMessage(f"Assigned {path.name} to {button_id}.", 5000)
 
     def stop_all_sounds(self) -> None:
         self.services.audio_engine.stop_all()
@@ -888,15 +830,17 @@ class MainWindow(QMainWindow):
 
     def _apply_responsive_layout(self, force: bool = False) -> None:
         width = self.width()
+        height = self.height()
+        short_workspace = height < 680
         base_density = self.services.settings_service.settings.grid_density
         if self._grid_focus_mode:
-            if width < 1050:
+            if width < 1050 or short_workspace:
                 density = "mini"
             elif width < 1500 and base_density != "compact":
                 density = "compact"
             else:
                 density = base_density
-        elif width < 1120:
+        elif width < 1120 or short_workspace:
             density = "mini"
         elif width < 1700 and base_density != "compact":
             density = "compact"
@@ -906,16 +850,16 @@ class MainWindow(QMainWindow):
             self._applied_grid_density = density
             self.grid.set_density(density)
 
-        compact_header = width < 1300
+        compact_header = width < 1420 or height < 720
         narrow_header = width < 1050
-        compact_workspace = width < 1370
-        narrow_workspace = width < 1080
+        compact_workspace = width < 1370 or short_workspace
+        narrow_workspace = width < 1080 or short_workspace
         self.app_header.setVisible(not self._grid_focus_mode)
-        if self._grid_focus_mode:
+        if self._grid_focus_mode or short_workspace:
             self.main_root_layout.setContentsMargins(8, 8, 8, 8)
             self.main_root_layout.setSpacing(8)
-            self.deck_layout.setContentsMargins(10, 10, 10, 10)
-            self.deck_layout.setSpacing(8)
+            self.deck_layout.setContentsMargins(8, 7, 8, 8)
+            self.deck_layout.setSpacing(6)
         else:
             self.main_root_layout.setContentsMargins(12, 10, 12, 12)
             self.main_root_layout.setSpacing(10)
@@ -923,18 +867,20 @@ class MainWindow(QMainWindow):
             self.deck_layout.setSpacing(10)
 
         self.deck_hint.setVisible(not compact_header and not self._grid_focus_mode)
-        self.header_subtitle.setVisible(width >= 1280)
+        self.header_subtitle.setVisible(width >= 1420 and height >= 720)
         self.header_context.setVisible(width >= 900)
         self.header_mode.setVisible(not narrow_header)
-        self.header_soundboard_button.setText("Sounds" if compact_header else "Sound Library")
+        self.header_soundboard_button.setText("Sounds" if compact_header else "Soundboard")
         self.header_reconnect_button.setText("Reconnect" if not narrow_header else "Link")
         self.header_debug_button.setVisible(width >= 1320)
         self.header_soundboard_button.setVisible(width >= 1080)
         self.header_update_button.setVisible(width >= 1080)
         self.sidebar_scroll.setVisible(not compact_workspace and not self._grid_focus_mode)
-        self.mode_status.setVisible(width >= 1320)
-        self.profile_status.setVisible(width >= 1120)
-        self.page_status.setVisible(width >= 1120)
+        self.mode_status.setVisible(width >= 1320 and not short_workspace)
+        self.profile_status.setVisible(width >= 1120 and not short_workspace)
+        self.page_status.setVisible(width >= 1120 and not short_workspace)
+        self.last_pressed_status.setVisible(width >= 900)
+        self.last_result_status.setVisible(width >= 760)
         self.statusBar().setVisible(not self._grid_focus_mode)
 
         responsive_mode = "focus" if self._grid_focus_mode else "narrow" if narrow_workspace else "compact" if compact_workspace else "wide"
@@ -1213,9 +1159,6 @@ class MainWindow(QMainWindow):
         if not self._force_quit and not saving_session and self.should_keep_running_in_background():
             if self.soundboard_panel is not None:
                 self.soundboard_panel.hide()
-            if self.sound_library_dialog is not None:
-                self.sound_library_dialog.shutdown()
-                self.sound_library_dialog.hide()
             self.hide()
             if self.services.audio_engine.voice_route_microphone_enabled and not self.services.settings_service.settings.minimize_to_tray:
                 self.tray.tray.showMessage(
@@ -1229,9 +1172,6 @@ class MainWindow(QMainWindow):
         self.services.audio_engine.stop_all()
         if self.soundboard_panel is not None:
             self.soundboard_panel.close()
-        if self.sound_library_dialog is not None:
-            self.sound_library_dialog.shutdown()
-            self.sound_library_dialog.close()
         self.device_reconnect_timer.stop()
         self._midi_health_executor.shutdown(wait=False, cancel_futures=True)
         self.services.device.close()
@@ -1309,10 +1249,3 @@ class MainWindow(QMainWindow):
             return
         self._quit_pending = False
         QTimer.singleShot(0, self.quit_app)
-
-
-def _sound_button_label(value: str) -> str:
-    words = " ".join(str(value).replace("_", " ").replace("-", " ").split())
-    if len(words) <= 24:
-        return words
-    return words[:23].rstrip() + "..."

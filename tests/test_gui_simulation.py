@@ -223,34 +223,6 @@ def test_disabled_grid_button_stays_selectable_for_editing():
     services.device.close()
 
 
-def test_sound_library_assignment_updates_and_saves_selected_pad(tmp_path):
-    app = QApplication.instance() or QApplication([])
-    services = build_services()
-    services.settings_service.settings.first_run_complete = True
-    services.settings_service.settings.auto_connect = False
-    window = MainWindow(services)
-    sound = tmp_path / "quick-alert.mp3"
-    sound.write_bytes(b"ID3test")
-    saves = []
-    services.profile_service.save_current = lambda: saves.append(True)
-
-    window.select_button("C3")
-    window.assign_sound_to_selected_button(str(sound), "Quick Alert")
-    app.processEvents()
-
-    button = services.profile_service.current_page.get_button("C3")
-    assert button.action.type == "play_sound"
-    assert button.action.config["file_path"] == str(sound.resolve())
-    assert button.label == "Quick Alert"
-    assert button.color == "purple"
-    assert saves == [True]
-
-    window._force_quit = True
-    window.close()
-    services.action_runner.shutdown()
-    services.device.close()
-
-
 def test_switching_pads_flushes_pending_action_edits():
     app = QApplication.instance() or QApplication([])
     services = build_services()
@@ -363,7 +335,7 @@ def test_button_editor_remains_accessible_in_narrow_window():
     assert file_widget.width() <= window.editor.action_editor.width()
 
     window.show_compact_grid()
-    window.resize(1180, 640)
+    window.resize(1180, 720)
     app.processEvents()
 
     assert window.deck_panel.isVisible()
@@ -376,7 +348,7 @@ def test_button_editor_remains_accessible_in_narrow_window():
     services.device.close()
 
 
-def test_grid_cells_stay_square_across_window_sizes():
+def test_grid_cells_fit_without_scrollbars_across_window_sizes():
     app = QApplication.instance() or QApplication([])
     services = build_services()
     services.settings_service.settings.first_run_complete = True
@@ -384,7 +356,7 @@ def test_grid_cells_stay_square_across_window_sizes():
     window = MainWindow(services)
     window.show()
 
-    for width, height in ((760, 560), (1100, 700), (1600, 900)):
+    for width, height in ((760, 560), (1100, 700), (1280, 640), (1600, 900)):
         window.resize(width, height)
         app.processEvents()
         window._fit_grid_to_viewport()
@@ -393,7 +365,19 @@ def test_grid_cells_stay_square_across_window_sizes():
         assert len(sizes) == 1
         cell_width, cell_height = sizes.pop()
         assert cell_width == cell_height
-        assert cell_width >= 50
+        assert cell_width >= 34
+        viewport = window.grid_scroll.viewport().size()
+        assert window.grid.width() <= viewport.width()
+        assert window.grid.height() <= viewport.height()
+        assert window.grid_scroll.horizontalScrollBar().maximum() == 0
+        assert window.grid_scroll.verticalScrollBar().maximum() == 0
+
+    window.resize(1280, 640)
+    app.processEvents()
+    assert window._responsive_mode == "narrow"
+    assert window.deck_panel.isVisible()
+    assert window.edit_selected_button.isVisible()
+    assert not window.editor_scroll.isVisible()
 
     window._force_quit = True
     window.close()
@@ -663,4 +647,3 @@ def test_connected_device_guard_stays_active_for_health_checks():
     window.close()
     services.action_runner.shutdown()
     services.device.close()
-

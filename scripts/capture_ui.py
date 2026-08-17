@@ -24,7 +24,6 @@ from openlaunchdeck.app import build_services
 from openlaunchdeck.logging_setup import shutdown_logging
 from openlaunchdeck.ui.main_window import MainWindow
 from openlaunchdeck.ui.settings_dialog import SettingsDialog
-from openlaunchdeck.ui.sound_library_dialog import SoundLibraryDialog
 from openlaunchdeck.ui.theme import apply_theme, theme_definitions
 
 
@@ -46,6 +45,17 @@ def capture(widget, path: Path, app: QApplication, expected_size: tuple[int, int
             f"{widget.windowTitle() or widget.objectName()} rendered at {widget.width()}x{widget.height()} "
             f"instead of {expected_size[0]}x{expected_size[1]}"
         )
+    if isinstance(widget, MainWindow) and widget.deck_panel.isVisible():
+        widget._fit_grid_to_viewport()
+        settle(app)
+        viewport = widget.grid_scroll.viewport().size()
+        if widget.grid.width() > viewport.width() or widget.grid.height() > viewport.height():
+            raise RuntimeError(
+                f"Launchpad grid {widget.grid.width()}x{widget.grid.height()} does not fit "
+                f"the {viewport.width()}x{viewport.height()} viewport"
+            )
+        if widget.grid_scroll.horizontalScrollBar().maximum() or widget.grid_scroll.verticalScrollBar().maximum():
+            raise RuntimeError("Launchpad grid unexpectedly requires a scrollbar")
     path.parent.mkdir(parents=True, exist_ok=True)
     if not widget.grab().save(str(path)):
         raise RuntimeError(f"Could not save {path}")
@@ -75,7 +85,12 @@ def main() -> int:
         services.profile_service.set_current_profile("basic_pc")
     window = MainWindow(services)
     try:
-        sizes = ((760, 560, "narrow"), (1180, 720, "compact"), (1600, 900, "wide"))
+        sizes = (
+            (760, 560, "narrow"),
+            (1180, 720, "compact"),
+            (1280, 640, "short"),
+            (1600, 900, "wide"),
+        )
         for definition in theme_definitions():
             apply_theme(definition.key, window)
             for width, height, label in sizes:
@@ -95,29 +110,6 @@ def main() -> int:
         settle(app)
         if args.docs:
             capture(window, Path("docs/screenshots/main-window-dark.png"), app, (1600, 900))
-
-        library = SoundLibraryDialog(
-            services.settings_service,
-            services.logger,
-            selected_button_provider=lambda: window.grid.selected_button_id,
-            parent=window,
-        )
-        library.resize(1100, 760)
-        capture(library, args.output / "sound-library.png", app, (1100, 760))
-        if args.docs:
-            capture(library, Path("docs/screenshots/sound-library.png"), app, (1100, 760))
-        library_tabs = (
-            (library.starter_page, "starter"),
-            (library.online_page, "online"),
-            (library.local_page, "local"),
-        )
-        for page, label in library_tabs:
-            library.tabs.setCurrentWidget(page)
-            capture(library, args.output / f"sound-library-{label}-narrow.png", app, (720, 620))
-        library.tabs.setCurrentWidget(library.online_page)
-        library._toggle_provider_setup()
-        capture(library, args.output / "sound-library-online-setup-narrow.png", app, (720, 620))
-        library.close()
 
         settings = SettingsDialog(services.settings_service, window, services.startup_service)
         settings.resize(800, 680)

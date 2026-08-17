@@ -15,7 +15,6 @@
 
 **Streaming And Audio**
 
-- [Sound Library](Sound-Library.md)
 - [OBS WebSocket Setup](OBS-WebSocket-Setup.md)
 - [Streaming Safety](Streaming-Safety.md)
 - [Soundboard And Voice Chat](Soundboard-and-Discord-Routing.md)

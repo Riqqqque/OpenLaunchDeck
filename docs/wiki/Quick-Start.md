@@ -104,7 +104,7 @@ Good next buttons are:
 
 Use [Button Recipes](Button-Recipes.md) for exact field values and [Actions Reference](Actions-Reference.md) for every available action.
 
-For sound effects, open [Sound Library](Sound-Library.md), preview an included Starter Sound, and click **Use**. No account is needed. Local imports and optional public sound search are available in the other tabs.
+For sound effects, select a pad, choose **Play Sound**, click **Browse** beside **Sound File**, and select a local WAV, MP3, or OGG file. Click **Test Action** before using it from the Launchpad.
 
 ## 8. Make It Start With Windows
 
@@ -130,5 +130,4 @@ Open **Settings > Settings > Config folder** to open it. Back up this folder bef
 - [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md)
 - [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md)
 - [OBS WebSocket Setup](OBS-WebSocket-Setup.md)
-- [Sound Library](Sound-Library.md)
 - [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md)

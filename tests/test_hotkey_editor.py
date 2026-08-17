@@ -233,7 +233,7 @@ def test_play_sound_volume_editor_uses_soundboard_bounds():
     app.processEvents()
 
 
-def test_action_editor_hides_irrelevant_fields_and_exposes_sound_library():
+def test_action_editor_hides_irrelevant_fields_and_uses_local_sound_picker():
     app = QApplication.instance() or QApplication([])
     editor = ActionEditor(create_default_registry())
     editor.set_action("obs_websocket", {"operation": "switch_scene"})
@@ -249,8 +249,8 @@ def test_action_editor_hides_irrelevant_fields_and_exposes_sound_library():
 
     editor.set_action("play_sound", {})
     sound_field = editor.field_widgets["file_path"]
-    library_buttons = [button for button in sound_field.findChildren(QPushButton) if button.text() == "Library"]
-    assert len(library_buttons) == 1
+    picker_buttons = [button.text() for button in sound_field.findChildren(QPushButton)]
+    assert picker_buttons == ["Browse"]
     assert "selected soundboard output" in editor.description_label.text()
 
     editor.deleteLater()
