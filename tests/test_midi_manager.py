@@ -1,4 +1,4 @@
-from openlaunchdeck.devices.midi_manager import _find_launchpad_name, _resolve_launchpad_port
+from openlaunchdeck.devices.midi_manager import MidiManager, _find_launchpad_name, _resolve_launchpad_port
 
 
 def test_detects_windows_launchpad_mini_mk3_abbreviated_port_name():
@@ -54,3 +54,13 @@ def test_resolve_keeps_available_manual_non_launchpad_port():
     ]
 
     assert _resolve_launchpad_port("Custom MIDI Device", ports) == "Custom MIDI Device"
+
+
+def test_detection_can_reuse_an_existing_port_snapshot():
+    inputs = ["Generic Input", "LPMiniMK3 MIDI 1"]
+    outputs = ["Microsoft GS Wavetable Synth", "LPMiniMK3 MIDI 1"]
+
+    assert MidiManager.detect_launchpad_ports(inputs, outputs) == (
+        "LPMiniMK3 MIDI 1",
+        "LPMiniMK3 MIDI 1",
+    )

@@ -1,7 +1,14 @@
 import pytest
 
 from openlaunchdeck.devices.device_calibration import CalibrationSession
-from openlaunchdeck.devices.midi_mapping import MidiAddress, MidiMapping, message_to_address
+from openlaunchdeck.devices.midi_mapping import (
+    MidiAddress,
+    MidiMapping,
+    address_for_auxiliary_control,
+    auxiliary_verification_table,
+    message_to_address,
+    parse_auxiliary_message,
+)
 
 
 class FakeMessage:
@@ -98,6 +105,46 @@ def test_mapping_rejects_duplicate_addresses():
         )
 
 
+def test_direct_mapping_construction_rejects_duplicate_addresses():
+    with pytest.raises(ValueError, match="same message"):
+        MidiMapping(
+            button_to_address={
+                "A1": MidiAddress("note", 81),
+                "A2": MidiAddress("note", 81),
+            }
+        )
+
+
+def test_calibration_rejects_a_message_already_used_by_another_pad():
+    session = CalibrationSession(expected_buttons=["A1", "A2"])
+    session.start()
+    message = FakeMessage("note_on", note=81, velocity=127)
+
+    assert session.capture(message) == "Press A2"
+    result = session.capture(message)
+
+    assert result == "That message is already assigned to A1. Press A2"
+    assert session.index == 1
+    assert list(session.captured) == ["A1"]
+
+
 def test_mapping_rejects_out_of_range_values():
     with pytest.raises(ValueError, match="between 0 and 127"):
         MidiAddress.from_dict({"message_type": "note", "number": 200, "channel": 0})
+
+
+def test_programmer_mode_auxiliary_controls_use_documented_cc_map():
+    left = parse_auxiliary_message(FakeMessage("control_change", control=93, value=127))
+    scene_eight = parse_auxiliary_message(FakeMessage("control_change", control=19, value=127))
+
+    assert left is not None and left.control_id == "top_left" and left.pressed is True
+    assert scene_eight is not None and scene_eight.control_id == "scene_8"
+    assert address_for_auxiliary_control("top_right") == MidiAddress("control", 94, 0)
+    assert len(auxiliary_verification_table()) == 16
+
+
+def test_auxiliary_control_release_and_unrelated_cc_are_parsed_safely():
+    released = parse_auxiliary_message(FakeMessage("control_change", control=94, value=0))
+
+    assert released is not None and released.pressed is False
+    assert parse_auxiliary_message(FakeMessage("control_change", control=10, value=127)) is None

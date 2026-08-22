@@ -262,6 +262,7 @@ def test_simulation_tooltip_and_grid_focus_mode():
     assert window.workspace_splitter.handleWidth() == 5
     assert "no Launchpad Mini MK3 MIDI connection is active" in window.header_mode.toolTip()
     assert window.mode_status.toolTip() == window.header_mode.toolTip()
+    assert "no Launchpad Mini MK3 MIDI connection is active" in window.header_reconnect_button.toolTip()
 
     window.resize(760, 560)
     window.set_grid_focus_mode(True)
@@ -281,12 +282,12 @@ def test_simulation_tooltip_and_grid_focus_mode():
     app.processEvents()
 
     assert not window.grid_focus_action.isChecked()
-    assert window.grid_focus_button.text() == "Focus Grid"
+    assert window.grid_focus_button.text() == "Deck View"
     assert window.app_header.isVisible()
     assert window.deck_panel.isVisible()
     assert window.edit_selected_button.isVisible()
     assert not window.editor_scroll.isVisible()
-    assert window.statusBar().isVisible()
+    assert not window.statusBar().isVisible()
 
     window._force_quit = True
     window.close()
@@ -368,8 +369,9 @@ def test_grid_cells_fit_without_scrollbars_across_window_sizes():
         sizes = {(cell.width(), cell.height()) for cell in window.grid.cells.values()}
         assert len(sizes) == 1
         cell_width, cell_height = sizes.pop()
-        assert cell_width == cell_height
-        assert cell_width >= 34
+        assert cell_width >= cell_height
+        assert cell_width >= 48
+        assert cell_height >= 38
         viewport = window.grid_scroll.viewport().size()
         assert window.grid.width() <= viewport.width()
         assert window.grid.height() <= viewport.height()
@@ -383,6 +385,32 @@ def test_grid_cells_fit_without_scrollbars_across_window_sizes():
     assert window.edit_selected_button.isVisible()
     assert not window.editor_scroll.isVisible()
     assert not window.deck_title.isVisible()
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_launchpad_hardware_controls_navigate_pages_without_running_grid_actions():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    services.profile_service.current_profile.pages.append(Page.blank("Second", "second"))
+    window = MainWindow(services)
+    window.show()
+    app.processEvents()
+
+    window.handle_hardware_control("top_right", True, None)
+    app.processEvents()
+    assert services.profile_service.current_page_id == "second"
+    assert window.deck_page_combo.currentData() == "second"
+
+    window.handle_hardware_control("scene_1", True, None)
+    app.processEvents()
+    assert services.profile_service.current_page_id == "main"
+    assert window.deck_page_combo.currentData() == "main"
 
     window._force_quit = True
     window.close()
@@ -470,6 +498,36 @@ def test_soundboard_panel_reuses_instance_and_pauses_hidden_refresh():
     assert first_panel.timer.isActive()
 
     first_panel.hide()
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_soundboard_panel_controls_remain_usable_at_compact_size():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+
+    window.show_soundboard_panel()
+    panel = window.soundboard_panel
+    assert panel is not None
+    panel.resize(520, 520)
+    app.processEvents()
+
+    assert panel.output_combo.width() >= 180
+    assert panel.voice_output_combo.width() >= 180
+    assert panel.mic_input_combo.width() >= 180
+    assert panel.monitor_note.isVisible()
+    assert panel.stop_all_button.isVisible()
+    assert panel.docs_button.isVisible()
+    assert panel.stop_all_button.geometry().bottom() < panel.docs_button.geometry().top()
+    assert panel.scroll_area.horizontalScrollBar().maximum() == 0
+    assert panel.scroll_area.verticalScrollBar().maximum() > 0
+
+    panel.hide()
     window._force_quit = True
     window.close()
     services.action_runner.shutdown()

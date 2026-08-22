@@ -12,17 +12,23 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialog,
     QFormLayout,
-    QHBoxLayout,
+    QGridLayout,
     QLabel,
     QListWidget,
     QPushButton,
+    QScrollArea,
     QSpinBox,
     QVBoxLayout,
+    QWidget,
 )
 
-from ..audio.input_devices import list_input_devices
 from ..audio.bridge_driver import detect_openlaunchdeck_bridge
-from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
+from ..audio.input_devices import list_input_devices
+from ..audio.output_devices import (
+    hidden_advanced_output_count,
+    hidden_duplicate_count,
+    list_output_devices,
+)
 from ..audio.voice_routing import find_best_voice_route
 
 
@@ -34,12 +40,27 @@ class SoundboardPanel(QDialog):
         self.setWindowTitle("Soundboard")
         self.setObjectName("SoundboardPanel")
         self.resize(560, 520)
-        layout = QVBoxLayout(self)
+        self.setMinimumSize(460, 420)
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(0, 0, 0, 0)
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setObjectName("SoundboardScroll")
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.scroll_area.setFrameShape(QScrollArea.Shape.NoFrame)
+        content = QWidget()
+        content.setObjectName("SoundboardContent")
+        layout = QVBoxLayout(content)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(12)
+        self.scroll_area.setWidget(content)
+        root_layout.addWidget(self.scroll_area)
         form = QFormLayout()
         form.setSpacing(10)
+        form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+        form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
         self.output_combo = QComboBox()
+        self._configure_device_combo(self.output_combo)
         self.output_combo.addItem("System default (recommended)", "")
         devices = list_output_devices()
         input_devices = list_input_devices()
@@ -48,12 +69,14 @@ class SoundboardPanel(QDialog):
         if current_device:
             self._select_saved_device(self.output_combo, current_device)
         self.voice_output_combo = QComboBox()
+        self._configure_device_combo(self.voice_output_combo)
         self.voice_output_combo.addItem("Not configured", "")
         self._add_device_items(self.voice_output_combo, devices)
         current_voice_device = audio_engine.voice_chat_output_device_id
         if current_voice_device:
             self._select_saved_device(self.voice_output_combo, current_voice_device)
         self.mic_input_combo = QComboBox()
+        self._configure_device_combo(self.mic_input_combo)
         self.mic_input_combo.addItem("System default microphone", "")
         self._add_device_items(self.mic_input_combo, input_devices, "Audio input")
         current_mic_device = audio_engine.voice_route_microphone_device_id
@@ -66,6 +89,10 @@ class SoundboardPanel(QDialog):
         self.mic_volume_spin.setValue(audio_engine.voice_route_microphone_volume)
         self.monitor_voice_check = QCheckBox()
         self.monitor_voice_check.setChecked(audio_engine.monitor_voice_chat_routes)
+        self.monitor_voice_check.setToolTip(
+            "Plays voice-routed clips through your normal listening output too. "
+            "Turn this off if a full-screen or system-audio share sends the same clip twice."
+        )
         self.volume_spin = QSpinBox()
         self.volume_spin.setRange(0, 100)
         self.volume_spin.setValue(audio_engine.global_volume)
@@ -77,6 +104,13 @@ class SoundboardPanel(QDialog):
         form.addRow("Monitor Voice Routes", self.monitor_voice_check)
         form.addRow("Global Volume", self.volume_spin)
         layout.addLayout(form)
+        self.monitor_note = QLabel(
+            "Sharing system audio? If viewers hear a routed clip twice, turn off Monitor Voice Routes "
+            "so the clip reaches them only through the voice input."
+        )
+        self.monitor_note.setWordWrap(True)
+        self.monitor_note.setObjectName("MutedText")
+        layout.addWidget(self.monitor_note)
         self.route_status = QLabel()
         self.route_status.setWordWrap(True)
         self.route_status.setObjectName("MutedText")
@@ -85,7 +119,7 @@ class SoundboardPanel(QDialog):
         self.bridge_status.setWordWrap(True)
         self.bridge_status.setObjectName("MutedText")
         layout.addWidget(self.bridge_status)
-        voice_route_row = QHBoxLayout()
+        voice_route_row = QGridLayout()
         voice_route_row.setSpacing(8)
         self.voice_chat_input = QLabel("Voice chat input: not configured")
         self.voice_chat_input.setWordWrap(True)
@@ -94,9 +128,10 @@ class SoundboardPanel(QDialog):
         self.auto_route_button.setObjectName("SecondaryButton")
         self.copy_voice_chat_input_button = QPushButton("Copy Voice Chat Input")
         self.copy_voice_chat_input_button.setObjectName("SecondaryButton")
-        voice_route_row.addWidget(self.voice_chat_input, 1)
-        voice_route_row.addWidget(self.auto_route_button)
-        voice_route_row.addWidget(self.copy_voice_chat_input_button)
+        voice_route_row.addWidget(self.voice_chat_input, 0, 0)
+        voice_route_row.addWidget(self.auto_route_button, 1, 0)
+        voice_route_row.addWidget(self.copy_voice_chat_input_button, 2, 0)
+        voice_route_row.setColumnStretch(0, 1)
         layout.addLayout(voice_route_row)
         hidden_duplicates = hidden_duplicate_count(devices)
         hidden_advanced = hidden_advanced_output_count()
@@ -126,9 +161,16 @@ class SoundboardPanel(QDialog):
         self.stop_all_button.setObjectName("PrimaryButton")
         self.refresh_button.setObjectName("SecondaryButton")
         self.docs_button.setObjectName("SecondaryButton")
-        layout.addWidget(self.stop_all_button)
-        layout.addWidget(self.refresh_button)
-        layout.addWidget(self.docs_button)
+        footer = QGridLayout()
+        footer.setContentsMargins(20, 0, 20, 16)
+        footer.setHorizontalSpacing(8)
+        footer.setVerticalSpacing(8)
+        footer.addWidget(self.stop_all_button, 0, 0, 1, 2)
+        footer.addWidget(self.refresh_button, 1, 0)
+        footer.addWidget(self.docs_button, 1, 1)
+        footer.setColumnStretch(0, 1)
+        footer.setColumnStretch(1, 1)
+        root_layout.addLayout(footer)
         self.stop_all_button.clicked.connect(self._stop_all)
         self.refresh_button.clicked.connect(self.refresh)
         self.docs_button.clicked.connect(self.open_docs)
@@ -269,6 +311,12 @@ class SoundboardPanel(QDialog):
                     "OpenLaunchDeck shows one entry to keep this list usable.",
                     Qt.ItemDataRole.ToolTipRole,
                 )
+
+    @staticmethod
+    def _configure_device_combo(combo: QComboBox) -> None:
+        combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        combo.setMinimumContentsLength(18)
+        combo.setMinimumWidth(0)
 
     def _select_saved_device(self, combo: QComboBox, device_id: str) -> None:
         index = combo.findData(device_id)

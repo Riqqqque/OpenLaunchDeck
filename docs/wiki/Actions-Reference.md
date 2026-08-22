@@ -8,16 +8,22 @@ Choose an action in the Button Editor, fill in its fields, then use **Test Actio
 | --- | --- |
 | No Action | Leave a pad intentionally empty |
 | Switch Page | Move to another page in the current profile |
+| Switch Profile | Open a specific profile |
+| Navigate Deck | Move to adjacent pages or profiles |
 | Open URL | Open a website normally or in a private window |
 | Open Path/App | Open a local file, folder, or application |
+| Clipboard | Copy reusable text or clear the clipboard |
 | Run Command | Start a Windows command |
 | PowerShell Command | Run PowerShell without loading a user profile |
 | Hotkey | Send a keyboard combination |
 | Type Text | Type configured text into the focused application |
 | Media Control | Play, pause, skip, stop, or change media volume |
 | Volume Control | Change the default Windows playback endpoint |
+| Window Control | Control the active window or show the desktop |
+| Mouse Control | Click or scroll at the current pointer position |
 | HTTP Request | Call a local service, webhook, or web API |
 | Play Sound | Play a local soundboard file |
+| Random Sound From Folder | Play one randomly selected local clip |
 | Stop Sound | Stop one button, one page, or all sounds |
 | Delay | Pause inside a multi-action sequence |
 | Multi-Action | Run multiple actions in order |
@@ -34,7 +40,19 @@ Does nothing and returns a successful result. Use it for blank or decorative pad
 
 Switches to another page in the active profile and refreshes the on-screen grid and Launchpad lighting. The ID must match the destination page ID, not only its display name.
 
-Use one or more grid pads as page navigation because Launchpad side buttons are not mapped to OpenLaunchDeck pages by default.
+The Launchpad's Left and Right hardware buttons also move between pages by default. Their assignments are configurable under **Settings > Launchpad**.
+
+## Switch Profile
+
+**Field:** Profile
+
+Opens the selected profile and its default page. The profile list comes from the profiles currently loaded by OpenLaunchDeck, so profile IDs do not need to be typed manually.
+
+## Navigate Deck
+
+**Fields:** Move To, Wrap At The End
+
+Moves to the previous, next, first, last, or default page without hard-coding a page ID. It can also move to the previous or next profile. With wrapping enabled, moving past the final item returns to the first item.
 
 ## Open URL
 
@@ -51,6 +69,12 @@ Private-window mode supports the registered Windows default browser when it is B
 Opens an existing file, folder, or executable with Windows. Environment variables such as `%USERPROFILE%` are supported.
 
 The action fails clearly when the path does not exist.
+
+## Clipboard
+
+**Fields:** Operation, Text
+
+Copies reusable text to the Windows clipboard without typing it into the focused application, or clears the clipboard. This is useful when a macro should prepare text for a later manual paste. Text is stored in the profile, so do not put secrets into profiles that may be exported.
 
 ## Run Command
 
@@ -128,6 +152,18 @@ Available modes:
 
 This controls the default Windows playback endpoint. It does not replace per-application mixer sliders. **Target Volume** is only used by `set_volume`.
 
+## Window Control
+
+**Field:** Window Action
+
+Minimizes, maximizes, restores, or closes the active Windows application, or shows the desktop. Closing a window is treated as dangerous and requires the normal two-press confirmation. OpenLaunchDeck refuses to close its own active window through this action.
+
+## Mouse Control
+
+**Fields:** Mouse Action, Scroll Amount
+
+Clicks at the current pointer position with the left, right, or middle button; double-clicks; or scrolls up and down. Mouse actions run through the action worker so they do not block the interface.
+
 ## HTTP Request
 
 **Fields:** Method, URL, Headers JSON, Body, Timeout
@@ -160,6 +196,12 @@ Already Playing choices:
 - `toggle_stop` stops the sound on the next press.
 
 Click **Browse** beside Sound File to select a local clip. OpenLaunchDeck keeps the path in the profile, so keep the file in a stable location. See [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md) for output routing and quality setup.
+
+## Random Sound From Folder
+
+**Fields:** Sound Folder, Include Subfolders, Clip Volume, Loop, When Pressed Again, Playing Color, Stop When Page Changes
+
+Selects one supported local file from a folder and plays it through the normal soundboard engine. The folder scan runs in the background, uses bounded memory, and supports `.wav`, `.mp3`, and `.ogg` where the installed media codecs allow them. No files are downloaded or copied.
 
 ## Stop Sound
 

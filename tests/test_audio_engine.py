@@ -242,6 +242,25 @@ def test_audio_engine_stop_scopes(tmp_path):
     assert not engine.currently_playing()
 
 
+def test_page_change_only_stops_opted_in_sounds(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"minimal wav bytes")
+    engine = AudioEngine()
+    install_qt_test_double(engine)
+
+    engine.play_button_sound(
+        "A1",
+        {"file_path": str(path), "_page_id": "main", "stop_on_page_change": True},
+    )
+    engine.play_button_sound(
+        "A2",
+        {"file_path": str(path), "_page_id": "main", "stop_on_page_change": False},
+    )
+    engine.stop_page("main", only_page_change=True)
+
+    assert {item.button_id for item in engine.currently_playing()} == {"A2"}
+
+
 def test_voice_chat_route_requires_output_device(tmp_path):
     path = tmp_path / "sound.wav"
     path.write_bytes(b"minimal wav bytes")

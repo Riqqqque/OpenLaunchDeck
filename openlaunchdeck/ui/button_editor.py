@@ -147,6 +147,9 @@ class ButtonEditor(QWidget):
     def set_page_choices(self, pages: list[tuple[str, str]]) -> None:
         self.action_editor.set_context_choices("switch_page", "page_id", pages)
 
+    def set_profile_choices(self, profiles: list[tuple[str, str]]) -> None:
+        self.action_editor.set_context_choices("switch_profile", "profile_id", profiles)
+
     def _queue_notes_change(self) -> None:
         if not self._loading:
             self._notes_timer.start(350)

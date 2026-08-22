@@ -37,3 +37,4 @@ class SoundInstance:
     loop: bool = False
     volume: int = 100
     routed_to_voice_chat: bool = False
+    stop_on_page_change: bool = False

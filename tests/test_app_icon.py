@@ -27,3 +27,18 @@ def test_app_icon_has_transparent_outer_corners():
     assert not image.isNull()
     assert image.pixelColor(0, 0).alpha() == 0
     assert image.pixelColor(255, 255).alpha() == 0
+
+
+def test_app_icon_fills_the_windows_icon_canvas():
+    image = QImage(str(ICONS_DIR / "openlaunchdeck_256.png"))
+    opaque_points = [
+        (x, y)
+        for y in range(image.height())
+        for x in range(image.width())
+        if image.pixelColor(x, y).alpha() > 16
+    ]
+
+    assert min(x for x, _y in opaque_points) <= 14
+    assert max(x for x, _y in opaque_points) >= 241
+    assert min(y for _x, y in opaque_points) <= 14
+    assert max(y for _x, y in opaque_points) >= 241

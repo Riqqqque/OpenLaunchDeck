@@ -9,10 +9,10 @@ from ..models.button import ButtonConfig
 
 
 CELL_SIZES = {
-    "mini": QSize(64, 64),
-    "compact": QSize(80, 80),
-    "comfortable": QSize(96, 96),
-    "large": QSize(112, 112),
+    "mini": QSize(88, 58),
+    "compact": QSize(108, 70),
+    "comfortable": QSize(128, 82),
+    "large": QSize(148, 96),
 }
 
 ACTION_LABELS = {
@@ -33,6 +33,12 @@ ACTION_LABELS = {
     "switch_page": "Page",
     "ssh_command": "SSH",
     "obs_websocket": "OBS",
+    "navigate_deck": "Navigate",
+    "switch_profile": "Profile",
+    "clipboard": "Clipboard",
+    "window_control": "Window",
+    "mouse_control": "Mouse",
+    "random_sound": "Random Sound",
 }
 
 
@@ -43,8 +49,8 @@ class ButtonCell(QWidget):
         super().__init__()
         self.button_id = button_id
         self._density = "comfortable"
-        self._cell_side = CELL_SIZES[self._density].width()
-        self.setFixedSize(self._cell_side, self._cell_side)
+        self._cell_size = CELL_SIZES[self._density]
+        self.setFixedSize(self._cell_size)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
@@ -85,6 +91,9 @@ class ButtonCell(QWidget):
         self._armed = armed
         self._playing = playing
         self._text = f"{button.id}\n{label}\n{action_type}"
+        action_label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
+        state = "Playing" if playing else "Armed" if armed else "Disabled" if not button.enabled else "Ready"
+        self.setToolTip(f"{button.id} - {label}\n{action_label}\n{state}")
         self.setEnabled(True)
         self.update()
 
@@ -92,21 +101,22 @@ class ButtonCell(QWidget):
         if density not in CELL_SIZES:
             density = "comfortable"
         self._density = density
-        self.set_cell_side(CELL_SIZES[density].width())
+        size = CELL_SIZES[density]
+        self.set_cell_size(size.width(), size.height())
         self.updateGeometry()
         self.update()
 
-    def set_cell_side(self, side: int) -> None:
-        side = max(34, int(side))
-        if side == self._cell_side:
+    def set_cell_size(self, width: int, height: int) -> None:
+        size = QSize(max(48, int(width)), max(38, int(height)))
+        if size == self._cell_size:
             return
-        self._cell_side = side
-        self.setFixedSize(side, side)
+        self._cell_size = size
+        self.setFixedSize(size)
         self.updateGeometry()
         self.update()
 
     def sizeHint(self) -> QSize:
-        return QSize(self._cell_side, self._cell_side)
+        return QSize(self._cell_size)
 
     def text(self) -> str:
         return self._text
@@ -152,8 +162,9 @@ class ButtonCell(QWidget):
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        inset = 2 if self._cell_side < 54 else 3
-        rect = self.rect().adjusted(inset, inset, -inset, -inset)
+        height = self._cell_size.height()
+        width = self._cell_size.width()
+        rect = self.rect().adjusted(1, 1, -1, -2)
         button = self._button
         action_type = button.action.type if button.action else "noop"
         label = button.label or "Empty"
@@ -167,13 +178,13 @@ class ButtonCell(QWidget):
         palette = self.palette()
         base = palette.color(QPalette.ColorRole.Base)
         if button.enabled:
-            base = self._blend(base, accent, 0.055 if not self._hover else 0.1)
+            base = self._blend(base, accent, 0.13 if not self._hover else 0.2)
         else:
             base = palette.color(QPalette.ColorRole.Window)
         if self._pressed:
-            base = self._blend(base, accent, 0.18)
+            base = self._blend(base, accent, 0.3)
 
-        border = palette.color(QPalette.ColorRole.Mid)
+        border = self._blend(palette.color(QPalette.ColorRole.Mid), accent, 0.48 if button.enabled else 0.05)
         if self._selected:
             border = palette.color(QPalette.ColorRole.Highlight)
         elif self._armed:
@@ -183,16 +194,16 @@ class ButtonCell(QWidget):
         elif self._hover:
             border = self._blend(palette.color(QPalette.ColorRole.Light), accent, 0.28)
 
-        painter.setPen(QPen(border, 2.0 if self._selected else 1.0))
+        painter.setPen(QPen(border, 2.5 if self._selected else 1.25))
         painter.setBrush(base)
-        radius = 5 if self._cell_side < 54 else 7
+        radius = 8 if height >= 58 else 6
         painter.drawRoundedRect(rect, radius, radius)
 
-        strip_margin = 6 if self._cell_side < 54 else 9
-        strip_height = 3 if self._cell_side < 54 else 4
+        strip_margin = 8 if width < 84 else 11
+        strip_height = 3 if height < 58 else 4
         strip = QRect(
             rect.left() + strip_margin,
-            rect.top() + (6 if self._cell_side < 54 else 8),
+            rect.top(),
             max(14, rect.width() - strip_margin * 2),
             strip_height,
         )
@@ -202,11 +213,11 @@ class ButtonCell(QWidget):
 
         painter.setPen(palette.color(QPalette.ColorRole.Text) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText))
         id_font = QFont(painter.font())
-        id_font.setPointSize(6 if self._cell_side < 54 else 7 if self._cell_side < 82 else 8)
+        id_font.setPointSize(7 if height < 56 else 8 if height < 82 else 9)
         id_font.setWeight(QFont.Weight.DemiBold)
         painter.setFont(id_font)
-        id_left = 7 if self._cell_side < 54 else 11
-        id_top = 10 if self._cell_side < 54 else 14
+        id_left = 8 if width < 82 else 11
+        id_top = 7 if height < 58 else 9
         painter.drawText(
             rect.adjusted(id_left, id_top, -6, -6),
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop,
@@ -217,14 +228,18 @@ class ButtonCell(QWidget):
         if badge:
             self._draw_badge(painter, rect, badge)
 
-        if self._cell_side < 70:
-            title_size = 7
-        elif self._cell_side < 90:
+        density_boost = {"mini": 1, "compact": 1, "comfortable": 1, "large": 2}.get(self._density, 1)
+        if height < 48:
             title_size = 8
-        elif self._cell_side < 108:
+        elif height < 60:
             title_size = 9
-        else:
+        elif height < 76:
             title_size = 10
+        elif height < 92:
+            title_size = 11
+        else:
+            title_size = 12
+        title_size += density_boost
         title_font = QFont(painter.font())
         title_font.setPointSize(title_size)
         title_font.setWeight(QFont.Weight.Bold)
@@ -232,25 +247,25 @@ class ButtonCell(QWidget):
         painter.setFont(title_font)
         title_color = palette.color(QPalette.ColorRole.BrightText) if button.enabled else palette.color(QPalette.ColorRole.PlaceholderText)
         painter.setPen(title_color)
-        title_top = 18 if self._cell_side < 54 else 22 if self._cell_side < 60 else 24 if self._cell_side < 76 else 27 if self._cell_side < 100 else 30
-        action_height = 13 if self._cell_side < 82 else 15 if self._cell_side < 108 else 17
-        action_bottom_margin = 5
-        show_action = self._cell_side >= 66
+        title_top = 17 if height < 54 else 20 if height < 72 else 23
+        action_height = 13 if height < 70 else 15 if height < 90 else 17
+        action_bottom_margin = 4 if height < 64 else 6
+        show_action = height >= 52 and width >= 70
         title_bottom_padding = action_height + action_bottom_margin + 4 if show_action else 6
-        horizontal_padding = 4 if self._cell_side < 54 else 7
+        horizontal_padding = 6 if width < 84 else 9
         title_rect = rect.adjusted(horizontal_padding, title_top, -horizontal_padding, -title_bottom_padding)
         self._draw_fitted_center(
             painter,
             title_rect,
             label,
-            minimum_size=5 if self._cell_side < 54 else 6 if self._density == "mini" else 7,
+            minimum_size=7 if self._density in {"mini", "compact"} else 8,
         )
 
         if not show_action:
             return
         action_label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
         action_font = QFont(painter.font())
-        action_font.setPointSize(6 if self._cell_side < 82 else 7)
+        action_font.setPointSize(8 if height < 92 else 9)
         action_font.setWeight(QFont.Weight.DemiBold)
         painter.setFont(action_font)
         action_font, metrics = self._fit_font(action_font, action_label, max(18, rect.width() - 20), minimum_size=6)
@@ -277,7 +292,7 @@ class ButtonCell(QWidget):
         return ""
 
     def _draw_badge(self, painter: QPainter, rect: QRect, text: str) -> None:
-        if self._cell_side < 54:
+        if self._cell_size.height() < 54 or self._cell_size.width() < 78:
             return
         font = QFont(painter.font())
         font.setPointSize(7)
@@ -285,7 +300,7 @@ class ButtonCell(QWidget):
         painter.setFont(font)
         metrics = QFontMetrics(font)
         width = metrics.horizontalAdvance(text) + 10
-        badge_rect = QRect(rect.right() - width - 8, rect.top() + 10, width, 15)
+        badge_rect = QRect(rect.right() - width - 8, rect.top() + 7, width, 15)
         color = QColor("#facc15") if text == "ARM" else QColor("#38bdf8") if text == "PLAY" else QColor("#334155")
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(color)
@@ -297,7 +312,7 @@ class ButtonCell(QWidget):
         base_font = QFont(painter.font())
         text = self._humanize_compact_label(text.strip())
         words = text.split()
-        if self._cell_side < 60:
+        if self._cell_size.height() < 52:
             lines = [text]
         elif len(words) > 1:
             midpoint = (len(words) + 1) // 2
@@ -310,7 +325,7 @@ class ButtonCell(QWidget):
             font, metrics = self._fit_font(base_font, line, rect.width(), minimum_size)
             fitted.append((line, font, metrics))
 
-        line_gap = 1 if self._cell_side < 86 else 2
+        line_gap = 1 if self._cell_size.height() < 76 else 2
         total_height = sum(metrics.height() for _, _, metrics in fitted) + max(0, len(fitted) - 1) * line_gap
         while total_height > rect.height() and any(font.pointSize() > minimum_size for _, font, _ in fitted):
             updated: list[tuple[str, QFont, QFontMetrics]] = []

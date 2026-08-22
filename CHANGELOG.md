@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.0
+
+- Rebuilt the 8x8 workspace as a responsive keycap surface with larger distance-readable labels, Deck View, compact editing, and unclipped layouts from 760x520 upward.
+- Added configurable Programmer Mode controls for the Launchpad arrows, Session/User buttons, and eight scene buttons, with exact MIDI Debug mapping and batched edge lighting.
+- Added Switch Profile, Navigate Deck, Clipboard, Window Control, Mouse Control, and Random Sound From Folder actions.
+- Expanded the Basic PC starter deck with previous, next, stop, mute, volume, and Show Desktop controls.
+- Fixed page-change sound handling so only clips configured to stop on page changes are interrupted.
+- Moved all grid and hardware-control lighting through one coalescing background output worker.
+- Replaced the application mark with a high-contrast launch-key icon rendered consistently at every Windows icon size.
+
 ## 0.1.63
 
 - Replaced the nested card-style workspace with a flat command bar, edge-aligned side rails, and an unframed Launchpad canvas.

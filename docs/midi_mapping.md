@@ -15,9 +15,23 @@ H1 H2 H3 H4 H5 H6 H7 H8
 
 Mapping code is isolated in `openlaunchdeck/devices/midi_mapping.py`. Device code asks the mapping for a button ID instead of hardcoding note numbers.
 
-The default preset follows the common Launchpad Mini MK3 Programmer Mode note layout, with A1-A8 on notes 81-88 and H1-H8 on notes 11-18. Verify this with MIDI Debug because device mode and driver naming can affect behavior.
+The default preset follows the Launchpad Mini MK3 Programmer Mode note layout, with A1-A8 on notes 81-88 and H1-H8 on notes 11-18. Verify this with MIDI Debug because device mode and driver naming can affect behavior.
 
-The Launchpad Mini MK3 also has navigation and scene-launch buttons outside the 8x8 grid. In Programmer Mode, those controls can send MIDI messages too, but OpenLaunchDeck does not bind them to previous/next page actions by default yet. Capture their raw messages in MIDI Debug before adding a built-in mapping.
+The extra Programmer Mode controls use fixed CC addresses:
+
+| Control | CC | Default OpenLaunchDeck assignment |
+| --- | ---: | --- |
+| Up | 91 | Previous profile |
+| Down | 92 | Next profile |
+| Left | 93 | Previous page |
+| Right | 94 | Next page |
+| Session | 95 | Default page |
+| Drums | 96 | Do nothing |
+| Keys | 97 | Do nothing |
+| User | 98 | Stop all sounds |
+| Scene 1-8 | 89, 79, 69, 59, 49, 39, 29, 19 | Open page 1-8 |
+
+Change these assignments under **Settings > Launchpad > Hardware Buttons**. Grid calibration does not rewrite these fixed Programmer Mode CCs.
 
 User mappings are saved as JSON in:
 
@@ -25,7 +39,7 @@ User mappings are saved as JSON in:
 
 ## Editing And Verification
 
-Open `Device > MIDI Debug` to see the current mapping table. The table shows each A1-H8 button, message type, MIDI number, and channel.
+Open `Device > MIDI Debug` to see the current mapping table. The Pad Mapping tab shows each A1-H8 button, message type, MIDI number, and channel. The Hardware Controls tab shows every fixed CC and current button name.
 
 Use this flow for hardware verification:
 
@@ -37,12 +51,14 @@ Use this flow for hardware verification:
 6. Save the mapping.
 7. Use Restore Default Mapping if the saved mapping should be reset.
 
+Press the four arrows and Scene 1-8 while the Live Messages tab is open. The Parsed field should name the hardware control. If it does not, confirm Programmer Mode and the selected second MIDI interface before reporting a mapping problem.
+
 Calibration stores raw message text and MIDI byte data in the debug log so contributors can compare reports without guessing.
 
 ## Lighting Output
 
-Lighting uses note/control color values from a Programmer Mode palette preset. Hardware behavior can vary by mode, so use MIDI Debug to verify incoming and outgoing messages before relying on a custom mapping live.
+Lighting uses the documented Programmer Mode palette values. Hardware behavior can vary by mode, so use MIDI Debug to verify incoming and outgoing messages before relying on a custom mapping live.
 
-Lighting updates are sent through `LaunchpadMiniMk3.set_many_pad_colors()` so page refreshes can be logged and batched. The lighting service skips refreshes when the computed page colors have not changed.
+Single changes use the pad's note or control address. Multi-pad refreshes use one Programmer Mode lighting SysEx containing changed LED/color pairs. The lighting service caches the last sent state and skips colors that have not changed.
 
 To update the built-in mapping, adjust `build_programmer_mode_mapping()` and include raw MIDI evidence from the debug window.

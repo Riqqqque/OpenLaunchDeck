@@ -15,8 +15,8 @@ Use **Test Action** in the editor when you want to test from the app. Use the ph
 - OBS: replay clip, screenshot, camera, microphone, or stream controls
 - Hotkeys: voice chat, games, media, or extended function keys
 - Soundboard: local playback, voice routing, and stop controls
-- Navigation: switch pages
-- Windows: websites, apps, folders, and commands
+- Navigation: move between pages or profiles
+- Windows: websites, apps, folders, windows, mouse, clipboard, and commands
 
 ## OBS Replay Clip
 
@@ -225,7 +225,37 @@ Use this for page navigation on the 8x8 grid.
 - Action type: `Switch Page`
 - Target Page: the page you want to open
 
-The Launchpad Mini MK3 has extra buttons around the grid, but OpenLaunchDeck uses the 8x8 grid as the reliable macro surface unless extra button mappings are verified in MIDI Debug.
+Use **Navigate Deck** instead when the same button should always move to the previous or next page.
+
+## Previous And Next Page
+
+Create two grid buttons:
+
+- Action type: `Navigate Deck`
+- Move To: `Previous Page` or `Next Page`
+- Wrap At The End: on
+
+The Launchpad's physical left and right arrow buttons use these operations by default. Change any top or scene-button assignment under `Settings > Launchpad Controls`.
+
+## Previous And Next Profile
+
+- Action type: `Navigate Deck`
+- Move To: `Previous Profile` or `Next Profile`
+- Wrap At The End: on
+
+The physical up and down arrow buttons use these operations by default. Use **Switch Profile** when a pad should always open one named profile instead.
+
+## Launchpad Scene Buttons
+
+The eight buttons down the right side open pages 1 through 8 by default. If a profile has fewer pages, an unavailable scene button does nothing and reports the reason in the status bar. Assign different behavior under `Settings > Launchpad Controls`.
+
+Useful defaults:
+
+- Left/Right: previous/next page
+- Up/Down: previous/next profile
+- Session: default page
+- User: stop all sounds
+- Scene 1-8: open page 1-8
 
 ## Open A Website
 
@@ -256,6 +286,41 @@ Examples:
 %USERPROFILE%\Videos
 C:\Program Files\obs-studio\bin\64bit\obs64.exe
 ```
+
+## Window Controls
+
+Use **Window Control** for the currently focused app:
+
+- Minimize Active Window
+- Maximize Active Window
+- Restore Active Window
+- Close Active Window
+- Show Desktop
+
+Mark **Close Active Window** as dangerous. OpenLaunchDeck refuses to close itself through this action.
+
+## Mouse Controls
+
+Use **Mouse Control** to click at the current pointer location, double-click, right-click, middle-click, or scroll. Scroll actions expose a `Scroll Steps` control. These actions never move the pointer.
+
+## Copy Reusable Text
+
+- Label: `Reply`
+- Action type: `Clipboard`
+- Operation: `Copy Configured Text`
+- Text: the text you want ready to paste
+
+This copies text without typing into the currently focused window. Use **Type Text** when the button should type immediately.
+
+## Random Sound From A Folder
+
+- Action type: `Random Sound From Folder`
+- Sound Folder: a local folder containing `.wav`, `.mp3`, or `.ogg` files
+- Include Subfolders: optional
+- Clip Volume: start around `60`
+- When Pressed Again: `restart`
+
+The folder is scanned in a background action worker only when pressed. A bounded one-pass selection avoids loading audio files or a large filename list into memory.
 
 ## Run A Local Command
 

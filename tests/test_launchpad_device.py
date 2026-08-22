@@ -31,6 +31,13 @@ class FakePadMessage:
     channel = 0
 
 
+class FakeControlMessage:
+    type = "control_change"
+    control = 94
+    value = 127
+    channel = 0
+
+
 def test_color_to_palette_value_uses_named_colors():
     assert color_to_palette_value("red") == 5
     assert color_to_palette_value("cyan") == 37
@@ -48,8 +55,10 @@ def test_batch_lighting_sends_midi_messages():
     sent = device.set_many_pad_colors({"A1": "red", "A2": "green"})
 
     assert sent == 2
-    assert len(port.messages) == 2
-    assert len(outgoing) == 2
+    assert len(port.messages) == 1
+    assert port.messages[0].type == "sysex"
+    assert list(port.messages[0].data) == [0, 32, 41, 2, 13, 3, 0, 81, 5, 0, 82, 21]
+    assert len(outgoing) == 1
 
 
 def test_enter_programmer_mode_sends_documented_sysex_message():
@@ -113,6 +122,16 @@ def test_button_callback_failure_does_not_disconnect_midi_transport():
 
     assert device.connected is True
     assert device.last_input_monotonic > 0
+
+
+def test_auxiliary_control_callback_uses_separate_event_path():
+    events = []
+    device = LaunchpadMiniMk3(control_callback=lambda *args: events.append(args))
+    device.connected = True
+
+    device._on_message(FakeControlMessage())
+
+    assert events and events[0][0:2] == ("top_right", True)
 
 
 def test_closed_transport_ignores_late_input_callback():

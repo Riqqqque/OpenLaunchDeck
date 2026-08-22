@@ -8,7 +8,7 @@ The version source of truth is `openlaunchdeck/version.py`.
 
 ```python
 APP_NAME = "OpenLaunchDeck"
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 ```
 
 When preparing a release:
