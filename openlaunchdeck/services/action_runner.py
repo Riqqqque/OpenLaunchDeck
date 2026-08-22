@@ -160,7 +160,11 @@ class ActionRunner:
             return False
         action_type = str(action_config.type or "").strip()
         operation = str(action_config.config.get("operation") or "").strip()
-        return action_type == "obs_websocket" and operation == "start_streaming"
+        return (
+            action_type == "obs_websocket" and operation == "start_streaming"
+        ) or (
+            action_type == "window_control" and operation == "close"
+        )
 
     def _run_action(self, button_id: str, action, context: ActionContext, config: dict) -> ActionResult:
         with self.performance_monitor.measure(f"action:{action.type_name}"):
@@ -196,6 +200,9 @@ class ActionRunner:
     def _execute_nested_action(self, action_type: str, context: ActionContext, config: dict) -> ActionResult:
         if not self.registry.has(action_type):
             return ActionResult.fail(f"Action type is unavailable: {action_type}")
+        if context.profile_service is not None:
+            context.current_profile = context.profile_service.current_profile
+            context.current_page = context.profile_service.current_page
         action = self.registry.get(action_type)
         try:
             errors = [str(message) for message in action.validate(config) if str(message).strip()]

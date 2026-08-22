@@ -117,9 +117,20 @@ If unplugging does not recover automatically:
 
 ## Extra Hardware Buttons
 
-OpenLaunchDeck currently treats the 8x8 grid as the supported macro surface. The arrows, scene-launch buttons, and other edge controls are not assigned to profile/page navigation by default.
+Programmer Mode exposes 16 controls outside the grid. Their default assignments are:
 
-Their raw messages can be inspected in MIDI Debug. They should only be added after the messages are verified in the intended Launchpad mode.
+| Hardware control | Default action |
+| --- | --- |
+| Left / Right | Previous / next page |
+| Up / Down | Previous / next profile |
+| Session | Open the profile's default page |
+| User | Stop all sounds |
+| Scene 1-8 | Open page 1-8 |
+| Drums / Keys | Unassigned |
+
+Open **Settings > Launchpad > Hardware Buttons** to change any assignment. Available choices include page/profile navigation, a numbered page, the default page, Stop All Sounds, and Do Nothing.
+
+The Hardware Controls tab in MIDI Debug lists the exact Programmer Mode CC values. Press each control and confirm its parsed name before a live workflow, especially after another MIDI application has changed the Launchpad mode.
 
 ## Still Not Working?
 

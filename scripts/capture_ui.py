@@ -7,12 +7,11 @@ import tempfile
 import time
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+os.environ.setdefault("QT_QPA_PLATFORM", "windows" if sys.platform == "win32" else "offscreen")
 _data_dir = tempfile.TemporaryDirectory(prefix="openlaunchdeck-ui-")
 os.environ["OPENLAUNCHDECK_DATA_DIR"] = _data_dir.name
 
@@ -86,6 +85,7 @@ def main() -> int:
     window = MainWindow(services)
     try:
         sizes = (
+            (760, 520, "minimum"),
             (760, 560, "narrow"),
             (1180, 720, "compact"),
             (1280, 640, "short"),
@@ -105,6 +105,14 @@ def main() -> int:
         window._apply_responsive_layout(force=True)
         capture(window, args.output / "main-midnight-focus.png", app, (760, 560))
         window.set_grid_focus_mode(False)
+        window.resize(760, 520)
+        window._apply_responsive_layout(force=True)
+        window.show_compact_editor()
+        capture(window, args.output / "main-midnight-editor-minimum.png", app, (760, 520))
+        window.editor_scroll.verticalScrollBar().setValue(window.editor_scroll.verticalScrollBar().maximum())
+        settle(app)
+        capture(window, args.output / "main-midnight-editor-actions-minimum.png", app, (760, 520))
+        window.show_compact_grid()
         window.resize(1600, 900)
         window._apply_responsive_layout(force=True)
         settle(app)
@@ -120,7 +128,24 @@ def main() -> int:
             settings.tabs.setCurrentIndex(index)
             label = settings.tabs.tabText(index).casefold().replace(" ", "-")
             capture(settings, args.output / f"settings-{label}-narrow.png", app, (680, 540))
+        settings.tabs.setCurrentIndex(1)
+        launchpad_tab = settings.tabs.currentWidget()
+        launchpad_tab.verticalScrollBar().setValue(launchpad_tab.verticalScrollBar().maximum())
+        settle(app)
+        capture(settings, args.output / "settings-launchpad-controls-narrow.png", app, (680, 540))
         settings.reject()
+
+        window.show_soundboard_panel()
+        soundboard = window.soundboard_panel
+        if soundboard is None:
+            raise RuntimeError("Soundboard panel did not open")
+        capture(soundboard, args.output / "soundboard-panel.png", app, (600, 680))
+        capture(soundboard, args.output / "soundboard-panel-compact.png", app, (520, 540))
+        soundboard.hide()
+
+        window.show_midi_debug()
+        capture(window.midi_debug_window, args.output / "midi-debug.png", app, (900, 650))
+        window.midi_debug_window.close()
     finally:
         window._force_quit = True
         window.close()

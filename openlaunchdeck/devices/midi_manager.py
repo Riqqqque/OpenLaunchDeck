@@ -24,9 +24,13 @@ class MidiManager:
             return []
 
     @classmethod
-    def detect_launchpad_ports(cls) -> tuple[str, str]:
-        inputs = cls.available_input_ports()
-        outputs = cls.available_output_ports()
+    def detect_launchpad_ports(
+        cls,
+        inputs: list[str] | None = None,
+        outputs: list[str] | None = None,
+    ) -> tuple[str, str]:
+        inputs = cls.available_input_ports() if inputs is None else inputs
+        outputs = cls.available_output_ports() if outputs is None else outputs
         input_port = _find_launchpad_name(inputs)
         output_port = _find_launchpad_name(outputs)
         return input_port, output_port

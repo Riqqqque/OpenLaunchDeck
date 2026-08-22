@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QDialogButtonBox,
     QFormLayout,
     QFrame,
+    QGridLayout,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -22,7 +23,15 @@ from PySide6.QtWidgets import (
 )
 
 from ..audio.input_devices import list_input_devices
-from ..audio.output_devices import hidden_advanced_output_count, hidden_duplicate_count, list_output_devices
+from ..audio.output_devices import (
+    hidden_advanced_output_count,
+    hidden_duplicate_count,
+    list_output_devices,
+)
+from ..constants import (
+    LAUNCHPAD_AUXILIARY_CONTROL_LABELS,
+    LAUNCHPAD_CONTROL_BINDING_LABELS,
+)
 from ..devices.midi_manager import MidiManager
 from ..paths import APP_DATA_DIR
 from .theme import apply_theme, theme_definition, theme_definitions
@@ -49,6 +58,37 @@ class PercentControl(QWidget):
 
     def value(self) -> int:
         return self.spin.value()
+
+
+class AuxiliaryBindingsEditor(QWidget):
+    def __init__(self, bindings: dict[str, str], parent=None) -> None:
+        super().__init__(parent)
+        self.combos: dict[str, QComboBox] = {}
+        layout = QGridLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setHorizontalSpacing(12)
+        layout.setVerticalSpacing(8)
+        controls = list(LAUNCHPAD_AUXILIARY_CONTROL_LABELS.items())
+        for index, (control_id, label) in enumerate(controls):
+            row = index % 8
+            pair = index // 8
+            label_widget = QLabel(label)
+            label_widget.setObjectName("FieldLabel")
+            combo = QComboBox()
+            for binding_id, binding_label in LAUNCHPAD_CONTROL_BINDING_LABELS.items():
+                combo.addItem(binding_label, binding_id)
+            combo.setCurrentIndex(max(0, combo.findData(bindings.get(control_id, "none"))))
+            combo.setMinimumWidth(145)
+            layout.addWidget(label_widget, row, pair * 2)
+            layout.addWidget(combo, row, pair * 2 + 1)
+            layout.setColumnStretch(pair * 2 + 1, 1)
+            self.combos[control_id] = combo
+
+    def bindings(self) -> dict[str, str]:
+        return {
+            control_id: str(combo.currentData() or "none")
+            for control_id, combo in self.combos.items()
+        }
 
 
 class SettingsDialog(QDialog):
@@ -117,6 +157,8 @@ class SettingsDialog(QDialog):
         self.grid_density.addItem("Comfortable", "comfortable")
         self.grid_density.addItem("Large", "large")
         self.grid_density.setCurrentIndex(max(0, self.grid_density.findData(settings.grid_density)))
+        self.deck_view = QCheckBox("Open with the grid-first Deck View")
+        self.deck_view.setChecked(settings.deck_view)
         self.tabs.addTab(
             self._tab(
                 self._section(
@@ -126,8 +168,8 @@ class SettingsDialog(QDialog):
                 ),
                 self._section(
                     "Launchpad Grid",
-                    "Density sets the largest pad size. Pads still resize automatically to stay square.",
-                    [("Pad size", self.grid_density)],
+                    "Pad size controls label scale and maximum keycap size. The grid always fits the available window.",
+                    [("Readability", self.grid_density), ("", self.deck_view)],
                 ),
             ),
             "Appearance",
@@ -140,6 +182,7 @@ class SettingsDialog(QDialog):
         self.midi_output = self._editable_port_combo(MidiManager.available_output_ports(), settings.midi_output_port, "Auto-detect output")
         self.midi_debug = QCheckBox("Include raw MIDI messages in debug logs")
         self.midi_debug.setChecked(settings.midi_debug_logging)
+        self.auxiliary_bindings = AuxiliaryBindingsEditor(settings.launchpad_control_bindings)
         self.tabs.addTab(
             self._tab(
                 self._section(
@@ -151,6 +194,11 @@ class SettingsDialog(QDialog):
                     "Diagnostics",
                     "Raw logging is useful during mapping calibration and should stay off during normal play.",
                     [("", self.midi_debug)],
+                ),
+                self._section(
+                    "Hardware Buttons",
+                    "Programmer Mode exposes the top row and eight Scene buttons. These assignments are independent from the 8x8 pad grid.",
+                    [("", self.auxiliary_bindings)],
                 ),
             ),
             "Launchpad",
@@ -369,6 +417,7 @@ class SettingsDialog(QDialog):
         self.settings_service.update(
             theme=self.theme.currentData(),
             grid_density=self.grid_density.currentData(),
+            deck_view=self.deck_view.isChecked(),
             auto_connect=self.auto_connect.isChecked(),
             start_minimized=self.start_minimized.isChecked(),
             minimize_to_tray=self.minimize_to_tray.isChecked(),
@@ -376,6 +425,7 @@ class SettingsDialog(QDialog):
             midi_input_port=str(self.midi_input.currentData() or self.midi_input.currentText()).strip(),
             midi_output_port=str(self.midi_output.currentData() or self.midi_output.currentText()).strip(),
             midi_debug_logging=self.midi_debug.isChecked(),
+            launchpad_control_bindings=self.auxiliary_bindings.bindings(),
             profile_autosave=self.autosave.isChecked(),
             backup_profiles_automatically=self.backups.isChecked(),
             soundboard_default_output_device=str(self.output_device.currentData() or ""),

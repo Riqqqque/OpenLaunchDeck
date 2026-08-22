@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 
 from ..config_store import read_json, write_json
-from ..constants import BUTTON_IDS, BUTTON_ROWS
+from ..constants import BUTTON_IDS, BUTTON_ROWS, LAUNCHPAD_AUXILIARY_CONTROL_LABELS
 from ..paths import MIDI_MAPPINGS_DIR
 
 
@@ -45,6 +45,38 @@ class ParsedPadMessage:
     raw_data: list[int] = field(default_factory=list)
 
 
+@dataclass(frozen=True, slots=True)
+class ParsedControlMessage:
+    control_id: str
+    pressed: bool
+    address: MidiAddress
+    value: int = 0
+    raw: Any = None
+    raw_data: list[int] = field(default_factory=list)
+
+
+# Launchpad Mini MK3 Programmer Mode sends CC 91-98 across the top and
+# CC 89-19 down the right edge. Grid pads continue to use note messages.
+AUXILIARY_CONTROL_ADDRESSES: dict[str, MidiAddress] = {
+    "top_up": MidiAddress("control", 91),
+    "top_down": MidiAddress("control", 92),
+    "top_left": MidiAddress("control", 93),
+    "top_right": MidiAddress("control", 94),
+    "session": MidiAddress("control", 95),
+    "drums": MidiAddress("control", 96),
+    "keys": MidiAddress("control", 97),
+    "user": MidiAddress("control", 98),
+    **{
+        f"scene_{index}": MidiAddress("control", 99 - index * 10)
+        for index in range(1, 9)
+    },
+}
+_ADDRESS_TO_AUXILIARY_CONTROL = {
+    address.key(): control_id
+    for control_id, address in AUXILIARY_CONTROL_ADDRESSES.items()
+}
+
+
 @dataclass
 class MidiMapping:
     name: str = "Launchpad Mini MK3 Programmer Mode"
@@ -62,6 +94,8 @@ class MidiMapping:
             address.key(): button_id
             for button_id, address in self.button_to_address.items()
         }
+        if len(self._address_to_button) != len(self.button_to_address):
+            raise ValueError("MIDI mapping assigns the same message to more than one pad.")
 
     @property
     def address_to_button(self) -> dict[tuple[str, int, int], str]:
@@ -112,9 +146,6 @@ class MidiMapping:
                 if isinstance(raw_buttons.get(button_id), dict):
                     mapping[button_id] = MidiAddress.from_dict(raw_buttons[button_id])
         instance = cls(name=str(data.get("name") or "Custom Mapping"), button_to_address=mapping)
-        keys = [address.key() for address in instance.button_to_address.values()]
-        if len(keys) != len(set(keys)):
-            raise ValueError("MIDI mapping assigns the same message to more than one pad.")
         return instance
 
     @classmethod
@@ -186,3 +217,40 @@ def message_to_address(message: Any) -> MidiAddress | None:
     if message_type == "control_change":
         return MidiAddress("control", int(getattr(message, "control", -1)), channel)
     return None
+
+
+def parse_auxiliary_message(message: Any) -> ParsedControlMessage | None:
+    if getattr(message, "type", "") != "control_change":
+        return None
+    address = message_to_address(message)
+    if address is None:
+        return None
+    control_id = _ADDRESS_TO_AUXILIARY_CONTROL.get(address.key())
+    if control_id is None:
+        return None
+    value = int(getattr(message, "value", 0) or 0)
+    return ParsedControlMessage(
+        control_id=control_id,
+        pressed=value > 0,
+        address=address,
+        value=value,
+        raw=message,
+        raw_data=message_to_raw_data(message),
+    )
+
+
+def address_for_auxiliary_control(control_id: str) -> MidiAddress | None:
+    return AUXILIARY_CONTROL_ADDRESSES.get(control_id)
+
+
+def auxiliary_verification_table() -> list[dict[str, int | str]]:
+    return [
+        {
+            "control_id": control_id,
+            "label": LAUNCHPAD_AUXILIARY_CONTROL_LABELS[control_id],
+            "message_type": address.message_type,
+            "number": address.number,
+            "channel": address.channel,
+        }
+        for control_id, address in AUXILIARY_CONTROL_ADDRESSES.items()
+    ]

@@ -39,20 +39,22 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 | Soundboard | Assign local WAV, MP3, or OGG files, then control routing, looping, overlap, volume, and stopping |
 | Voice chat | Send selected clips to a configured Windows voice route while monitoring them locally |
 | Hotkeys | Build shortcuts with modifier controls and a searchable key list covering navigation, media keys, and `F1` through `F24` |
-| Windows | Open websites, apps, folders, files, commands, PowerShell, and typed text |
+| Windows | Open websites, apps, folders, files, commands, PowerShell, control windows and the pointer, and copy or type text |
 | Automation | Send HTTP requests, run key-based SSH commands, and combine actions with delays |
-| Deck organization | Create profiles, pages, labels, colors, page-switch buttons, and dangerous-action confirmations |
+| Deck organization | Create profiles, pages, labels, colors, direct or relative navigation buttons, and dangerous-action confirmations |
 
 ## Highlights
 
 - Native Windows desktop application with a system tray
-- Responsive 8x8 grid with square pads that stays readable in wide, compact, and single-pane windows
+- Responsive 8x8 keycap grid that stays readable in wide, compact, and deck-focused windows
 - Multiple profiles and pages with autosave and backups
 - MIDI auto-detection, manual port selection, live debug logs, and pad calibration
+- Configurable top-arrow, Session/User, and Scene-button controls for page and profile navigation
 - Batched RGB lighting with press, success, error, armed, and playing feedback
 - Local-file soundboard playback with per-pad volume, global volume, looping, overlap, stopping, and optional voice routing
 - Seven complete themes: Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, and High Contrast
 - Searchable action picker, visible field guidance, color swatches, and a visual Multi-Action sequence editor
+- Random-folder sounds, clipboard text, active-window commands, pointer clicks/scrolling, and direct profile switching
 - Background action execution so commands and network requests do not block the interface
 - Checksum-verified update downloads with user confirmation before installation
 - User data stored outside the install folder in `%APPDATA%\OpenLaunchDeck`
@@ -84,7 +86,7 @@ Continue with the [beginner Quick Start](https://github.com/Riqqqque/OpenLaunchD
 
 ## Make It Yours
 
-Open **Settings > Settings > Appearance** to choose a theme and pad density. The grid automatically keeps every pad square; at narrow widths, **Edit A1** opens the selected pad editor as a full-width view and **Back to Grid** returns to the deck.
+Open **Settings > Settings > Appearance** to choose a theme and pad density. The grid automatically fits readable keycaps to the available width and height; at narrow widths, **Edit A1** opens the selected pad editor as a full-width view and **Back to Grid** returns to the deck. Turn on **Deck View** when the grid should use nearly the entire app window.
 
 To add a sound, select a pad, choose **Play Sound**, and use **Browse** beside **Sound File** to select a local WAV, MP3, or OGG file. Open **Soundboard > Open Soundboard Panel** to manage outputs, routing, global volume, currently playing clips, and Stop All Sounds.
 
@@ -148,7 +150,7 @@ The build creates versioned packages and SHA256 files under `dist`. See [CONTRIB
 ## Current Limitations
 
 - Launchpad mappings and lighting should be verified in MIDI Debug for the device mode in use.
-- The extra Launchpad side and navigation buttons are not assigned to OpenLaunchDeck page changes by default. Use grid pads with the Switch Page action.
+- Programmer Mode hardware controls have configurable defaults: arrows navigate pages/profiles, Scene 1-8 open numbered pages, Session opens the default page, and User stops all sounds. Verify them in MIDI Debug after a mode or firmware change.
 - Voice-chat routing needs a Windows audio route selected in both OpenLaunchDeck and the target chat application. No audio driver is bundled.
 - OBS actions require OBS WebSocket. Passwords are masked in the editor but stored in local profile JSON, so exported profiles containing passwords are sensitive.
 - SSH uses key-based authentication and rejects unknown host keys.

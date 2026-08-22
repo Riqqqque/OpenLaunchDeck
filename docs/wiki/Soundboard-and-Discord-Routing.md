@@ -70,7 +70,7 @@ Recommended starting values:
 | --- | --- |
 | Default Output | Your real headphones/interface or System default |
 | Voice Route Output | Playback side of the route |
-| Monitor Voice Routes | On, so you also hear routed clips |
+| Monitor Voice Routes | On for normal calls; see screen-share note below |
 | Microphone Input | Your real microphone |
 | Route Microphone | On when the voice app listens to the combined route |
 | Microphone Volume | `100` |
@@ -149,6 +149,18 @@ Voice-processing features can damage music and effects. For a soundboard route, 
 - Do not enable Windows "Listen to this device" for the route unless you understand the extra monitor path.
 - Keep only the intended voice-route playback/recording pair selected.
 - Use OpenLaunchDeck monitoring instead of creating a second Windows monitoring loop.
+
+### A screen-share viewer hears each clip twice
+
+A routed clip can reach a viewer through two independent paths: once through the voice input and once through the system audio captured by a full-screen share. OpenLaunchDeck cannot tell Discord which individual application audio session to exclude.
+
+Use one of these layouts:
+
+1. **Voice route only:** keep **Route To Voice Chat** enabled on the pad and turn off **Monitor Voice Routes** while sharing system audio. You will not hear that local monitor copy, but viewers receive one copy through the voice input.
+2. **Shared application audio only:** turn off **Route To Voice Chat** for that pad and let the shared application's audio carry it. People who are not watching the share will not hear the clip.
+3. **Normal call:** when no system audio is being shared, keep both **Route To Voice Chat** and **Monitor Voice Routes** enabled so everyone hears the clip and you hear the local monitor.
+
+Sharing one application is less likely to capture the soundboard monitor than sharing the entire screen with system audio. Keep the voice application's output on real headphones and leave Windows **Listen to this device** off for the route input.
 
 ## Missing Or Duplicate Devices
 

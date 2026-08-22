@@ -1,7 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from typing import Any
+
+from ..constants import (
+    DEFAULT_LAUNCHPAD_CONTROL_BINDINGS,
+    LAUNCHPAD_AUXILIARY_CONTROL_LABELS,
+    LAUNCHPAD_CONTROL_BINDING_LABELS,
+)
 
 
 BOOL_FIELDS = {
@@ -19,6 +25,7 @@ BOOL_FIELDS = {
     "enable_performance_logging",
     "use_native_acceleration",
     "first_run_complete",
+    "deck_view",
 }
 PERCENT_FIELDS = {
     "soundboard_voice_route_microphone_volume",
@@ -61,6 +68,7 @@ def _coerce_percent(value: Any, default: int) -> int:
 class Settings:
     theme: str = "midnight"
     grid_density: str = "comfortable"
+    deck_view: bool = False
     auto_connect: bool = True
     start_minimized: bool = False
     minimize_to_tray: bool = True
@@ -69,6 +77,9 @@ class Settings:
     midi_input_port: str = ""
     midi_output_port: str = ""
     midi_debug_logging: bool = False
+    launchpad_control_bindings: dict[str, str] = field(
+        default_factory=lambda: dict(DEFAULT_LAUNCHPAD_CONTROL_BINDINGS)
+    )
     profile_autosave: bool = True
     backup_profiles_automatically: bool = True
     soundboard_default_output_device: str = ""
@@ -101,6 +112,8 @@ class Settings:
                 values[key] = _coerce_bool(value, default)
             elif key in PERCENT_FIELDS:
                 values[key] = _coerce_percent(value, default)
+            elif key == "launchpad_control_bindings":
+                values[key] = _coerce_launchpad_bindings(value)
             elif isinstance(default, str):
                 values[key] = value if isinstance(value, str) else default
             else:
@@ -113,7 +126,20 @@ class Settings:
             settings.grid_density = "comfortable"
         if settings.update_channel not in {"stable", "beta"}:
             settings.update_channel = "stable"
+        settings.launchpad_control_bindings = _coerce_launchpad_bindings(settings.launchpad_control_bindings)
         return settings
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
+
+
+def _coerce_launchpad_bindings(value: Any) -> dict[str, str]:
+    bindings = dict(DEFAULT_LAUNCHPAD_CONTROL_BINDINGS)
+    if not isinstance(value, dict):
+        return bindings
+    valid_bindings = set(LAUNCHPAD_CONTROL_BINDING_LABELS)
+    for control_id in LAUNCHPAD_AUXILIARY_CONTROL_LABELS:
+        binding = str(value.get(control_id) or "").strip()
+        if binding in valid_bindings:
+            bindings[control_id] = binding
+    return bindings

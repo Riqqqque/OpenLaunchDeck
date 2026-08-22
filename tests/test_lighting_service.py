@@ -10,6 +10,7 @@ class FakeDevice:
 
     def __init__(self):
         self.batches = []
+        self.auxiliary_batches = []
         self.single = []
         self.cleared = False
 
@@ -19,6 +20,10 @@ class FakeDevice:
 
     def set_pad_color(self, button_id, color):
         self.single.append((button_id, color))
+
+    def set_many_auxiliary_colors(self, colors):
+        self.auxiliary_batches.append(dict(colors))
+        return len(colors)
 
     def clear_all_pads(self):
         self.cleared = True
@@ -80,6 +85,21 @@ def test_async_lighting_output_uses_worker():
 
         assert len(device.batches) == 1
         assert len(device.batches[0]) == 64
+    finally:
+        service.shutdown()
+
+
+def test_async_auxiliary_lighting_uses_output_worker():
+    device = FakeDevice()
+    service = LightingService(device=device, async_output=True)
+
+    try:
+        service.set_auxiliary_colors({"top_left": "blue", "top_right": "blue"})
+        deadline = time.monotonic() + 1
+        while not device.auxiliary_batches and time.monotonic() < deadline:
+            time.sleep(0.01)
+
+        assert device.auxiliary_batches == [{"top_left": "blue", "top_right": "blue"}]
     finally:
         service.shutdown()
 
