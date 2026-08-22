@@ -20,7 +20,7 @@ OpenLaunchDeck is designed to stay responsive without competing with games, OBS,
 
 - Keep Performance logging off unless diagnosing latency.
 - Close MIDI Debug after hardware setup.
-- Minimize the app or use **Focus Launchpad Grid** when the editor is not needed.
+- Minimize the app or use **Deck View** when the editor is not needed.
 - Use OBS WebSocket for replay clips and screenshots instead of relying on a game to accept a hotkey.
 - Use unused extended keys such as `F13` through `F24` for global bindings.
 - Avoid `overlap` for long soundboard clips unless layering is intentional.

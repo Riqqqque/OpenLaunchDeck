@@ -229,7 +229,7 @@ User data should remain under AppData. See [Release and Update Flow](Release-and
 
 1. Close MIDI Debug.
 2. Turn off performance logging after diagnosis.
-3. Minimize the app or use Focus Grid.
+3. Minimize the app or use Deck View.
 4. Stop overlapping/looping sounds.
 5. Check Task Manager for sustained CPU, memory growth, repeated child processes, or disk activity.
 6. Identify the exact action that causes the change.
