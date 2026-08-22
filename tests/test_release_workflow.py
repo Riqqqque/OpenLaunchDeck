@@ -38,6 +38,7 @@ def test_windows_exe_metadata_and_icon_refresh_are_configured():
     assert 'IconFilename: "{app}\\OpenLaunchDeck.ico"' in installer
     assert "[InstallDelete]" in installer
     assert 'Type: filesandordirs; Name: "{app}\\_internal"' in installer
+    assert f'#define MyAppVersion "{__version__}"' in installer
 
 
 def test_package_metadata_reads_the_app_version_source():

@@ -8,7 +8,7 @@ The version source of truth is `openlaunchdeck/version.py`.
 
 ```python
 APP_NAME = "OpenLaunchDeck"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 ```
 
 When preparing a release:
@@ -48,12 +48,12 @@ Before launching a downloaded installer, OpenLaunchDeck tries to back up profile
 
 ```json
 {
-  "latest_version": "0.2.0",
+  "latest_version": "0.2.1",
   "minimum_supported_version": "0.1.0",
   "required": false,
-  "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.0.exe",
+  "download_url": "https://example.com/OpenLaunchDeckSetup-0.2.1.exe",
   "sha256": "0000000000000000000000000000000000000000000000000000000000000000",
-  "release_notes_url": "https://example.com/releases/v0.2.0",
+  "release_notes_url": "https://example.com/releases/v0.2.1",
   "published_at": "2026-01-01T00:00:00Z"
 }
 ```

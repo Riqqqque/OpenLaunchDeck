@@ -7,7 +7,6 @@ from PySide6.QtWidgets import QSizePolicy, QWidget
 from ..constants import NAMED_COLORS
 from ..models.button import ButtonConfig
 
-
 CELL_SIZES = {
     "mini": QSize(88, 58),
     "compact": QSize(108, 70),
@@ -228,7 +227,7 @@ class ButtonCell(QWidget):
         if badge:
             self._draw_badge(painter, rect, badge)
 
-        density_boost = {"mini": 1, "compact": 1, "comfortable": 1, "large": 2}.get(self._density, 1)
+        density_boost = {"mini": 1, "compact": 1, "comfortable": 2, "large": 3}.get(self._density, 1)
         if height < 48:
             title_size = 8
         elif height < 60:

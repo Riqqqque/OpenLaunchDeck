@@ -70,7 +70,7 @@ Update `openlaunchdeck/version.py`:
 
 ```python
 APP_NAME = "OpenLaunchDeck"
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 ```
 
 Keep the fallback version in `installer/openlaunchdeck.iss` synchronized. Update the changelog and any release-specific docs in the same commit.
