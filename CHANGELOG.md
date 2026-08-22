@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.1
+
+- Let Deck View use comfortable or large keycaps at typical second-monitor widths instead of unnecessarily forcing Compact sizing.
+- Increased distance-view label scale and added a 1480-pixel layout regression check for all 64 pads.
+
 ## 0.2.0
 
 - Rebuilt the 8x8 workspace as a responsive keycap surface with larger distance-readable labels, Deck View, compact editing, and unclipped layouts from 760x520 upward.

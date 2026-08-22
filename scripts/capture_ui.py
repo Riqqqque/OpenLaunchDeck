@@ -89,6 +89,7 @@ def main() -> int:
             (760, 560, "narrow"),
             (1180, 720, "compact"),
             (1280, 640, "short"),
+            (1480, 920, "second-monitor"),
             (1600, 900, "wide"),
         )
         for definition in theme_definitions():
@@ -104,6 +105,9 @@ def main() -> int:
         window.resize(760, 560)
         window._apply_responsive_layout(force=True)
         capture(window, args.output / "main-midnight-focus.png", app, (760, 560))
+        window.resize(1480, 920)
+        window._apply_responsive_layout(force=True)
+        capture(window, args.output / "main-midnight-focus-second-monitor.png", app, (1480, 920))
         window.set_grid_focus_mode(False)
         window.resize(760, 520)
         window._apply_responsive_layout(force=True)

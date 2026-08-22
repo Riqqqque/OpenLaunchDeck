@@ -999,7 +999,7 @@ class MainWindow(QMainWindow):
         if self._grid_focus_mode:
             if width < 1050 or short_workspace:
                 density = "mini"
-            elif width < 1500 and base_density != "compact":
+            elif width < 1280 and base_density != "compact":
                 density = "compact"
             else:
                 density = base_density
