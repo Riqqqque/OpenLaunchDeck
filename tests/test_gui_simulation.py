@@ -295,6 +295,32 @@ def test_simulation_tooltip_and_grid_focus_mode():
     services.device.close()
 
 
+def test_deck_view_uses_distance_readable_pads_at_second_monitor_size():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    services.settings_service.settings.grid_density = "comfortable"
+    window = MainWindow(services)
+    window.resize(1480, 920)
+    window.show()
+    window.set_grid_focus_mode(True, persist=False)
+    app.processEvents()
+    window._fit_grid_to_viewport()
+    app.processEvents()
+
+    sizes = {(cell.width(), cell.height()) for cell in window.grid.cells.values()}
+    assert sizes == {(152, 94)}
+    assert window.grid_scroll.horizontalScrollBar().maximum() == 0
+    assert window.grid_scroll.verticalScrollBar().maximum() == 0
+    assert all(cell.isVisible() for cell in window.grid.cells.values())
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
 def test_button_editor_remains_accessible_in_narrow_window():
     app = QApplication.instance() or QApplication([])
     services = build_services()
