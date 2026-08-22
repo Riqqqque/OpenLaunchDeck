@@ -58,5 +58,10 @@ class PlaySoundAction(BaseAction):
         if context.audio_engine is None:
             return ActionResult.fail("Audio engine is unavailable.")
         config = dict(config)
-        config.setdefault("_page_id", context.current_page.id)
+        current_page_id = (
+            context.profile_service.current_page_id
+            if context.profile_service is not None
+            else context.current_page.id
+        )
+        config.setdefault("_page_id", current_page_id)
         return context.audio_engine.play_button_sound(context.button_id, config)

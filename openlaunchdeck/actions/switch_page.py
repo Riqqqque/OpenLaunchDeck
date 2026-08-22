@@ -26,8 +26,11 @@ class SwitchPageAction(BaseAction):
             return ActionResult.fail("Choose a page to switch to.")
         if context.profile_service is None:
             return ActionResult.fail("Profile service is unavailable.")
+        old_page_id = context.profile_service.current_page_id
         if not context.profile_service.set_current_page(page_id):
             return ActionResult.fail(f"Page not found: {page_id}")
+        if context.audio_engine is not None and old_page_id != context.profile_service.current_page_id:
+            context.audio_engine.stop_page(old_page_id, only_page_change=True)
         return ActionResult.ok(
             f"Switched to {page_id}.",
             should_update_lighting=True,

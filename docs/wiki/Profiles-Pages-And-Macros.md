@@ -56,7 +56,7 @@ Assign **Switch Page** to a grid pad:
 - Action: **Switch Page**
 - Page ID: exact destination page ID
 
-The Launchpad's extra side buttons are not OpenLaunchDeck page buttons by default. Use the 8x8 grid until those messages are verified for the active hardware mode.
+The Launchpad's Left and Right buttons change pages by default in Programmer Mode, and Scene 1-8 open numbered pages. Change those assignments under **Settings > Launchpad** and verify the parsed controls in MIDI Debug after changing device modes.
 
 ## Editing A Button
 

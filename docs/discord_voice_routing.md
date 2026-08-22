@@ -125,6 +125,16 @@ If you cannot hear your friends:
 - Confirm Windows output is your real listening device.
 - Confirm OpenLaunchDeck Default Output is `System default`.
 
+If a screen-share viewer hears every clip twice:
+
+- The clip is probably reaching the viewer through both the voice input and the shared system audio.
+- Keep `Route To Voice Chat` enabled and turn off `Monitor Voice Routes` for the duration of a full-screen/system-audio share.
+- Alternatively, turn off `Route To Voice Chat` on the pad and rely on shared application audio. People outside the share will not hear that clip.
+- Share one application instead of the entire screen when practical.
+- Keep Discord output on real headphones and leave Windows `Listen to this device` disabled for the route recording endpoint.
+
+OpenLaunchDeck cannot detect an active Discord screen share or ask Discord to exclude one playback session, so the app cannot switch this automatically without risking missing audio.
+
 ## Notes
 
 OpenLaunchDeck does not install or bundle audio drivers. The app owns the soundboard routing logic, monitoring, volume, and diagnostics; Windows still owns audio endpoints.

@@ -118,7 +118,43 @@
           }
         },
         "B2": {
-          "label": "Vol Up",
+          "label": "Previous",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "media_control",
+            "config": {
+              "control": "previous"
+            }
+          }
+        },
+        "B3": {
+          "label": "Next",
+          "color": "blue",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "media_control",
+            "config": {
+              "control": "next"
+            }
+          }
+        },
+        "B4": {
+          "label": "Stop",
+          "color": "red",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "media_control",
+            "config": {
+              "control": "stop"
+            }
+          }
+        },
+        "B5": {
+          "label": "Volume Up",
           "color": "yellow",
           "enabled": true,
           "dangerous": false,
@@ -129,8 +165,8 @@
             }
           }
         },
-        "B3": {
-          "label": "Vol Down",
+        "B6": {
+          "label": "Volume Down",
           "color": "yellow",
           "enabled": true,
           "dangerous": false,
@@ -141,7 +177,7 @@
             }
           }
         },
-        "B4": {
+        "B7": {
           "label": "Mute",
           "color": "pink",
           "enabled": true,
@@ -150,6 +186,18 @@
             "type": "volume_control",
             "config": {
               "mode": "toggle_mute"
+            }
+          }
+        },
+        "B8": {
+          "label": "Show Desktop",
+          "color": "cyan",
+          "enabled": true,
+          "dangerous": false,
+          "action": {
+            "type": "window_control",
+            "config": {
+              "operation": "show_desktop"
             }
           }
         }

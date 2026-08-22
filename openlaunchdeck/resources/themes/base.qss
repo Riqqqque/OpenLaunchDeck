@@ -194,9 +194,40 @@ QListWidget, QTableWidget {
   selection-color: @ACCENT_TEXT@;
 }
 
+QSpinBox, QDoubleSpinBox {
+  padding-right: 30px;
+}
+
+QSpinBox::up-button, QSpinBox::down-button,
+QDoubleSpinBox::up-button, QDoubleSpinBox::down-button {
+  background: @PANEL@;
+  border: none;
+  border-left: 1px solid @BORDER@;
+  width: 24px;
+}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+  border-top-right-radius: 5px;
+}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+  border-bottom-right-radius: 5px;
+}
+
+QSpinBox::up-button:hover, QSpinBox::down-button:hover,
+QDoubleSpinBox::up-button:hover, QDoubleSpinBox::down-button:hover {
+  background: @HOVER@;
+}
+
 QComboBox#HeaderContextCombo {
   min-height: 18px;
   padding: 5px 28px 5px 9px;
+}
+
+QComboBox#DeckPageCombo {
+  min-height: 18px;
+  padding: 5px 28px 5px 10px;
+  font-weight: 700;
 }
 
 QLineEdit:focus, QPlainTextEdit:focus, QTextEdit:focus, QComboBox:focus,
@@ -329,6 +360,22 @@ QPushButton#SecondaryButton, QPushButton#HeaderButton, QPushButton#CategoryButto
 QPushButton#HeaderButton, QPushButton#HeaderPrimaryButton {
   min-height: 18px;
   padding: 6px 9px;
+}
+
+QPushButton#DeckNavButton {
+  background: @PANEL@;
+  border: 1px solid @BORDER@;
+  border-radius: 6px;
+  min-width: 30px;
+  max-width: 30px;
+  min-height: 30px;
+  max-height: 30px;
+  padding: 0;
+}
+
+QPushButton#DeckNavButton:hover {
+  background: @HOVER@;
+  border-color: @ACCENT@;
 }
 
 QPushButton#CategoryButton {

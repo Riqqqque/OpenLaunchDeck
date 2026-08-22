@@ -4,7 +4,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from ..constants import BUTTON_IDS
-from .midi_mapping import MidiAddress, MidiMapping, message_to_address, message_to_raw_data
+from .midi_mapping import (
+    MidiAddress,
+    MidiMapping,
+    message_to_address,
+    message_to_raw_data,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +56,16 @@ class CalibrationSession:
         address = message_to_address(message)
         if address is None:
             return self.current_instruction()
+        duplicate_button = next(
+            (
+                captured_button
+                for captured_button, captured_address in self.captured.items()
+                if captured_address.key() == address.key()
+            ),
+            "",
+        )
+        if duplicate_button:
+            return f"That message is already assigned to {duplicate_button}. {self.current_instruction()}"
         button_id = self.expected_buttons[self.index]
         self.captured[button_id] = address
         self.raw_messages.append(

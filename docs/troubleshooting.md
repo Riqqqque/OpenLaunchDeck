@@ -62,6 +62,12 @@ If friends or teammates say routed soundboard clips are muffled, crunchy, or und
 
 If friends can barely hear clips, raise the per-button volume in OpenLaunchDeck first. Start around `60` to `80`. Also check voice app/game input volume, Discord input sensitivity, and the Windows volume mixer for the route.
 
+## Soundboard Is Duplicated In A Screen Share
+
+If a viewer hears each routed clip twice, the clip is usually reaching them once through the voice input and once through shared system audio. Turn off `Monitor Voice Routes` in the Soundboard panel while sharing the whole screen or system audio. Keep `Route To Voice Chat` enabled on the pad so the clip still reaches the call once.
+
+Another option is to disable `Route To Voice Chat` on the pad and rely on shared application audio, but people who are not watching the share will not hear it. Sharing a single application is less likely to capture the monitor path than sharing the entire screen. Keep Discord output on real headphones and leave Windows `Listen to this device` disabled for the route input.
+
 ## Browser Shows Audio Renderer Error
 
 Keep Windows output set to a real hardware device, then restart the browser. In OpenLaunchDeck, use `System default` for the normal sound output device and reserve the voice route output only for buttons that enable `Route To Voice Chat`.

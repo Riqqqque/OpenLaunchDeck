@@ -1,15 +1,19 @@
 from __future__ import annotations
 
-from collections.abc import Callable
 import threading
 import time
+from collections.abc import Callable
 from typing import Any
 
 from ..constants import NAMED_COLORS
 from ..services.performance_monitor import PerformanceMonitor
 from .midi_manager import MidiManager
-from .midi_mapping import MidiMapping
-
+from .midi_mapping import (
+    MidiAddress,
+    MidiMapping,
+    address_for_auxiliary_control,
+    parse_auxiliary_message,
+)
 
 LAUNCHPAD_PALETTE = {
     # Programmer Mode palette preset. Verify with MIDI Debug before treating a
@@ -38,6 +42,7 @@ class LaunchpadMiniMk3:
         mapping: MidiMapping | None = None,
         logger=None,
         button_callback: Callable[[str, bool, Any], None] | None = None,
+        control_callback: Callable[[str, bool, Any], None] | None = None,
         midi_in_callback: Callable[[Any, str], None] | None = None,
         midi_out_callback: Callable[[Any, str], None] | None = None,
         disconnect_callback: Callable[[str], None] | None = None,
@@ -46,6 +51,7 @@ class LaunchpadMiniMk3:
         self.mapping = mapping or MidiMapping.load_user_default(logger)
         self.logger = logger
         self.button_callback = button_callback
+        self.control_callback = control_callback
         self.midi_in_callback = midi_in_callback
         self.midi_out_callback = midi_out_callback
         self.disconnect_callback = disconnect_callback
@@ -122,10 +128,18 @@ class LaunchpadMiniMk3:
                     self.logger.exception("MIDI debug callback failed.")
         try:
             parsed = self.mapping.parse_message(message)
+            control = None if parsed else parse_auxiliary_message(message)
             parse_ms = (time.perf_counter() - receive_start) * 1000
-            self.performance_monitor.record("midi_event_parse", parse_ms, recognized=bool(parsed))
+            self.performance_monitor.record("midi_event_parse", parse_ms, recognized=bool(parsed or control))
             if self.logger and parsed:
                 self.logger.debug("MIDI parsed %s pressed=%s in %.3f ms", parsed.button_id, parsed.pressed, parse_ms)
+            elif self.logger and control:
+                self.logger.debug(
+                    "MIDI parsed control=%s pressed=%s in %.3f ms",
+                    control.control_id,
+                    control.pressed,
+                    parse_ms,
+                )
             elif self.logger:
                 self.logger.debug("MIDI parse ignored message in %.3f ms", parse_ms)
         except Exception:
@@ -138,11 +152,38 @@ class LaunchpadMiniMk3:
             except Exception:
                 if self.logger:
                     self.logger.exception("MIDI button callback failed for %s.", parsed.button_id)
+        elif control and self.control_callback:
+            try:
+                self.control_callback(control.control_id, control.pressed, message)
+            except Exception:
+                if self.logger:
+                    self.logger.exception("MIDI control callback failed for %s.", control.control_id)
 
     def set_pad_color(self, button_id: str, color: str) -> None:
         self.set_many_pad_colors({button_id: color})
 
     def set_many_pad_colors(self, colors: dict[str, str]) -> int:
+        addresses = {
+            button_id: (self.mapping.address_for_button(button_id), color)
+            for button_id, color in colors.items()
+        }
+        return self._set_many_colors(addresses, "pads")
+
+    def set_auxiliary_color(self, control_id: str, color: str) -> None:
+        self.set_many_auxiliary_colors({control_id: color})
+
+    def set_many_auxiliary_colors(self, colors: dict[str, str]) -> int:
+        addresses = {
+            control_id: (address_for_auxiliary_control(control_id), color)
+            for control_id, color in colors.items()
+        }
+        return self._set_many_colors(addresses, "controls")
+
+    def _set_many_colors(
+        self,
+        addresses: dict[str, tuple[MidiAddress | None, str]],
+        group: str,
+    ) -> int:
         start = time.perf_counter()
         sent = 0
         with self._lock:
@@ -154,16 +195,43 @@ class LaunchpadMiniMk3:
                 if self.logger:
                     self.logger.exception("MIDI dependency is unavailable while sending lighting.")
                 return 0
-            for button_id, color in colors.items():
-                message = self._color_message(mido, button_id, color)
-                if message is None:
-                    continue
+            entries = [
+                (item_id, address, color)
+                for item_id, (address, color) in addresses.items()
+                if address is not None
+            ]
+            if not entries:
+                return 0
+            messages = []
+            if len(entries) > 1:
+                data = list(LAUNCHPAD_SYSEX_HEADER) + [3]
+                for _item_id, address, color in entries:
+                    data.extend((0, address.number, color_to_palette_value(color)))
+                messages.append((mido.Message("sysex", data=data), entries))
+            else:
+                item_id, address, color = entries[0]
+                if address.message_type == "note":
+                    message = mido.Message(
+                        "note_on",
+                        note=address.number,
+                        velocity=color_to_palette_value(color),
+                        channel=address.channel,
+                    )
+                else:
+                    message = mido.Message(
+                        "control_change",
+                        control=address.number,
+                        value=color_to_palette_value(color),
+                        channel=address.channel,
+                    )
+                messages.append((message, entries))
+            for message, message_entries in messages:
                 try:
                     self.output_port.send(message)
                 except Exception as exc:
                     self._mark_disconnected(f"Could not send MIDI lighting: {exc}")
                     break
-                sent += 1
+                sent += len(message_entries)
                 if self.midi_out_callback:
                     try:
                         self.midi_out_callback(message, repr(message))
@@ -171,21 +239,13 @@ class LaunchpadMiniMk3:
                         if self.logger:
                             self.logger.exception("MIDI debug output callback failed.")
                 if self.logger:
-                    self.logger.debug("MIDI OUT %s color=%s %r", button_id, color, message)
+                    summary = ", ".join(f"{item_id}={color}" for item_id, _address, color in message_entries)
+                    self.logger.debug("MIDI OUT %s %s %r", group, summary, message)
         elapsed_ms = (time.perf_counter() - start) * 1000
         self.performance_monitor.record("midi_lighting_batch", elapsed_ms, sent=sent)
         if self.logger:
             self.logger.debug("MIDI lighting batch sent=%s elapsed=%.3f ms", sent, elapsed_ms)
         return sent
-
-    def _color_message(self, mido, button_id: str, color: str):
-        address = self.mapping.address_for_button(button_id)
-        if not address:
-            return None
-        value = color_to_palette_value(color)
-        if address.message_type == "note":
-            return mido.Message("note_on", note=address.number, velocity=value, channel=address.channel)
-        return mido.Message("control_change", control=address.number, value=value, channel=address.channel)
 
     def enter_programmer_mode(self, strict: bool = False) -> bool:
         return self._send_sysex(PROGRAMMER_MODE_SYSEX, "programmer_mode", strict)
@@ -217,6 +277,15 @@ class LaunchpadMiniMk3:
 
     def clear_all_pads(self) -> None:
         self.set_many_pad_colors({button_id: "off" for button_id in self.mapping.button_to_address})
+
+    def clear_surface(self) -> None:
+        self.clear_all_pads()
+        self.set_many_auxiliary_colors(
+            {control_id: "off" for control_id in (
+                "top_up", "top_down", "top_left", "top_right", "session", "drums", "keys", "user",
+                "scene_1", "scene_2", "scene_3", "scene_4", "scene_5", "scene_6", "scene_7", "scene_8",
+            )}
+        )
 
     def flash_pad(self, button_id: str, color: str = "white") -> None:
         self.set_pad_color(button_id, color)

@@ -22,7 +22,7 @@ Key rules:
 - Lighting refreshes skip redundant pad updates when the page state has not changed.
 - Pad flashes and blinking states share one waiting scheduler instead of creating timer threads for each pad or cycle.
 - Grid cells skip text and stylesheet updates when their visible state has not changed.
-- Grid resizing calculates one square pad size per breakpoint and updates geometry only after the resize settles.
+- Grid resizing calculates one readable keycap size per breakpoint and updates geometry only after the resize settles.
 - File logging is queued so action dispatch and the GUI do not wait for disk writes.
 - Profile autosaves are debounced so editing several fields produces one atomic JSON write.
 - Multi-line action edits are debounced so typing does not trigger page lighting refreshes on every character.
@@ -54,6 +54,8 @@ MIDI and lighting timing details are logged at debug level or when debug logging
 - Parsed button event time
 - Action dispatch time
 - Lighting feedback and page refresh time
+
+Full-page and hardware-control lighting updates are sent as compact Programmer Mode batches. The device layer keeps separate last-sent caches for grid and auxiliary controls, so unchanged colors do not produce USB MIDI traffic. A single shared scheduler handles temporary flashes and armed/playing blink states.
 
 Normal usage keeps these logs quiet. Enable MIDI debug logging or performance logging only while diagnosing latency.
 

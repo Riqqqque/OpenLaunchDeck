@@ -39,9 +39,9 @@ The app works without hardware in **Simulation mode**. Clicking a grid pad selec
 - Hotkeys, media keys, typed text, websites, apps, files, folders, and commands
 - OBS replay clips, screenshots, recording, scenes, sources, and mute controls
 - Local-file soundboard playback with per-pad volume, looping, stopping, and optional voice routing
-- Seven complete themes and responsive wide, compact, focus, and single-pane layouts
+- Seven complete themes and responsive wide, compact, Deck View, and single-pane layouts
 - Searchable guided action setup and visual Multi-Action sequences
-- Local soundboard playback and optional voice-route playback
+- Relative page/profile navigation, clipboard text, window controls, pointer controls, and random-folder sounds
 - HTTP requests, key-based SSH commands, delays, and action sequences
 - Dangerous-action double-press confirmation
 - System tray, startup launch, profile backups, logs, and checksum-verified updates
@@ -60,7 +60,7 @@ If the app says Connected but pads do nothing, open [Launchpad Mini MK3 Setup](L
 
 ## Important Limitations
 
-- The 8x8 grid is the verified macro surface. Extra side/navigation buttons are not page controls by default.
+- The 8x8 grid and Programmer Mode edge controls are supported. Arrow, Scene, Session, and User assignments can be changed under **Settings > Launchpad**.
 - Programmer Mode is recommended, but mappings should still be checked with MIDI Debug on real hardware.
 - Voice-chat soundboard routing requires a compatible Windows audio route and the matching input selected in the chat application. No audio driver is bundled.
 - OBS controls require OBS WebSocket to be enabled.

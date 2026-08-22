@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
 
 from ..constants import BUTTON_IDS
 from .performance_monitor import PerformanceMonitor
@@ -37,6 +37,7 @@ class LightingService:
         self._scheduler_thread: threading.Thread | None = None
         self._shutdown_requested = False
         self._pending_colors: dict[str, str] = {}
+        self._pending_auxiliary_colors: dict[str, str] = {}
         self._output_scheduled = False
         self._executor = (
             ThreadPoolExecutor(max_workers=1, thread_name_prefix="openlaunchdeck-lighting")
@@ -148,9 +149,24 @@ class LightingService:
         if self.device and getattr(self.device, "connected", False):
             with self._lock:
                 self._pending_colors.clear()
-            self._submit_raw(self.device.clear_all_pads)
+                self._pending_auxiliary_colors.clear()
+            clear_method = getattr(self.device, "clear_surface", self.device.clear_all_pads)
+            self._submit_raw(clear_method)
         with self._lock:
             self._last_colors.clear()
+
+    def set_auxiliary_colors(self, colors: dict[str, str]) -> None:
+        if not colors or not self.device or not getattr(self.device, "connected", False):
+            return
+        if self._executor is None:
+            self._send_auxiliary_many_now(dict(colors))
+            return
+        with self._lock:
+            self._pending_auxiliary_colors.update(colors)
+            if self._output_scheduled:
+                return
+            self._output_scheduled = True
+        self._schedule_output_drain()
 
     def shutdown(self) -> None:
         with self._scheduler_condition:
@@ -220,6 +236,9 @@ class LightingService:
             if self._output_scheduled:
                 return
             self._output_scheduled = True
+        self._schedule_output_drain()
+
+    def _schedule_output_drain(self) -> None:
         try:
             self._executor.submit(self._drain_pending_colors)
         except RuntimeError:
@@ -231,12 +250,17 @@ class LightingService:
     def _drain_pending_colors(self) -> None:
         while True:
             with self._lock:
-                if not self._pending_colors:
+                if not self._pending_colors and not self._pending_auxiliary_colors:
                     self._output_scheduled = False
                     return
                 colors = dict(self._pending_colors)
+                auxiliary_colors = dict(self._pending_auxiliary_colors)
                 self._pending_colors.clear()
-            self._send_many_now(colors)
+                self._pending_auxiliary_colors.clear()
+            if colors:
+                self._send_many_now(colors)
+            if auxiliary_colors:
+                self._send_auxiliary_many_now(auxiliary_colors)
 
     def _send_many_now(self, colors: dict[str, str]) -> None:
         start = time.perf_counter()
@@ -251,6 +275,17 @@ class LightingService:
 
     def _send_one(self, button_id: str, color: str) -> None:
         self._send_many({button_id: color})
+
+    def _send_auxiliary_many_now(self, colors: dict[str, str]) -> None:
+        start = time.perf_counter()
+        try:
+            if self.device and getattr(self.device, "connected", False):
+                self.device.set_many_auxiliary_colors(colors)
+        except Exception:
+            if self.logger:
+                self.logger.exception("Could not refresh Launchpad hardware-control lighting.")
+        finally:
+            self.performance_monitor.record_since("lighting_auxiliary_output", start, controls=len(colors))
 
     def _submit_raw(self, func, *args) -> None:
         if self._executor is None:

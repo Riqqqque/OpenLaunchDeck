@@ -182,6 +182,7 @@ def test_every_bounded_action_field_uses_a_selector():
     app = QApplication.instance() or QApplication([])
     editor = ActionEditor(create_default_registry())
     editor.set_context_choices("switch_page", "page_id", [("Main", "main")])
+    editor.set_context_choices("switch_profile", "profile_id", [("Basic PC", "basic_pc")])
 
     for action in editor.registry.all():
         editor.set_action(action.type_name, {})
@@ -208,6 +209,26 @@ def test_switch_page_uses_current_profile_page_choices():
     assert widget.currentText() == "Streaming"
     assert widget.currentData() == "streaming"
     assert editor.current_action()[1]["page_id"] == "streaming"
+
+    editor.deleteLater()
+    app.processEvents()
+
+
+def test_switch_profile_uses_profile_library_choices():
+    app = QApplication.instance() or QApplication([])
+    editor = ActionEditor(create_default_registry())
+    editor.set_context_choices(
+        "switch_profile",
+        "profile_id",
+        [("Basic PC", "basic_pc"), ("Streaming", "streaming")],
+    )
+
+    editor.set_action("switch_profile", {"profile_id": "streaming"})
+    widget = editor.field_widgets["profile_id"]
+
+    assert isinstance(widget, QComboBox)
+    assert widget.currentText() == "Streaming"
+    assert editor.current_action()[1]["profile_id"] == "streaming"
 
     editor.deleteLater()
     app.processEvents()

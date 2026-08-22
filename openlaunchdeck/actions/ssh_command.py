@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import time
+
 from .base import ActionResult, BaseAction
+
+
+MAX_SSH_OUTPUT_BYTES = 64 * 1024
 
 
 class SshCommandAction(BaseAction):
@@ -53,10 +58,10 @@ class SshCommandAction(BaseAction):
                 auth_timeout=10,
                 look_for_keys=True,
             )
-            _, stdout, stderr = client.exec_command(command, timeout=30)
-            exit_status = stdout.channel.recv_exit_status()
-            output = stdout.read().decode(errors="replace")
-            error = stderr.read().decode(errors="replace")
+            _, stdout, _stderr = client.exec_command(command, timeout=30)
+            exit_status, output_bytes, error_bytes = _drain_channel(stdout.channel, timeout=30)
+            output = output_bytes.decode(errors="replace")
+            error = error_bytes.decode(errors="replace")
         except Exception as exc:
             return ActionResult.fail(f"SSH command failed: {exc}")
         finally:
@@ -64,3 +69,36 @@ class SshCommandAction(BaseAction):
         if exit_status != 0:
             return ActionResult.fail(f"SSH command exited with {exit_status}.", output=error[:1000])
         return ActionResult.ok("SSH command completed.", output=output[:1000])
+
+
+def _drain_channel(channel, timeout: float) -> tuple[int, bytes, bytes]:
+    deadline = time.monotonic() + max(0.1, timeout)
+    output = bytearray()
+    error = bytearray()
+    while True:
+        had_data = False
+        while channel.recv_ready():
+            chunk = channel.recv(4096)
+            if not chunk:
+                break
+            _append_bounded(output, chunk)
+            had_data = True
+        while channel.recv_stderr_ready():
+            chunk = channel.recv_stderr(4096)
+            if not chunk:
+                break
+            _append_bounded(error, chunk)
+            had_data = True
+        if channel.exit_status_ready() and not channel.recv_ready() and not channel.recv_stderr_ready():
+            return channel.recv_exit_status(), bytes(output), bytes(error)
+        if time.monotonic() >= deadline:
+            channel.close()
+            raise TimeoutError(f"SSH command timed out after {timeout:g} seconds.")
+        if not had_data:
+            time.sleep(0.01)
+
+
+def _append_bounded(buffer: bytearray, chunk: bytes) -> None:
+    remaining = MAX_SSH_OUTPUT_BYTES - len(buffer)
+    if remaining > 0:
+        buffer.extend(chunk[:remaining])

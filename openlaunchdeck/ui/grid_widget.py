@@ -39,13 +39,23 @@ class GridWidget(QWidget):
         self.adjustSize()
 
     def fit_to_viewport(self, viewport_size: QSize) -> None:
-        maximum = {"mini": 72, "compact": 88, "comfortable": 106, "large": 124}.get(self._density, 106)
-        available = max(0, min(viewport_size.width(), viewport_size.height()) - 8)
-        side = min(maximum, max(34, (available - self._spacing * 7) // 8))
+        maximum = {
+            "mini": QSize(112, 70),
+            "compact": QSize(132, 82),
+            "comfortable": QSize(152, 94),
+            "large": QSize(176, 108),
+        }.get(self._density, QSize(152, 94))
+        available_width = max(0, viewport_size.width() - 8 - self._spacing * 7)
+        available_height = max(0, viewport_size.height() - 8 - self._spacing * 7)
+        cell_height = min(maximum.height(), max(38, available_height // 8))
+        natural_width = max(48, available_width // 8)
+        aspect_limit = {"mini": 2.15, "compact": 2.0}.get(self._density, 1.75)
+        cell_width = min(maximum.width(), natural_width, max(56, int(cell_height * aspect_limit)))
         for cell in self.cells.values():
-            cell.set_cell_side(side)
-        total = side * 8 + self._spacing * 7
-        self.setFixedSize(total, total)
+            cell.set_cell_size(cell_width, cell_height)
+        total_width = cell_width * 8 + self._spacing * 7
+        total_height = cell_height * 8 + self._spacing * 7
+        self.setFixedSize(total_width, total_height)
 
     def select(self, button_id: str) -> str:
         previous = self.selected_button_id

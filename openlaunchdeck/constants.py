@@ -4,6 +4,41 @@ BUTTON_ROWS = "ABCDEFGH"
 BUTTON_COLUMNS = range(1, 9)
 BUTTON_IDS = [f"{row}{column}" for row in BUTTON_ROWS for column in BUTTON_COLUMNS]
 
+LAUNCHPAD_AUXILIARY_CONTROL_LABELS: dict[str, str] = {
+    "top_up": "Up Arrow",
+    "top_down": "Down Arrow",
+    "top_left": "Left Arrow",
+    "top_right": "Right Arrow",
+    "session": "Session",
+    "drums": "Drums",
+    "keys": "Keys",
+    "user": "User",
+    **{f"scene_{index}": f"Scene {index}" for index in range(1, 9)},
+}
+
+LAUNCHPAD_CONTROL_BINDING_LABELS: dict[str, str] = {
+    "none": "Do nothing",
+    "previous_page": "Previous page",
+    "next_page": "Next page",
+    "previous_profile": "Previous profile",
+    "next_profile": "Next profile",
+    "default_page": "Default page",
+    "stop_all_sounds": "Stop all sounds",
+    **{f"page_{index}": f"Open page {index}" for index in range(1, 9)},
+}
+
+DEFAULT_LAUNCHPAD_CONTROL_BINDINGS: dict[str, str] = {
+    "top_up": "previous_profile",
+    "top_down": "next_profile",
+    "top_left": "previous_page",
+    "top_right": "next_page",
+    "session": "default_page",
+    "drums": "none",
+    "keys": "none",
+    "user": "stop_all_sounds",
+    **{f"scene_{index}": f"page_{index}" for index in range(1, 9)},
+}
+
 NAMED_COLORS: dict[str, str] = {
     "off": "#000000",
     "dim": "#20242c",

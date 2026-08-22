@@ -140,6 +140,7 @@ class AudioEngine:
                     loop=loop,
                     volume=volume,
                     routed_to_voice_chat=routed_to_voice_chat,
+                    stop_on_page_change=bool(config.get("stop_on_page_change", False)),
                 )
                 with self._lock:
                     self._instances[instance_id] = instance
@@ -210,11 +211,11 @@ class AudioEngine:
         for instance in self.instances_for_button(button_id):
             self._stop_instance(instance.instance_id)
 
-    def stop_page(self, page_id: str) -> None:
+    def stop_page(self, page_id: str, only_page_change: bool = False) -> None:
         with self._lock:
             instances = list(self._instances.values())
         for instance in instances:
-            if instance.page_id == page_id:
+            if instance.page_id == page_id and (not only_page_change or instance.stop_on_page_change):
                 self._stop_instance(instance.instance_id)
 
     def stop_all(self) -> None:

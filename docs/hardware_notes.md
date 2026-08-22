@@ -6,7 +6,7 @@ For source builds on Windows, Python 3.11-3.13 is recommended for hardware MIDI 
 
 On Windows, the device may appear as `LPMiniMK3 MIDI`, `MIDIIN2 (LPMiniMK3 MIDI)`, and `MIDIOUT2 (LPMiniMK3 MIDI)`. The first interface is the DAW/session interface. OpenLaunchDeck prefers the second MIDI interface for macro control and lighting because the Launchpad Mini MK3 reference manual identifies that interface for Custom modes, Lighting Custom Modes, and Programmer Mode.
 
-The Launchpad Mini MK3 has 64 RGB pads plus extra navigation and scene-launch buttons around the grid. OpenLaunchDeck currently treats the 8x8 pad grid as the supported macro surface. Use grid pads with the Switch Page action for OpenLaunchDeck page changes. The extra hardware buttons can be inspected in MIDI Debug, but they are not assigned to previous/next OpenLaunchDeck pages by default until their exact messages are verified on hardware.
+The Launchpad Mini MK3 has 64 RGB pads plus top navigation/mode controls and eight scene buttons. OpenLaunchDeck handles all of them in Programmer Mode. Left and Right move between pages, Up and Down move between profiles, Session opens the default page, User stops all sounds, and Scene 1-8 open the corresponding page by default. Every assignment can be changed or disabled under **Settings > Launchpad**.
 
 ## Programmer Mode
 
@@ -23,7 +23,9 @@ Use the MIDI debug window to view:
 - Incoming messages
 - Outgoing lighting messages
 - Parsed A1-H8 button IDs
+- Parsed top/scene hardware control names
 - Current mapping table
+- Programmer Mode hardware control table
 - Calibration raw message captures
 
 If the parsed button ID is wrong or missing, use calibration and save the mapping.
@@ -42,6 +44,6 @@ If the device disappears during a lighting send, the app disarms dangerous butto
 
 ## RGB Lighting Verification
 
-OpenLaunchDeck can set individual pad colors, clear all pads, refresh a full page, flash press/success/error colors, blink armed dangerous buttons, and show sound playing state. These features use a Programmer Mode palette preset until the exact device/mode behavior is verified on hardware.
+OpenLaunchDeck can set individual pad colors, clear the full surface, refresh a page, flash press/success/error colors, blink armed dangerous buttons, show sound playing state, and light assigned edge controls. Multi-pad changes are combined into one documented Programmer Mode lighting message where practical.
 
-Use MIDI Debug to confirm outgoing messages before relying on lighting behavior during a live workflow.
+Use MIDI Debug to confirm outgoing messages and the physical result before relying on lighting behavior during a live workflow. Device firmware or a mode change from another MIDI application can still affect the surface.

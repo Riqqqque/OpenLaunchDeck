@@ -49,13 +49,13 @@ The action picker is searchable and labels actions by purpose, such as Essential
 
 Each pad can show its ID, label, action name, configured color, disabled state, dangerous armed state, and sound-playing state.
 
-Pads remain square and resize as one grid. Choose the largest grid density in Settings:
+Pads resize as one grid, using a wider keycap shape when that makes labels easier to read. Choose the largest grid density in Settings:
 
 - **Compact** for smaller windows
 - **Comfortable** for normal editing
 - **Large** for a bigger second-monitor view
 
-Use **View > Focus Launchpad Grid** to hide the editor and sidebar and give the grid more room. This is an in-app focus view, not exclusive monitor fullscreen.
+Use **View > Deck View** to hide the editor and sidebar and give the grid almost the entire window. This is an in-app deck view, not exclusive monitor fullscreen.
 
 At narrow window sizes, OpenLaunchDeck shows one workspace at a time instead of squeezing the grid beside the editor. Select a pad, click **Edit A1**, make the change in the full-width editor, then use **Back to Grid**.
 
@@ -77,7 +77,7 @@ Open **Settings > Settings > Appearance** to choose:
 - A **page** is one 8x8 layout inside a profile.
 - A **button** is one pad configuration on one page.
 
-Changing the active page updates the on-screen grid and refreshes Launchpad lighting. Use a **Switch Page** action on a grid pad for physical page navigation.
+Changing the active page updates the on-screen grid and refreshes Launchpad lighting. A **Switch Page** or **Navigate Deck** action can navigate from a grid pad. In Programmer Mode, Left and Right also change pages by default.
 
 See [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md) for safe organization patterns.
 
@@ -97,7 +97,7 @@ See [Profiles, Pages, and Macros](Profiles-Pages-And-Macros.md) for safe organiz
 
 ### View
 
-- Focus Launchpad Grid
+- Deck View
 
 ### Device
 

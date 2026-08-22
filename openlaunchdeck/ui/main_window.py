@@ -14,9 +14,9 @@ from PySide6.QtCore import QObject, QSize, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
+    QComboBox,
     QFileDialog,
     QFrame,
-    QComboBox,
     QHBoxLayout,
     QInputDialog,
     QLabel,
@@ -33,10 +33,11 @@ from PySide6.QtWidgets import (
 )
 
 from .. import native_acceleration
-from ..constants import BUTTON_IDS
+from ..constants import BUTTON_IDS, LAUNCHPAD_AUXILIARY_CONTROL_LABELS
 from ..devices.midi_manager import MidiManager
 from ..models.button import ButtonConfig
 from ..paths import LOGS_DIR, PROFILES_DIR
+from ..services.update_service import UpdateService
 from ..version import APP_NAME, __version__
 from .button_editor import ButtonEditor
 from .grid_widget import GridWidget
@@ -48,7 +49,6 @@ from .settings_dialog import SettingsDialog
 from .setup_wizard import SetupWizard
 from .soundboard_panel import SoundboardPanel
 from .theme import apply_theme
-from ..services.update_service import UpdateService
 from .tray import TrayController
 from .update_dialog import UpdateCheckWorker, UpdateDialog
 
@@ -75,6 +75,7 @@ class MidiConnectionWorker(QObject):
 class MainWindow(QMainWindow):
     action_finished = Signal(str, object)
     hardware_button = Signal(str, bool, object)
+    hardware_control = Signal(str, bool, object)
     midi_in = Signal(object, str)
     midi_out = Signal(object, str)
     device_disconnected = Signal(str)
@@ -93,7 +94,7 @@ class MainWindow(QMainWindow):
         self._connect_worker: MidiConnectionWorker | None = None
         self._startup_update_thread: QThread | None = None
         self._startup_update_worker: UpdateCheckWorker | None = None
-        self._grid_focus_mode = False
+        self._grid_focus_mode = bool(self.services.settings_service.settings.deck_view)
         self._responsive_mode = ""
         self._compact_workspace_view = "grid"
         self._midi_debug_callbacks_active = False
@@ -105,6 +106,7 @@ class MainWindow(QMainWindow):
         self._midi_health_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="openlaunchdeck-midi-health")
         self._midi_health_future: Future | None = None
         self._midi_connection_epoch = 0
+        self._auxiliary_lighting_state: dict[str, str] = {}
         self._profile_autosave_timer = QTimer(self)
         self._profile_autosave_timer.setSingleShot(True)
         self._profile_autosave_timer.setInterval(450)
@@ -112,6 +114,10 @@ class MainWindow(QMainWindow):
         self._grid_fit_timer = QTimer(self)
         self._grid_fit_timer.setSingleShot(True)
         self._grid_fit_timer.timeout.connect(self._fit_grid_to_viewport)
+        self._auxiliary_restore_timer = QTimer(self)
+        self._auxiliary_restore_timer.setSingleShot(True)
+        self._auxiliary_restore_timer.setInterval(140)
+        self._auxiliary_restore_timer.timeout.connect(lambda: self.refresh_auxiliary_lighting(force=True))
         self.setWindowTitle(f"{APP_NAME} {__version__}")
         self.setWindowIcon(app_icon())
         self.resize(1480, 920)
@@ -120,6 +126,7 @@ class MainWindow(QMainWindow):
 
         self.services.action_runner.completion_callback = lambda button_id, result: self.action_finished.emit(button_id, result)
         self.services.device.button_callback = lambda button_id, pressed, raw: self.hardware_button.emit(button_id, pressed, raw)
+        self.services.device.control_callback = lambda control_id, pressed, raw: self.hardware_control.emit(control_id, pressed, raw)
         self.services.device.midi_in_callback = None
         self.services.device.midi_out_callback = None
         self.services.device.disconnect_callback = lambda reason: self.device_disconnected.emit(reason)
@@ -263,12 +270,34 @@ class MainWindow(QMainWindow):
         self.deck_title.setObjectName("PanelTitle")
         self.deck_hint = QLabel("Select a pad to edit")
         self.deck_hint.setObjectName("PanelHint")
-        self.grid_focus_button = QPushButton("Focus Grid")
+        self.deck_previous_page_button = QPushButton()
+        self.deck_previous_page_button.setObjectName("DeckNavButton")
+        self.deck_previous_page_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowLeft))
+        self.deck_previous_page_button.setToolTip("Previous page")
+        self.deck_previous_page_button.setAccessibleName("Previous page")
+        self.deck_page_combo = QComboBox()
+        self.deck_page_combo.setObjectName("DeckPageCombo")
+        self.deck_page_combo.setMinimumContentsLength(8)
+        self.deck_page_combo.setMaximumWidth(180)
+        self.deck_page_combo.setToolTip("Current Launchpad page")
+        self.deck_next_page_button = QPushButton()
+        self.deck_next_page_button.setObjectName("DeckNavButton")
+        self.deck_next_page_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowRight))
+        self.deck_next_page_button.setToolTip("Next page")
+        self.deck_next_page_button.setAccessibleName("Next page")
+        self.grid_focus_button = QPushButton("Edit Layout" if self._grid_focus_mode else "Deck View")
         self.grid_focus_button.setObjectName("HeaderButton")
         self.grid_focus_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarMaxButton))
         self.grid_focus_button.setIconSize(QSize(14, 14))
-        self.grid_focus_button.setToolTip("Hide the side panels and give the Launchpad grid more room.")
+        self.grid_focus_button.setToolTip(
+            "Show the editor and profile library."
+            if self._grid_focus_mode
+            else "Use the whole workspace for larger, easier-to-read pads."
+        )
         deck_header.addWidget(self.deck_title)
+        deck_header.addWidget(self.deck_previous_page_button)
+        deck_header.addWidget(self.deck_page_combo)
+        deck_header.addWidget(self.deck_next_page_button)
         deck_header.addStretch(1)
         deck_header.addWidget(self.deck_hint)
         self.edit_selected_button = QPushButton("Edit A1")
@@ -309,6 +338,9 @@ class MainWindow(QMainWindow):
         self.header_soundboard_button.clicked.connect(self.show_soundboard_panel)
         self.header_update_button.clicked.connect(self.check_updates)
         self.grid_focus_button.clicked.connect(self.toggle_grid_focus_mode)
+        self.deck_previous_page_button.clicked.connect(lambda: self.navigate_page(-1))
+        self.deck_next_page_button.clicked.connect(lambda: self.navigate_page(1))
+        self.deck_page_combo.currentIndexChanged.connect(self._deck_page_changed)
         self.edit_selected_button.clicked.connect(self.show_compact_editor)
         self.header_profile_combo.currentIndexChanged.connect(self._header_profile_changed)
         self.header_page_combo.currentIndexChanged.connect(self._header_page_changed)
@@ -336,8 +368,9 @@ class MainWindow(QMainWindow):
         edit_menu.addActions([copy_action, paste_action, clear_action])
 
         view_menu = menu_bar.addMenu("View")
-        self.grid_focus_action = QAction("Focus Launchpad Grid", self)
+        self.grid_focus_action = QAction("Deck View", self)
         self.grid_focus_action.setCheckable(True)
+        self.grid_focus_action.setChecked(self._grid_focus_mode)
         self.grid_focus_action.setShortcut("Ctrl+G")
         self.grid_focus_action.triggered.connect(self.set_grid_focus_mode)
         view_menu.addAction(self.grid_focus_action)
@@ -421,6 +454,7 @@ class MainWindow(QMainWindow):
         self.sidebar.export_profile_requested.connect(self.export_profile)
         self.action_finished.connect(self.on_action_finished)
         self.hardware_button.connect(self.handle_hardware_button)
+        self.hardware_control.connect(self.handle_hardware_control)
         self.midi_in.connect(self.on_midi_in)
         self.midi_out.connect(self.on_midi_out)
         self.device_disconnected.connect(self.on_device_disconnected)
@@ -433,6 +467,7 @@ class MainWindow(QMainWindow):
         self.sidebar.refresh(profile_service)
         self._refresh_header_context()
         self.editor.set_page_choices([(page.name, page.id) for page in profile_service.current_profile.pages])
+        self.editor.set_profile_choices([(profile.name, profile.id) for profile in profile_service.profiles.values()])
         if self.grid.selected_button_id not in BUTTON_IDS:
             self.grid.select("A1")
         self.grid.update_from_page(current_page, self.services.action_runner.dangerous_service, self.services.audio_engine)
@@ -442,6 +477,7 @@ class MainWindow(QMainWindow):
         self.mode_status.setText("Connected mode" if self.services.device.connected else "Simulation mode")
         self.device_status.setText("Device: Connected" if self.services.device.connected else "Device: Simulation")
         self._set_header_mode(self.services.device.connected)
+        self._refresh_deck_page_combo()
         self._schedule_grid_fit()
 
     def _set_header_mode(self, connected: bool) -> None:
@@ -455,6 +491,7 @@ class MainWindow(QMainWindow):
         self.header_mode.setToolTip(tooltip)
         self.mode_status.setToolTip(tooltip)
         self.device_status.setToolTip(tooltip)
+        self.header_reconnect_button.setToolTip(tooltip + " Click to scan the MIDI ports again.")
         self.header_mode.style().unpolish(self.header_mode)
         self.header_mode.style().polish(self.header_mode)
 
@@ -464,6 +501,41 @@ class MainWindow(QMainWindow):
             self.services.audio_engine,
             self.services.action_runner.dangerous_service,
         )
+        self.refresh_auxiliary_lighting()
+
+    def refresh_auxiliary_lighting(self, force: bool = False) -> None:
+        if not self.services.device.connected:
+            self._auxiliary_lighting_state.clear()
+            return
+        bindings = self.services.settings_service.settings.launchpad_control_bindings
+        colors = {
+            "top_up": "purple",
+            "top_down": "purple",
+            "top_left": "blue",
+            "top_right": "blue",
+            "session": "green",
+            "drums": "dim",
+            "keys": "dim",
+            "user": "red",
+        }
+        pages = self.services.profile_service.current_profile.pages
+        current_page_id = self.services.profile_service.current_page_id
+        for index in range(1, 9):
+            if index <= len(pages):
+                colors[f"scene_{index}"] = "cyan" if pages[index - 1].id == current_page_id else "dim"
+            else:
+                colors[f"scene_{index}"] = "off"
+        for control_id, binding in bindings.items():
+            if binding == "none":
+                colors[control_id] = "off"
+        changed = colors if force else {
+            control_id: color
+            for control_id, color in colors.items()
+            if self._auxiliary_lighting_state.get(control_id) != color
+        }
+        if changed:
+            self.services.lighting_service.set_auxiliary_colors(changed)
+        self._auxiliary_lighting_state = colors
 
     def handle_simulation_press(self, button_id: str) -> None:
         if not button_id:
@@ -481,6 +553,42 @@ class MainWindow(QMainWindow):
             self.last_pressed_status.setText(f"Last: {button_id}")
         self.services.lighting_service.flash(button_id, "white", delay=0.12)
         self.services.action_runner.handle_button_press(button_id, "midi")
+
+    def handle_hardware_control(self, control_id: str, pressed: bool, raw) -> None:
+        if not pressed:
+            return
+        label = LAUNCHPAD_AUXILIARY_CONTROL_LABELS.get(control_id, control_id)
+        if self._should_update_visible_ui():
+            self.last_pressed_status.setText(f"Last: {label}")
+        self.services.lighting_service.set_auxiliary_colors({control_id: "white"})
+        binding = self.services.settings_service.settings.launchpad_control_bindings.get(control_id, "none")
+        handled = self._run_launchpad_control_binding(binding)
+        self._auxiliary_restore_timer.start()
+        if not handled and self._should_update_visible_ui():
+            self.statusBar().showMessage(f"{label} is not assigned.", 2500)
+
+    def _run_launchpad_control_binding(self, binding: str) -> bool:
+        if binding == "previous_page":
+            return self.navigate_page(-1)
+        if binding == "next_page":
+            return self.navigate_page(1)
+        if binding == "previous_profile":
+            return self.navigate_profile(-1)
+        if binding == "next_profile":
+            return self.navigate_profile(1)
+        if binding == "default_page":
+            return self.change_page(self.services.profile_service.current_profile.default_page)
+        if binding == "stop_all_sounds":
+            self.stop_all_sounds()
+            return True
+        if binding.startswith("page_"):
+            try:
+                index = int(binding.removeprefix("page_")) - 1
+            except ValueError:
+                return False
+            pages = self.services.profile_service.current_profile.pages
+            return 0 <= index < len(pages) and self.change_page(pages[index].id)
+        return False
 
     def _should_update_visible_ui(self) -> bool:
         return self.isVisible() and not self.isMinimized()
@@ -513,6 +621,18 @@ class MainWindow(QMainWindow):
         self.header_profile_combo.blockSignals(False)
         self.header_page_combo.blockSignals(False)
 
+    def _refresh_deck_page_combo(self) -> None:
+        profile_service = self.services.profile_service
+        self.deck_page_combo.blockSignals(True)
+        self.deck_page_combo.clear()
+        for page in profile_service.current_profile.pages:
+            self.deck_page_combo.addItem(page.name, page.id)
+        self.deck_page_combo.setCurrentIndex(max(0, self.deck_page_combo.findData(profile_service.current_page_id)))
+        self.deck_page_combo.blockSignals(False)
+        multiple_pages = len(profile_service.current_profile.pages) > 1
+        self.deck_previous_page_button.setEnabled(multiple_pages)
+        self.deck_next_page_button.setEnabled(multiple_pages)
+
     def _header_profile_changed(self) -> None:
         profile_id = str(self.header_profile_combo.currentData() or "")
         if profile_id and profile_id != self.services.profile_service.current_profile_id:
@@ -520,6 +640,11 @@ class MainWindow(QMainWindow):
 
     def _header_page_changed(self) -> None:
         page_id = str(self.header_page_combo.currentData() or "")
+        if page_id and page_id != self.services.profile_service.current_page_id:
+            self.change_page(page_id)
+
+    def _deck_page_changed(self) -> None:
+        page_id = str(self.deck_page_combo.currentData() or "")
         if page_id and page_id != self.services.profile_service.current_page_id:
             self.change_page(page_id)
 
@@ -596,14 +721,33 @@ class MainWindow(QMainWindow):
         self.refresh_all()
         self.refresh_lighting()
 
-    def change_profile(self, profile_id: str) -> None:
+    def change_profile(self, profile_id: str) -> bool:
         self._flush_profile_autosave()
+        old_profile_id = self.services.profile_service.current_profile_id
+        old_page_id = self.services.profile_service.current_page_id
         if profile_id and self.services.profile_service.set_current_profile(profile_id):
             self.services.settings_service.update(default_profile=profile_id)
             self.services.action_runner.disarm_all()
             self.services.lighting_service.stop_all_blinks()
+            if (
+                old_profile_id != self.services.profile_service.current_profile_id
+                or old_page_id != self.services.profile_service.current_page_id
+            ):
+                self.services.audio_engine.stop_page(old_page_id, only_page_change=True)
             self.refresh_all()
             self.refresh_lighting()
+            return True
+        return False
+
+    def navigate_profile(self, offset: int) -> bool:
+        profile_ids = list(self.services.profile_service.profiles)
+        if len(profile_ids) < 2:
+            return False
+        try:
+            current_index = profile_ids.index(self.services.profile_service.current_profile_id)
+        except ValueError:
+            current_index = 0
+        return self.change_profile(profile_ids[(current_index + offset) % len(profile_ids)])
 
     def show_profile_manager(self) -> None:
         self._flush_profile_autosave()
@@ -613,15 +757,29 @@ class MainWindow(QMainWindow):
         self.refresh_all()
         self.refresh_lighting()
 
-    def change_page(self, page_id: str) -> None:
+    def change_page(self, page_id: str) -> bool:
         self._flush_profile_autosave()
         old_page_id = self.services.profile_service.current_page.id
         if page_id and self.services.profile_service.set_current_page(page_id):
             self.services.action_runner.disarm_all()
             self.services.lighting_service.stop_all_blinks()
-            self.services.audio_engine.stop_page(old_page_id)
+            if old_page_id != self.services.profile_service.current_page_id:
+                self.services.audio_engine.stop_page(old_page_id, only_page_change=True)
             self.refresh_all()
             self.refresh_lighting()
+            return True
+        return False
+
+    def navigate_page(self, offset: int) -> bool:
+        pages = self.services.profile_service.current_profile.pages
+        if len(pages) < 2:
+            return False
+        page_ids = [page.id for page in pages]
+        try:
+            current_index = page_ids.index(self.services.profile_service.current_page_id)
+        except ValueError:
+            current_index = 0
+        return self.change_page(page_ids[(current_index + offset) % len(page_ids)])
 
     def add_page(self) -> None:
         name, ok = QInputDialog.getText(self, "Add Page", "Page name:")
@@ -704,6 +862,7 @@ class MainWindow(QMainWindow):
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
         self.services.lighting_service.clear()
+        self._auxiliary_lighting_state.clear()
         self.refresh_all()
 
     def reconnect_device(self) -> None:
@@ -712,6 +871,7 @@ class MainWindow(QMainWindow):
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
         self.services.lighting_service.clear()
+        self._auxiliary_lighting_state.clear()
         self.connect_device()
 
     def show_midi_debug(self) -> None:
@@ -789,7 +949,7 @@ class MainWindow(QMainWindow):
         dialog = SettingsDialog(self.services.settings_service, self, self.services.startup_service)
         if dialog.exec():
             apply_theme(self.services.settings_service.settings.theme, self)
-            self._apply_responsive_layout()
+            self.set_grid_focus_mode(self.services.settings_service.settings.deck_view, persist=False)
             self.services.audio_engine.set_global_volume(self.services.settings_service.settings.soundboard_global_volume)
             self.services.audio_engine.set_default_output_device(self.services.settings_service.settings.soundboard_default_output_device)
             self.services.audio_engine.set_voice_chat_output_device(self.services.settings_service.settings.soundboard_voice_chat_output_device)
@@ -812,15 +972,17 @@ class MainWindow(QMainWindow):
     def toggle_grid_focus_mode(self) -> None:
         self.set_grid_focus_mode(not self._grid_focus_mode)
 
-    def set_grid_focus_mode(self, enabled: bool) -> None:
+    def set_grid_focus_mode(self, enabled: bool, persist: bool = True) -> None:
         self._grid_focus_mode = bool(enabled)
+        if persist and self.services.settings_service.settings.deck_view != self._grid_focus_mode:
+            self.services.settings_service.update(deck_view=self._grid_focus_mode)
         if hasattr(self, "grid_focus_action"):
             self.grid_focus_action.setChecked(self._grid_focus_mode)
-        self.grid_focus_button.setText("Edit Layout" if self._grid_focus_mode else "Focus Grid")
+        self.grid_focus_button.setText("Edit Layout" if self._grid_focus_mode else "Deck View")
         self.grid_focus_button.setToolTip(
             "Show the profile library and button editor."
             if self._grid_focus_mode
-            else "Hide the side panels and give the Launchpad grid more room."
+            else "Use the whole workspace for larger, easier-to-read pads."
         )
         self._apply_responsive_layout()
 
@@ -864,7 +1026,7 @@ class MainWindow(QMainWindow):
             self.deck_layout.setSpacing(12)
 
         self.deck_hint.setVisible(not compact_header and not self._grid_focus_mode)
-        self.deck_title.setVisible(not short_workspace or self._grid_focus_mode)
+        self.deck_title.setVisible(not short_workspace and width >= 1180)
         self.header_subtitle.setVisible(width >= 1420 and height >= 720)
         self.header_context.setVisible(width >= 900)
         self.header_mode.setVisible(not narrow_header)
@@ -879,7 +1041,7 @@ class MainWindow(QMainWindow):
         self.page_status.setVisible(width >= 1120 and not short_workspace)
         self.last_pressed_status.setVisible(width >= 900)
         self.last_result_status.setVisible(width >= 760)
-        self.statusBar().setVisible(not self._grid_focus_mode)
+        self.statusBar().setVisible(not self._grid_focus_mode and height >= 700)
 
         responsive_mode = "focus" if self._grid_focus_mode else "narrow" if narrow_workspace else "compact" if compact_workspace else "wide"
         editor_only = responsive_mode == "narrow" and self._compact_workspace_view == "editor"
@@ -887,6 +1049,12 @@ class MainWindow(QMainWindow):
         self.editor_scroll.setVisible(not self._grid_focus_mode and (responsive_mode != "narrow" or editor_only))
         self.edit_selected_button.setVisible(responsive_mode == "narrow" and not editor_only)
         self.editor.set_compact_navigation(responsive_mode == "narrow")
+        self.editor.setMaximumWidth(980 if editor_only else 16777215)
+        self.editor_scroll.setAlignment(
+            Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignTop
+            if editor_only
+            else Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
         if self._grid_focus_mode:
             self.workspace_splitter.setOrientation(Qt.Orientation.Horizontal)
             self.grid_scroll.setWidgetResizable(False)
@@ -1126,6 +1294,7 @@ class MainWindow(QMainWindow):
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
         self.services.lighting_service.clear()
+        self._auxiliary_lighting_state.clear()
         self.statusBar().showMessage(f"MIDI device disconnected: {reason}", 5000)
         self.refresh_all()
         self._schedule_device_reconnect()
