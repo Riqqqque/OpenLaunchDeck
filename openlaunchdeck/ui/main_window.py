@@ -1401,11 +1401,23 @@ class MainWindow(QMainWindow):
                 for dialog in busy_dialogs:
                     dialog.idle.connect(self._finish_deferred_quit)
                     dialog.hide()
+                self.tray.hide()
                 self.hide()
             return
+        self._quit_pending = False
         self.services.action_runner.completion_callback = None
         self.services.audio_engine.state_changed_callback = None
+        self.tray.hide()
         self.close()
+        self._quit_qt_application()
+
+    @staticmethod
+    def _quit_qt_application(app: QApplication | None = None) -> None:
+        app = app or QApplication.instance()
+        if app is None:
+            return
+        app.closeAllWindows()
+        app.quit()
 
     def _finish_deferred_quit(self) -> None:
         if not self._quit_pending:

@@ -59,6 +59,17 @@ class StartupWindowDouble:
         self.calls.append("showMinimized")
 
 
+class QtApplicationDouble:
+    def __init__(self) -> None:
+        self.calls: list[str] = []
+
+    def closeAllWindows(self) -> None:
+        self.calls.append("close_all_windows")
+
+    def quit(self) -> None:
+        self.calls.append("quit")
+
+
 def test_initial_window_state_skips_full_show_when_starting_in_background():
     window = StartupWindowDouble(keep_running=True)
 
@@ -614,6 +625,41 @@ def test_voice_route_close_hides_instead_of_quitting(monkeypatch):
     window.close()
     services.action_runner.shutdown()
     services.device.close()
+
+
+def test_tray_quit_action_forces_complete_application_shutdown(monkeypatch):
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    services.settings_service.settings.minimize_to_tray = True
+    window = MainWindow(services)
+    window.show()
+    app.processEvents()
+    quit_calls = []
+    tray_hide_calls = []
+    monkeypatch.setattr(window, "_quit_qt_application", lambda: quit_calls.append("quit"))
+    monkeypatch.setattr(window.tray, "hide", lambda: tray_hide_calls.append("hide"))
+    quit_action = next(action for action in window.tray.tray.contextMenu().actions() if action.text() == "Quit")
+
+    quit_action.trigger()
+    app.processEvents()
+
+    assert window._force_quit is True
+    assert window.isVisible() is False
+    assert tray_hide_calls == ["hide"]
+    assert quit_calls == ["quit"]
+
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_complete_application_shutdown_closes_windows_and_exits_qt():
+    app = QtApplicationDouble()
+
+    MainWindow._quit_qt_application(app)
+
+    assert app.calls == ["close_all_windows", "quit"]
 
 
 def test_voice_route_guard_restarts_stopped_route():

@@ -101,6 +101,42 @@ function Get-InnoSetupCompiler {
     return $null
 }
 
+function Test-PackagedShutdown {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Executable
+    )
+    if (!(Test-Path -LiteralPath $Executable)) {
+        throw "Cannot test packaged shutdown because the executable was not found: $Executable"
+    }
+
+    $PreviousSmokeTest = $env:OPENLAUNCHDECK_SMOKE_TEST
+    $PreviousQtPlatform = $env:QT_QPA_PLATFORM
+    try {
+        $env:OPENLAUNCHDECK_SMOKE_TEST = "1"
+        $env:QT_QPA_PLATFORM = "offscreen"
+        $Process = Start-Process -FilePath $Executable -PassThru
+        if (!$Process.WaitForExit(15000)) {
+            Stop-Process -Id $Process.Id -Force -ErrorAction SilentlyContinue
+            throw "Packaged shutdown did not finish within 15 seconds."
+        }
+        if ($Process.ExitCode -ne 0) {
+            throw "Packaged shutdown failed with exit code $($Process.ExitCode)."
+        }
+    } finally {
+        if ($null -eq $PreviousSmokeTest) {
+            Remove-Item Env:OPENLAUNCHDECK_SMOKE_TEST -ErrorAction SilentlyContinue
+        } else {
+            $env:OPENLAUNCHDECK_SMOKE_TEST = $PreviousSmokeTest
+        }
+        if ($null -eq $PreviousQtPlatform) {
+            Remove-Item Env:QT_QPA_PLATFORM -ErrorAction SilentlyContinue
+        } else {
+            $env:QT_QPA_PLATFORM = $PreviousQtPlatform
+        }
+    }
+}
+
 if ($UseCurrentPython) {
     $PythonCommand = Get-Command python -ErrorAction Stop
     $Python = $PythonCommand.Source
@@ -152,6 +188,7 @@ Invoke-Checked { & $Python -m PyInstaller openlaunchdeck.spec --noconfirm } "Bui
 $ExePath = Join-Path $Root "dist\OpenLaunchDeck\OpenLaunchDeck.exe"
 if (Test-Path $ExePath) {
     Write-Host "Executable: $ExePath"
+    Invoke-Checked { Test-PackagedShutdown -Executable $ExePath } "Verify packaged shutdown"
 }
 
 $PortableZip = Join-Path $Root "dist\OpenLaunchDeck-$AppVersion-Windows.zip"
