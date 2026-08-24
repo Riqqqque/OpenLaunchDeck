@@ -29,6 +29,9 @@ class TrayController:
         if QSystemTrayIcon.isSystemTrayAvailable():
             self.tray.show()
 
+    def hide(self) -> None:
+        self.tray.hide()
+
     def restore_window(self) -> None:
         if hasattr(self.window, "restore_from_tray"):
             self.window.restore_from_tray()

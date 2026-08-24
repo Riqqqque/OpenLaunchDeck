@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.2
+
+- Fixed tray Quit so it removes the tray icon, closes all application windows, and terminates the background process.
+- Routed packaged startup smoke checks through the same complete shutdown path.
+
 ## 0.2.1
 
 - Let Deck View use comfortable or large keycaps at typical second-monitor widths instead of unnecessarily forcing Compact sizing.

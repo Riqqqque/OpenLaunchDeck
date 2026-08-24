@@ -266,7 +266,7 @@ def run() -> int:
         _set_windows_process_priority(logger=services.logger)
         if smoke_test:
             window.hide()
-            QTimer.singleShot(250, app.quit)
+            QTimer.singleShot(250, window.quit_app)
         else:
             show_initial_window_state(
                 window,
