@@ -23,6 +23,7 @@ logs/
 *.log
 
 # Editors
+.cursor/
 .idea/
 .vscode/
 *.swp
