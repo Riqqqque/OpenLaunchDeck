@@ -15,7 +15,8 @@ foreach ($Size in $Sizes) {
     }
 }
 
-$PngFiles = $Sizes | ForEach-Object { Join-Path $IconDir "openlaunchdeck_$_.png" }
+# ICO directory entries cannot describe frames larger than 256 px.
+$PngFiles = $Sizes | Where-Object { $_ -le 256 } | ForEach-Object { Join-Path $IconDir "openlaunchdeck_$_.png" }
 $Ico = Join-Path $IconDir "openlaunchdeck.ico"
 & $Magick @PngFiles -strip $Ico
 if ($LASTEXITCODE -ne 0) {

@@ -1,18 +1,80 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="OpenLaunchDeck">
-  <defs>
-    <linearGradient id="key" x1="76" y1="58" x2="438" y2="454" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#22d3ee"/>
-      <stop offset="0.52" stop-color="#06b6d4"/>
-      <stop offset="1" stop-color="#14b8a6"/>
-    </linearGradient>
-    <linearGradient id="arrow" x1="175" y1="156" x2="360" y2="354" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#dbeafe"/>
-    </linearGradient>
-  </defs>
-  <rect x="26" y="26" width="460" height="460" rx="112" fill="url(#key)"/>
-  <rect x="66" y="66" width="380" height="380" rx="82" fill="#07111f"/>
-  <path d="M150 346l137-137h-55v-69h142v142h-69v-55L168 364z" fill="url(#arrow)"/>
-  <rect x="95" y="95" width="66" height="66" rx="19" fill="#f43f5e"/>
-  <circle cx="385" cy="385" r="34" fill="#facc15"/>
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="#2e1f5e"/>
+  <rect x="26" y="26" width="460" height="460" rx="102" fill="#120a2b"/>
+  <g fill="#1e1442">
+    <rect x="56" y="56" width="44" height="44" rx="11"/>
+    <rect x="108" y="56" width="44" height="44" rx="11"/>
+    <rect x="160" y="56" width="44" height="44" rx="11"/>
+    <rect x="316" y="56" width="44" height="44" rx="11"/>
+    <rect x="368" y="56" width="44" height="44" rx="11"/>
+    <rect x="420" y="56" width="44" height="44" rx="11"/>
+    <rect x="56" y="108" width="44" height="44" rx="11"/>
+    <rect x="108" y="108" width="44" height="44" rx="11"/>
+    <rect x="368" y="108" width="44" height="44" rx="11"/>
+    <rect x="420" y="108" width="44" height="44" rx="11"/>
+    <rect x="56" y="160" width="44" height="44" rx="11"/>
+    <rect x="108" y="160" width="44" height="44" rx="11"/>
+    <rect x="368" y="160" width="44" height="44" rx="11"/>
+    <rect x="420" y="160" width="44" height="44" rx="11"/>
+    <rect x="56" y="212" width="44" height="44" rx="11"/>
+    <rect x="108" y="212" width="44" height="44" rx="11"/>
+    <rect x="368" y="212" width="44" height="44" rx="11"/>
+    <rect x="420" y="212" width="44" height="44" rx="11"/>
+    <rect x="56" y="264" width="44" height="44" rx="11"/>
+    <rect x="108" y="264" width="44" height="44" rx="11"/>
+    <rect x="368" y="264" width="44" height="44" rx="11"/>
+    <rect x="420" y="264" width="44" height="44" rx="11"/>
+    <rect x="56" y="316" width="44" height="44" rx="11"/>
+    <rect x="420" y="316" width="44" height="44" rx="11"/>
+    <rect x="56" y="368" width="44" height="44" rx="11"/>
+    <rect x="160" y="368" width="44" height="44" rx="11"/>
+    <rect x="316" y="368" width="44" height="44" rx="11"/>
+    <rect x="420" y="368" width="44" height="44" rx="11"/>
+    <rect x="56" y="420" width="44" height="44" rx="11"/>
+    <rect x="108" y="420" width="44" height="44" rx="11"/>
+    <rect x="160" y="420" width="44" height="44" rx="11"/>
+    <rect x="316" y="420" width="44" height="44" rx="11"/>
+    <rect x="368" y="420" width="44" height="44" rx="11"/>
+    <rect x="420" y="420" width="44" height="44" rx="11"/>
+  </g>
+  <g fill="#ff5fa2">
+    <rect x="212" y="56" width="44" height="44" rx="11"/>
+    <rect x="264" y="56" width="44" height="44" rx="11"/>
+    <rect x="108" y="316" width="44" height="44" rx="11"/>
+    <rect x="368" y="316" width="44" height="44" rx="11"/>
+    <rect x="108" y="368" width="44" height="44" rx="11"/>
+    <rect x="368" y="368" width="44" height="44" rx="11"/>
+  </g>
+  <g fill="#f6f3ff">
+    <rect x="160" y="108" width="44" height="44" rx="11"/>
+    <rect x="212" y="108" width="44" height="44" rx="11"/>
+    <rect x="264" y="108" width="44" height="44" rx="11"/>
+    <rect x="316" y="108" width="44" height="44" rx="11"/>
+    <rect x="160" y="160" width="44" height="44" rx="11"/>
+    <rect x="316" y="160" width="44" height="44" rx="11"/>
+    <rect x="160" y="212" width="44" height="44" rx="11"/>
+    <rect x="316" y="212" width="44" height="44" rx="11"/>
+    <rect x="160" y="264" width="44" height="44" rx="11"/>
+    <rect x="212" y="264" width="44" height="44" rx="11"/>
+    <rect x="264" y="264" width="44" height="44" rx="11"/>
+    <rect x="316" y="264" width="44" height="44" rx="11"/>
+    <rect x="160" y="316" width="44" height="44" rx="11"/>
+    <rect x="212" y="316" width="44" height="44" rx="11"/>
+    <rect x="264" y="316" width="44" height="44" rx="11"/>
+    <rect x="316" y="316" width="44" height="44" rx="11"/>
+  </g>
+  <g fill="#7af5d8">
+    <rect x="212" y="160" width="44" height="44" rx="11"/>
+    <rect x="264" y="160" width="44" height="44" rx="11"/>
+    <rect x="212" y="212" width="44" height="44" rx="11"/>
+    <rect x="264" y="212" width="44" height="44" rx="11"/>
+  </g>
+  <g fill="#ff7849">
+    <rect x="212" y="368" width="44" height="44" rx="11"/>
+    <rect x="264" y="368" width="44" height="44" rx="11"/>
+  </g>
+  <g fill="#ffe066">
+    <rect x="212" y="420" width="44" height="44" rx="11"/>
+    <rect x="264" y="420" width="44" height="44" rx="11"/>
+  </g>
 </svg>

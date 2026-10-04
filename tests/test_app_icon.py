@@ -42,3 +42,13 @@ def test_app_icon_fills_the_windows_icon_canvas():
     assert max(x for x, _y in opaque_points) >= 241
     assert min(y for _x, y in opaque_points) <= 14
     assert max(y for _x, y in opaque_points) >= 241
+
+
+def test_windows_icon_has_no_frames_larger_than_256():
+    import struct
+
+    data = (ICONS_DIR / "openlaunchdeck.ico").read_bytes()
+    _reserved, _kind, count = struct.unpack_from("<HHH", data, 0)
+    widths = [data[6 + index * 16] or 256 for index in range(count)]
+
+    assert sorted(widths) == [16, 24, 32, 48, 64, 128, 256]
