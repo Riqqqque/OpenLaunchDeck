@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.2.4
+
+- The installer now refreshes the Windows icon cache on 64-bit Windows, so taskbar pins and shortcuts pick up a new app icon.
+- The Windows `.ico` no longer contains an oversized 512 px frame that the ICO format cannot describe.
+
+## 0.2.3
+
+- Replaced the application icon and wordmark with an 8x8 pad-grid rocket.
+- Fixed new, duplicated, and imported profiles overwriting a profile file that failed to load or had been renamed.
+- Fixed a pad on one page stopping or lighting from a sound started by the same pad position on another page.
+- Fixed unfinished label and note edits being lost when the Launchpad changed the selection or page.
+- Multi-Action buttons now require confirmation when a step starts streaming or closes a window, keep going after a step raises an error when Continue After A Failed Step is on, and stop between steps on Quit.
+- Quit no longer leaves a hidden process running while a Delay, Run Command, SSH, or HTTP action finishes.
+- Fixed pads staying dark after Connect or Reconnect Device, armed pads surviving a page change from a pad, and a possible crash when closing during a MIDI connect or update check.
+- The microphone voice route now restarts after its device disappears, and voice-route status prefers the cable pair over Stereo Mix.
+- Importing a profile now switches to it the same way as the profile list, including Launchpad lighting.
+- Custom update manifests and installer downloads must use HTTPS (plain HTTP is still accepted for localhost).
+- Sounds are now tracked per profile as well as per page, so profiles that share a page name no longer light or stop each other's clips.
+- Launchpad presses no longer run actions while MIDI Debug calibration is capturing pads.
+- The MIDI Debug window now closes with the main window instead of keeping the app open.
+- Adding, duplicating, or deleting a page and switching profiles from Profile Manager or first-run setup now disarm pads, stop page-change sounds, and relight the Launchpad.
+- Fixed a blinking pad occasionally keeping its blink color after the blink stopped.
+
 ## 0.2.2
 
 - Fixed tray Quit so it removes the tray icon, closes all application windows, and terminates the background process.
