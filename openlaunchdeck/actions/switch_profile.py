@@ -34,7 +34,7 @@ class SwitchProfileAction(BaseAction):
         if context.audio_engine is not None and (
             old_profile_id != service.current_profile_id or old_page_id != service.current_page_id
         ):
-            context.audio_engine.stop_page(old_page_id, only_page_change=True)
+            context.audio_engine.stop_page(old_page_id, only_page_change=True, profile_id=old_profile_id)
         return ActionResult.ok(
             f"Opened profile {service.current_profile.name}.",
             should_update_lighting=True,

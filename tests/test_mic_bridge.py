@@ -137,3 +137,33 @@ def test_mic_bridge_updates_volume_and_stops():
     assert sink.volume == 0.8
     assert sink.stopped is True
     assert bridge.state.running is False
+
+
+def test_refresh_state_reports_stream_that_stopped_with_error():
+    from types import SimpleNamespace
+
+    from openlaunchdeck.audio.mic_bridge import MicBridge, MicBridgeState
+
+    class Stream:
+        def __init__(self, error="NoError", state="ActiveState"):
+            self._error = SimpleNamespace(name=error)
+            self._state = SimpleNamespace(name=state)
+
+        def error(self):
+            return self._error
+
+        def state(self):
+            return self._state
+
+    bridge = MicBridge()
+    bridge.state = MicBridgeState(running=True, input_name="Mic", output_name="Route")
+    bridge._source = Stream()
+    bridge._sink = Stream(state="IdleState")
+    assert bridge.refresh_state().running is True
+
+    bridge._source = Stream(error="IOError", state="StoppedState")
+    state = bridge.refresh_state()
+
+    assert state.running is False
+    assert state.input_name == "Mic"
+    assert "stopped unexpectedly" in state.message

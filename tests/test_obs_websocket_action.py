@@ -224,3 +224,37 @@ def test_set_input_mute_fails_if_verification_disagrees():
     assert result.success is False
     assert "did not verify" in result.message
 
+
+
+def test_obs_client_closes_socket_when_authentication_fails(monkeypatch):
+    import json
+    import sys
+    import types
+
+    from openlaunchdeck.actions.obs_websocket import ObsWebSocketClient
+
+    class FakeSocket:
+        def __init__(self):
+            self.closed = False
+            self.messages = [json.dumps({"op": 0, "d": {"authentication": {"salt": "s", "challenge": "c"}}})]
+
+        def recv(self):
+            return self.messages.pop(0)
+
+        def send(self, _data):
+            pass
+
+        def close(self):
+            self.closed = True
+
+    sockets = []
+    fake_module = types.SimpleNamespace(create_connection=lambda *_args, **_kwargs: sockets.append(FakeSocket()) or sockets[-1])
+    monkeypatch.setitem(sys.modules, "websocket", fake_module)
+
+    try:
+        with ObsWebSocketClient("127.0.0.1", 4455, password=""):
+            raise AssertionError("connection should not open without a password")
+    except RuntimeError as exc:
+        assert "password" in str(exc)
+
+    assert sockets and sockets[0].closed is True

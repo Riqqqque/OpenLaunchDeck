@@ -19,5 +19,9 @@ class DelayAction(BaseAction):
             milliseconds = max(0, min(60000, int(config.get("milliseconds", 250) or 0)))
         except (TypeError, ValueError):
             return ActionResult.fail("Delay must be a whole number of milliseconds.")
-        time.sleep(milliseconds / 1000)
+        stop_event = getattr(context, "stop_event", None)
+        if stop_event is None:
+            time.sleep(milliseconds / 1000)
+        elif stop_event.wait(milliseconds / 1000):
+            return ActionResult.fail("Delay cancelled.")
         return ActionResult.ok(f"Waited {milliseconds} ms.")

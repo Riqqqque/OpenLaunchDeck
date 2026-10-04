@@ -64,7 +64,7 @@ Rules:
 
 - `latest_version` and `minimum_supported_version` must be valid semantic versions.
 - `required` must be a JSON boolean.
-- `download_url` must be HTTP or HTTPS.
+- The manifest URL and `download_url` must use HTTPS. Plain HTTP is accepted only for `localhost`, `127.0.0.1`, or `::1` when testing locally.
 - `sha256` must be the SHA256 checksum of the installer.
 - `release_notes_url` may be empty, otherwise it must be HTTP or HTTPS.
 - `published_at` must be ISO 8601.

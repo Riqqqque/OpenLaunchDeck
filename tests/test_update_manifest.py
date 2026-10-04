@@ -60,3 +60,14 @@ def test_update_manifest_rejects_invalid_published_date():
 
     with pytest.raises(ValueError):
         UpdateManifest.from_dict(data)
+
+
+def test_update_urls_require_https_except_loopback():
+    from openlaunchdeck.models.update_manifest import is_trusted_update_url
+
+    assert is_trusted_update_url("https://github.com/Riqqqque/OpenLaunchDeck/releases/download/v1/setup.exe")
+    assert is_trusted_update_url("http://127.0.0.1:8000/manifest.json")
+    assert is_trusted_update_url("http://localhost/manifest.json")
+    assert not is_trusted_update_url("http://example.com/manifest.json")
+    assert not is_trusted_update_url("ftp://example.com/setup.exe")
+    assert not is_trusted_update_url("https:///setup.exe")

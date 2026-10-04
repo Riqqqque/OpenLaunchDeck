@@ -52,6 +52,10 @@ class RandomSoundAction(BaseAction):
             if context.profile_service is not None
             else context.current_page.id
         )
+        source_profile_id = str(
+            getattr(context.profile_service, "current_profile_id", None)
+            or getattr(getattr(context, "current_profile", None), "id", "")
+        )
         if not folder.exists() or not folder.is_dir():
             return ActionResult.fail(f"Sound folder does not exist: {folder}")
         try:
@@ -77,6 +81,7 @@ class RandomSoundAction(BaseAction):
             "active_color": config.get("active_color", "cyan"),
             "stop_on_page_change": bool(config.get("stop_on_page_change", False)),
             "_page_id": source_page_id,
+            "_profile_id": source_profile_id,
         }
         return context.action_executor("play_sound", context, sound_config)
 

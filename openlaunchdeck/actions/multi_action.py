@@ -53,7 +53,11 @@ class MultiAction(BaseAction):
         results: list[str] = []
         details: dict = {}
         should_update_lighting = False
+        stop_event = getattr(context, "stop_event", None)
         for index, step in enumerate(steps, start=1):
+            if stop_event is not None and stop_event.is_set():
+                details["results"] = results
+                return ActionResult(False, f"Multi-action cancelled before step {index}.", details, should_update_lighting)
             if not isinstance(step, dict):
                 result = ActionResult.fail(f"Step {index} is not an action object.")
             else:
@@ -61,10 +65,15 @@ class MultiAction(BaseAction):
                 action_config = dict(step.get("config")) if isinstance(step.get("config"), dict) else {}
                 if action_type == self.type_name:
                     action_config["_multi_depth"] = depth + 1
-                if context.action_executor is not None:
-                    result = context.action_executor(action_type, context, action_config)
-                else:
-                    result = context.action_registry.get(action_type).execute(context, action_config)
+                try:
+                    if context.action_executor is not None:
+                        result = context.action_executor(action_type, context, action_config)
+                    else:
+                        result = context.action_registry.get(action_type).execute(context, action_config)
+                except Exception as exc:
+                    if context.logger:
+                        context.logger.exception("Multi-action step %s failed: %s", index, action_type)
+                    result = ActionResult.fail(f"Step failed: {exc}")
             results.append(f"{index}: {result.message}")
             should_update_lighting = should_update_lighting or result.should_update_lighting
             details.update(result.details)

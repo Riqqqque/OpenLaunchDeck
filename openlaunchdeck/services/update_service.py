@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from packaging.version import Version, InvalidVersion
 
-from ..models.update_manifest import UpdateManifest
+from ..models.update_manifest import UpdateManifest, is_trusted_update_url
 from ..native_acceleration import verify_sha256 as verify_sha256_accelerated
 from ..paths import UPDATES_DIR
 
@@ -97,6 +97,8 @@ class UpdateService:
     def fetch_manifest(self, manifest_url: str) -> UpdateManifest:
         if not manifest_url:
             raise ValueError("No update manifest URL is configured.")
+        if not is_trusted_update_url(manifest_url):
+            raise ValueError("The update manifest URL must use HTTPS.")
         try:
             import requests
         except Exception as exc:
@@ -140,6 +142,8 @@ class UpdateService:
             if not isinstance(data, list):
                 raise ValueError("GitHub release response must be a list.")
             data = next((release for release in data if isinstance(release, dict) and not release.get("draft")), None)
+            if not isinstance(data, dict):
+                raise ValueError("GitHub did not return a usable beta release.")
         if not isinstance(data, dict):
             raise ValueError("GitHub did not return a usable release.")
 
@@ -155,7 +159,10 @@ class UpdateService:
             raise ValueError("The release is missing its installer or SHA256 checksum asset.")
         checksum_response = requests.get(checksum_url, headers=headers, timeout=10)
         checksum_response.raise_for_status()
-        checksum = checksum_response.text.strip().split(maxsplit=1)[0].lower()
+        checksum_fields = checksum_response.text.strip().split(maxsplit=1)
+        if not checksum_fields:
+            raise ValueError("The release checksum asset is empty.")
+        checksum = checksum_fields[0].lower()
         manifest = UpdateManifest.from_dict(
             {
                 "latest_version": latest_version,

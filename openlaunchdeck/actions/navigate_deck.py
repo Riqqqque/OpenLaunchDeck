@@ -89,7 +89,7 @@ class NavigateDeckAction(BaseAction):
         if context.settings_service is not None:
             context.settings_service.update(default_profile=target_id)
         if old_profile_id != service.current_profile_id or old_page_id != service.current_page_id:
-            self._stop_old_page(context, old_page_id)
+            self._stop_old_page(context, old_page_id, old_profile_id)
         return ActionResult.ok(
             f"Opened profile {service.current_profile.name}.",
             should_update_lighting=True,
@@ -100,6 +100,6 @@ class NavigateDeckAction(BaseAction):
         )
 
     @staticmethod
-    def _stop_old_page(context, page_id: str) -> None:
+    def _stop_old_page(context, page_id: str, profile_id: str | None = None) -> None:
         if context.audio_engine is not None:
-            context.audio_engine.stop_page(page_id, only_page_change=True)
+            context.audio_engine.stop_page(page_id, only_page_change=True, profile_id=profile_id)

@@ -189,3 +189,26 @@ def test_delete_profile_keeps_backup(tmp_path, monkeypatch):
     assert "two" not in service.profiles
     assert not (profiles_dir / "two.json").exists()
     assert (backups_dir / "deleted_profiles" / "two.json").exists()
+
+
+def test_new_profiles_never_overwrite_unloaded_or_renamed_files(tmp_path, monkeypatch):
+    profiles_dir = tmp_path / "profiles"
+    backups_dir = tmp_path / "backups"
+    starters_dir = tmp_path / "starters"
+    profiles_dir.mkdir()
+    starters_dir.mkdir()
+    renamed_path = profiles_dir / "work.json"
+    renamed_path.write_text('{"name":"Gaming","id":"gaming","pages":[]}', encoding="utf-8")
+    corrupt_path = profiles_dir / "stream.json"
+    corrupt_path.write_text("{not json", encoding="utf-8")
+    monkeypatch.setattr(profile_service, "PROFILES_DIR", profiles_dir)
+    monkeypatch.setattr(profile_service, "BACKUPS_DIR", backups_dir)
+    monkeypatch.setattr(profile_service, "STARTER_PROFILES_DIR", starters_dir)
+
+    service = profile_service.ProfileService()
+    service.create_profile("Work")
+    service.create_profile("Stream")
+
+    assert corrupt_path.read_text(encoding="utf-8") == "{not json"
+    assert '"Gaming"' in renamed_path.read_text(encoding="utf-8")
+    assert set(profile_service.ProfileService().profiles) == {"gaming", "work", "stream"}

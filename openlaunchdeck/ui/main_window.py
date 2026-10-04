@@ -10,7 +10,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSize, Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
@@ -99,6 +99,7 @@ class MainWindow(QMainWindow):
         self._compact_workspace_view = "grid"
         self._midi_debug_callbacks_active = False
         self._force_next_action_ui_update = False
+        self._ui_refresh_pending = False
         self._last_voice_route_guard_message = ""
         self._last_voice_route_guard_log_time = 0.0
         self._manual_disconnect = False
@@ -545,8 +546,12 @@ class MainWindow(QMainWindow):
         self._force_next_action_ui_update = True
         self.services.action_runner.handle_button_press(button_id, "simulation")
 
+    def _calibration_active(self) -> bool:
+        window = self.midi_debug_window
+        return bool(window is not None and window.isVisible() and window.calibration.active)
+
     def handle_hardware_button(self, button_id: str, pressed: bool, raw) -> None:
-        if not pressed:
+        if not pressed or self._calibration_active():
             return
         if self._should_update_visible_ui():
             self.select_button(button_id)
@@ -555,7 +560,7 @@ class MainWindow(QMainWindow):
         self.services.action_runner.handle_button_press(button_id, "midi")
 
     def handle_hardware_control(self, control_id: str, pressed: bool, raw) -> None:
-        if not pressed:
+        if not pressed or self._calibration_active():
             return
         label = LAUNCHPAD_AUXILIARY_CONTROL_LABELS.get(control_id, control_id)
         if self._should_update_visible_ui():
@@ -682,6 +687,33 @@ class MainWindow(QMainWindow):
         self._profile_autosave_timer.stop()
         self._save_current_profile()
 
+    def _flush_editor_before_external_page_change(self) -> None:
+        # The page or profile was switched by an action, so the editor still holds a
+        # button from the previous page. Save its edits to the profile that owns it.
+        button = self.editor.button
+        self.editor.flush_pending_changes()
+        if not self._profile_autosave_timer.isActive():
+            return
+        self._profile_autosave_timer.stop()
+        profile_service = self.services.profile_service
+        owner = next(
+            (
+                profile
+                for profile in profile_service.profiles.values()
+                if any(candidate is button for page in profile.pages for candidate in page.buttons.values())
+            ),
+            None,
+        )
+        if owner is None or owner is profile_service.current_profile:
+            self._save_current_profile()
+            return
+        try:
+            profile_service.save_profile(owner)
+        except Exception as exc:
+            if self.services.logger:
+                self.services.logger.exception("Profile could not be saved.")
+            self.statusBar().showMessage(f"Profile could not be saved: {exc}", 8000)
+
     def _save_current_profile(self) -> bool:
         try:
             self.services.profile_service.save_current()
@@ -733,7 +765,7 @@ class MainWindow(QMainWindow):
                 old_profile_id != self.services.profile_service.current_profile_id
                 or old_page_id != self.services.profile_service.current_page_id
             ):
-                self.services.audio_engine.stop_page(old_page_id, only_page_change=True)
+                self.services.audio_engine.stop_page(old_page_id, only_page_change=True, profile_id=old_profile_id)
             self.refresh_all()
             self.refresh_lighting()
             return True
@@ -751,11 +783,12 @@ class MainWindow(QMainWindow):
 
     def show_profile_manager(self) -> None:
         self._flush_profile_autosave()
+        old_profile_id = self.services.profile_service.current_profile_id
+        old_page_id = self.services.profile_service.current_page_id
         dialog = ProfileManagerDialog(self.services.profile_service, self)
         dialog.exec()
         self.services.settings_service.update(default_profile=self.services.profile_service.current_profile_id)
-        self.refresh_all()
-        self.refresh_lighting()
+        self._finish_external_switch(old_profile_id, old_page_id)
 
     def change_page(self, page_id: str) -> bool:
         self._flush_profile_autosave()
@@ -784,22 +817,36 @@ class MainWindow(QMainWindow):
     def add_page(self) -> None:
         name, ok = QInputDialog.getText(self, "Add Page", "Page name:")
         if ok and name.strip():
+            self._flush_profile_autosave()
             page = self.services.profile_service.add_page(name.strip())
-            self.services.profile_service.set_current_page(page.id)
-            self.refresh_all()
-            self.refresh_lighting()
+            self.change_page(page.id)
 
     def duplicate_page(self) -> None:
+        self._flush_profile_autosave()
         page = self.services.profile_service.duplicate_page(self.services.profile_service.current_page.id)
-        self.services.profile_service.set_current_page(page.id)
-        self.refresh_all()
-        self.refresh_lighting()
+        self.change_page(page.id)
 
     def delete_page(self) -> None:
         if QMessageBox.question(self, APP_NAME, "Delete the current page?") != QMessageBox.StandardButton.Yes:
             return
-        if not self.services.profile_service.delete_page(self.services.profile_service.current_page.id):
+        self._flush_profile_autosave()
+        profile_service = self.services.profile_service
+        old_profile_id = profile_service.current_profile_id
+        old_page_id = profile_service.current_page_id
+        if not profile_service.delete_page(old_page_id):
             QMessageBox.information(self, APP_NAME, "A profile must keep at least one page.")
+            return
+        # The page is gone, so nothing can stop its sounds later.
+        self.services.audio_engine.stop_page(old_page_id, profile_id=old_profile_id)
+        self._finish_external_switch(old_profile_id, old_page_id)
+
+    def _finish_external_switch(self, old_profile_id: str, old_page_id: str) -> None:
+        # For switches made outside change_profile/change_page (dialogs, page deletion).
+        profile_service = self.services.profile_service
+        if old_profile_id != profile_service.current_profile_id or old_page_id != profile_service.current_page_id:
+            self.services.action_runner.disarm_all()
+            self.services.lighting_service.stop_all_blinks()
+            self.services.audio_engine.stop_page(old_page_id, only_page_change=True, profile_id=old_profile_id)
         self.refresh_all()
         self.refresh_lighting()
 
@@ -810,11 +857,11 @@ class MainWindow(QMainWindow):
             return
         try:
             profile = self.services.profile_service.import_profile(Path(path))
-            self.services.profile_service.set_current_profile(profile.id)
         except Exception as exc:
             QMessageBox.warning(self, APP_NAME, f"Profile could not be imported:\n{exc}")
             return
-        self.refresh_all()
+        # Go through change_profile so the Launchpad is relit and armed pads are cleared.
+        self.change_profile(profile.id)
 
     def export_profile(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
@@ -876,7 +923,7 @@ class MainWindow(QMainWindow):
 
     def show_midi_debug(self) -> None:
         if self.midi_debug_window is None:
-            self.midi_debug_window = MidiDebugWindow(self.services.device)
+            self.midi_debug_window = MidiDebugWindow(self.services.device, self)
             self.midi_debug_window.closed.connect(self.disable_midi_debug_callbacks)
         self.midi_debug_window.refresh_ports()
         self.enable_midi_debug_callbacks()
@@ -909,9 +956,13 @@ class MainWindow(QMainWindow):
         if update_visible_ui:
             self.last_result_status.setText(f"Result: {result.message[:60]}")
         if result.details.get("page_changed"):
-            self.services.lighting_service.stop_blink(button_id)
+            self._flush_editor_before_external_page_change()
+            self.services.action_runner.disarm_all()
+            self.services.lighting_service.stop_all_blinks()
             if update_visible_ui:
                 self.refresh_all()
+            else:
+                self._ui_refresh_pending = True
             self.refresh_lighting()
             return
         if "Press again" in result.message:
@@ -934,6 +985,7 @@ class MainWindow(QMainWindow):
     def show_soundboard_panel(self) -> None:
         if self.soundboard_panel is None:
             self.soundboard_panel = SoundboardPanel(self.services.audio_engine, self.services.settings_service, self)
+            self.soundboard_panel.mic_route_check.stateChanged.connect(lambda _state: self.update_voice_route_guard())
         self.soundboard_panel.refresh()
         self.soundboard_panel.show()
         self.soundboard_panel.raise_()
@@ -1092,9 +1144,11 @@ class MainWindow(QMainWindow):
         self._schedule_grid_fit()
 
     def show_first_run(self) -> None:
+        old_profile_id = self.services.profile_service.current_profile_id
+        old_page_id = self.services.profile_service.current_page_id
         dialog = SetupWizard(self.services.profile_service, self.services.settings_service, self)
         dialog.exec()
-        self.refresh_all()
+        self._finish_external_switch(old_profile_id, old_page_id)
 
     def check_updates(self) -> None:
         UpdateDialog(self.services.settings_service, self.services.logger, self, auto_check=True).exec()
@@ -1273,10 +1327,22 @@ class MainWindow(QMainWindow):
     def on_connect_finished(self, success: bool, message: str, input_port: str, output_port: str) -> None:
         automatic = self._automatic_connect_attempt
         self._automatic_connect_attempt = False
+        if success and self._manual_disconnect:
+            # Disconnect was clicked while the ports were still opening.
+            self.services.device.close()
+            self.refresh_all()
+            return
         if success:
             self.services.settings_service.update(midi_input_port=input_port, midi_output_port=output_port)
             self.statusBar().showMessage("MIDI device connected.", 3000)
-            self.refresh_lighting()
+            # The pads were reset by the reconnect, so the cached colors no longer match the device.
+            self.services.lighting_service.refresh_page(
+                self.services.profile_service.current_page,
+                self.services.audio_engine,
+                self.services.action_runner.dangerous_service,
+                force=True,
+            )
+            self.refresh_auxiliary_lighting(force=True)
         else:
             if automatic:
                 self.statusBar().showMessage(f"Launchpad reconnect failed: {message}", 4000)
@@ -1336,13 +1402,38 @@ class MainWindow(QMainWindow):
                 )
             event.ignore()
             return
+        if self._connect_thread is not None or self._startup_update_thread is not None:
+            # Destroying a running QThread aborts the process, so finish through the deferred quit.
+            if not saving_session:
+                event.ignore()
+                self.quit_app()
+                return
+            for thread in (self._connect_thread, self._startup_update_thread):
+                if thread is not None:
+                    thread.wait(5000)
         self.services.audio_engine.stop_all()
         if self.soundboard_panel is not None:
             self.soundboard_panel.close()
+        if self.midi_debug_window is not None:
+            self.midi_debug_window.close()
         self.device_reconnect_timer.stop()
         self._midi_health_executor.shutdown(wait=False, cancel_futures=True)
         self.services.device.close()
         super().closeEvent(event)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._refresh_if_pending()
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange:
+            self._refresh_if_pending()
+
+    def _refresh_if_pending(self) -> None:
+        if self._ui_refresh_pending and self._should_update_visible_ui():
+            self._ui_refresh_pending = False
+            QTimer.singleShot(0, self.refresh_all)
 
     def should_keep_running_in_background(self) -> bool:
         if not self.tray.tray.isVisible():

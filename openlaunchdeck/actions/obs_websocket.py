@@ -48,6 +48,14 @@ class ObsWebSocketClient:
         self._socket = None
 
     def __enter__(self) -> "ObsWebSocketClient":
+        # Python skips __exit__ when __enter__ raises, so release partial setup here.
+        try:
+            return self._open()
+        except BaseException:
+            self.__exit__(None, None, None)
+            raise
+
+    def _open(self) -> "ObsWebSocketClient":
         try:
             import websocket
         except Exception as exc:

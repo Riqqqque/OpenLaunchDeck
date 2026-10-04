@@ -52,8 +52,9 @@ class ActionRunner:
         }
         self._pending_limit = self._pending_limits["background"]
         self._pending_counts = {"background": 0, "interactive": 0}
-        self._pending_lock = threading.Lock()
+        self._pending_lock = threading.Condition()
         self._shutting_down = False
+        self._stop_event = threading.Event()
         self._main_thread = MainThreadDispatcher()
 
     def handle_button_press(self, button_id: str, source: str = "simulation") -> ActionResult:
@@ -87,9 +88,14 @@ class ActionRunner:
     def shutdown(self) -> None:
         with self._pending_lock:
             self._shutting_down = True
+        self._stop_event.set()
         self.completion_callback = None
         self.executor.shutdown(wait=False, cancel_futures=True)
         self.interactive_executor.shutdown(wait=False, cancel_futures=True)
+
+    def wait_for_idle(self, timeout: float) -> bool:
+        with self._pending_lock:
+            return self._pending_lock.wait_for(lambda: not any(self._pending_counts.values()), timeout=max(0.0, timeout))
 
     def _dispatch(self, button_id: str, button: ButtonConfig, press_start: float, source: str) -> ActionResult:
         action_config = button.action
@@ -107,9 +113,11 @@ class ActionRunner:
             settings_service=self.settings_service,
             action_registry=self.registry,
             action_executor=self._execute_nested_action,
+            stop_event=self._stop_event,
         )
         config = dict(action_config.config if action_config else {})
         config.setdefault("_page_id", context.current_page.id)
+        config.setdefault("_profile_id", context.current_profile.id)
         self.performance_monitor.record_since(
             "button_press_to_action_dispatch",
             press_start,
@@ -151,20 +159,31 @@ class ActionRunner:
         errors = [message for message in errors if message.strip()]
         return ActionResult.fail(errors[0]) if errors else None
 
-    @staticmethod
-    def _requires_confirmation(button: ButtonConfig) -> bool:
+    @classmethod
+    def _requires_confirmation(cls, button: ButtonConfig) -> bool:
         if button.dangerous:
             return True
         action_config = button.action
         if not action_config:
             return False
-        action_type = str(action_config.type or "").strip()
-        operation = str(action_config.config.get("operation") or "").strip()
-        return (
-            action_type == "obs_websocket" and operation == "start_streaming"
-        ) or (
+        return cls._is_dangerous_action(action_config.type, action_config.config)
+
+    @classmethod
+    def _is_dangerous_action(cls, action_type: object, config: object, depth: int = 0) -> bool:
+        if not isinstance(config, dict) or depth > 8:
+            return False
+        action_type = str(action_type or "").strip()
+        operation = str(config.get("operation") or "").strip()
+        if (action_type == "obs_websocket" and operation == "start_streaming") or (
             action_type == "window_control" and operation == "close"
-        )
+        ):
+            return True
+        if action_type == "multi_action" and isinstance(config.get("steps"), list):
+            return any(
+                isinstance(step, dict) and cls._is_dangerous_action(step.get("type"), step.get("config"), depth + 1)
+                for step in config["steps"]
+            )
+        return False
 
     def _run_action(self, button_id: str, action, context: ActionContext, config: dict) -> ActionResult:
         with self.performance_monitor.measure(f"action:{action.type_name}"):
@@ -196,8 +215,11 @@ class ActionRunner:
     def _release_action_slot(self, _future: Future | None, lane: str) -> None:
         with self._pending_lock:
             self._pending_counts[lane] = max(0, self._pending_counts[lane] - 1)
+            self._pending_lock.notify_all()
 
     def _execute_nested_action(self, action_type: str, context: ActionContext, config: dict) -> ActionResult:
+        if self._stop_event.is_set():
+            return ActionResult.fail("OpenLaunchDeck is shutting down.")
         if not self.registry.has(action_type):
             return ActionResult.fail(f"Action type is unavailable: {action_type}")
         if context.profile_service is not None:

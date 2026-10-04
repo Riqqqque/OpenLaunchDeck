@@ -242,6 +242,45 @@ def test_audio_engine_stop_scopes(tmp_path):
     assert not engine.currently_playing()
 
 
+def test_same_button_id_on_another_page_keeps_its_own_sound(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"minimal wav bytes")
+    engine = AudioEngine()
+    install_qt_test_double(engine)
+    toggle = {"file_path": str(path), "behavior_when_already_playing": "toggle_stop", "loop": True}
+
+    engine.play_button_sound("A1", dict(toggle, _page_id="page1"))
+    assert engine.playing_button_ids("page2") == set()
+    assert engine.is_button_playing("A1", "page2") is False
+
+    result = engine.play_button_sound("A1", dict(toggle, _page_id="page2"))
+
+    assert result.message != "Stopped sound."
+    assert sorted(item.page_id for item in engine.currently_playing()) == ["page1", "page2"]
+    engine.stop_button("A1", "page2")
+    assert [item.page_id for item in engine.currently_playing()] == ["page1"]
+
+
+def test_same_page_id_in_another_profile_keeps_sounds_apart(tmp_path):
+    path = tmp_path / "sound.wav"
+    path.write_bytes(b"minimal wav bytes")
+    engine = AudioEngine()
+    install_qt_test_double(engine)
+    current = {"profile": "gaming"}
+    engine._current_profile_id_provider = lambda: current["profile"]
+    config = {"file_path": str(path), "_page_id": "main", "loop": True, "stop_on_page_change": True}
+
+    engine.play_button_sound("A1", dict(config, _profile_id="gaming"))
+    current["profile"] = "stream"
+
+    assert engine.playing_button_ids("main") == set()
+    engine.play_button_sound("A1", dict(config, _profile_id="stream", behavior_when_already_playing="toggle_stop"))
+    assert sorted(item.profile_id for item in engine.currently_playing()) == ["gaming", "stream"]
+
+    engine.stop_page("main", only_page_change=True, profile_id="gaming")
+    assert [item.profile_id for item in engine.currently_playing()] == ["stream"]
+
+
 def test_page_change_only_stops_opted_in_sounds(tmp_path):
     path = tmp_path / "sound.wav"
     path.write_bytes(b"minimal wav bytes")

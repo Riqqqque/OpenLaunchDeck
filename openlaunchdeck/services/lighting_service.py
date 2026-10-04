@@ -73,7 +73,7 @@ class LightingService:
         colors: dict[str, str] = {}
         playing_buttons = None
         if audio_engine is not None and hasattr(audio_engine, "playing_button_ids"):
-            playing_buttons = audio_engine.playing_button_ids()
+            playing_buttons = audio_engine.playing_button_ids(page.id)
         for button_id in BUTTON_IDS:
             button = page.get_button(button_id)
             if not button.enabled:
@@ -222,8 +222,10 @@ class LightingService:
                     state.next_change = now + state.period
                     colors[button_id] = state.color_a if state.showing_a else state.color_b
 
-            if colors and self.device and getattr(self.device, "connected", False):
-                self._send_many(colors)
+                # Queue while still holding the lock so a stop_blink() or refresh that runs
+                # right after cannot have its restore color overwritten by this blink step.
+                if colors and self.device and getattr(self.device, "connected", False):
+                    self._send_many(colors)
 
     def _send_many(self, colors: dict[str, str]) -> None:
         if not self.device or not getattr(self.device, "connected", False):

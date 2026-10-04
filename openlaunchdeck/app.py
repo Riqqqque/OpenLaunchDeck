@@ -47,6 +47,7 @@ PRIORITY_CLASSES_TO_NORMALIZE = {
 PRIORITY_STARTUP_RECHECK_DELAYS_MS = (100, 500, 1_000, 2_000, 5_000)
 PRIORITY_GUARD_INTERVAL_MS = 60_000
 SMOKE_TEST_ENV = "OPENLAUNCHDECK_SMOKE_TEST"
+ACTION_SHUTDOWN_GRACE_SECONDS = 2.0
 
 
 def _kernel32_priority_api() -> object:
@@ -153,6 +154,7 @@ def build_services() -> AppServices:
         voice_route_microphone_volume=settings_service.settings.soundboard_voice_route_microphone_volume,
         performance_logging_enabled=settings_service.settings.enable_performance_logging,
         performance_monitor=performance_monitor,
+        current_profile_id=lambda: profile_service.current_profile_id,
     )
     if settings_service.settings.soundboard_voice_route_microphone_enabled:
         audio_engine.refresh_voice_route_microphone()
@@ -259,6 +261,7 @@ def run() -> int:
     if not single_instance_listening:
         services.logger.warning("Single-instance startup handling is unavailable.")
     priority_guard = None if smoke_test else start_windows_priority_guard(app, services.logger)
+    result = 1
     try:
         with services.performance_monitor.measure("app_startup_main_window"):
             window = MainWindow(services)
@@ -280,6 +283,9 @@ def run() -> int:
         return 1
     finally:
         services.action_runner.shutdown()
+        actions_idle = services.action_runner.wait_for_idle(ACTION_SHUTDOWN_GRACE_SECONDS)
+        if not actions_idle:
+            services.logger.warning("Exiting while an action is still running.")
         services.lighting_service.shutdown()
         services.audio_engine.shutdown()
         services.device.close()
@@ -287,4 +293,8 @@ def run() -> int:
             priority_guard.stop()
         single_instance.close()
         shutdown_logging(services.logger)
+        if not actions_idle:
+            # Worker threads stuck in a command, SSH, or HTTP wait would otherwise keep the
+            # process alive with no window or tray icon until they finish.
+            os._exit(result)
     return result

@@ -157,3 +157,13 @@ def test_find_best_voice_route_can_return_legacy_when_allowed():
 
     assert status is not None
     assert status.uses_legacy_mixer is True
+
+
+def test_voice_route_prefers_cable_pair_over_earlier_stereo_mix():
+    outputs = [device("out", "CABLE Input (Virtual Cable)")]
+    inputs = [device("mix", "Stereo Mix (Realtek Audio)"), device("in", "CABLE Output (Virtual Cable)")]
+
+    status = analyze_voice_route("out", outputs, inputs)
+
+    assert status.input_id == "in"
+    assert status.route_kind == "paired_bridge"

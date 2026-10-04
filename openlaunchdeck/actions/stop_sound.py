@@ -20,7 +20,7 @@ class StopSoundAction(BaseAction):
             return ActionResult.fail("Audio engine is unavailable.")
         scope = str(config.get("scope") or "all")
         if scope == "this_button":
-            context.audio_engine.stop_button(context.button_id)
+            context.audio_engine.stop_button(context.button_id, context.current_page.id)
             return ActionResult.ok("Stopped this button sound.")
         if scope == "current_page":
             context.audio_engine.stop_page(context.current_page.id)

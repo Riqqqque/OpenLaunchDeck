@@ -106,6 +106,34 @@ class MicBridge:
                 self.logger.exception("Could not stop microphone voice route.")
         self.state = MicBridgeState()
 
+    def refresh_state(self) -> MicBridgeState:
+        # state.running is set once at start; a removed microphone or output stops the
+        # Qt streams with an error, which only shows up on the streams themselves.
+        if self.state.running and not self._streams_alive():
+            if self.logger:
+                self.logger.warning("Microphone voice route stopped unexpectedly.")
+            self.state = MicBridgeState(
+                input_id=self.state.input_id,
+                input_name=self.state.input_name,
+                output_id=self.state.output_id,
+                output_name=self.state.output_name,
+                message="Microphone route stopped unexpectedly.",
+            )
+        return self.state
+
+    def _streams_alive(self) -> bool:
+        for stream in (self._source, self._sink):
+            if stream is None:
+                return False
+            try:
+                error_name = getattr(stream.error(), "name", "NoError")
+                state_name = getattr(stream.state(), "name", "")
+            except Exception:
+                return False
+            if error_name != "NoError" or state_name == "StoppedState":
+                return False
+        return True
+
     def set_volume(self, volume: int) -> None:
         if self._sink is not None and hasattr(self._sink, "setVolume"):
             self._sink.setVolume(max(0, min(100, int(volume))) / 100.0)

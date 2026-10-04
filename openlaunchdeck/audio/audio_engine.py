@@ -49,7 +49,9 @@ class AudioEngine:
         voice_route_microphone_volume: int = 100,
         performance_logging_enabled: bool = False,
         performance_monitor: PerformanceMonitor | None = None,
+        current_profile_id: Callable[[], str] | None = None,
     ) -> None:
+        self._current_profile_id_provider = current_profile_id
         self.logger = logger
         self.global_volume = clamp_percent(global_volume)
         self.default_output_device_id = default_output_device_id
@@ -86,14 +88,16 @@ class AudioEngine:
         if not self.qt_available or self._qt is None:
             return ActionResult.fail("QtMultimedia is unavailable.")
         behavior = str(config.get("behavior_when_already_playing") or "restart")
-        existing = self.instances_for_button(button_id)
+        source_page_id = str(config.get("_page_id") or "")
+        source_profile_id = str(config.get("_profile_id") or self._current_profile_id())
+        existing = self.instances_for_button(button_id, source_page_id, source_profile_id)
         if existing and behavior == "ignore":
             return ActionResult.ok("Sound is already playing.")
         if existing and behavior == "toggle_stop":
-            self.stop_button(button_id)
+            self.stop_button(button_id, source_page_id, source_profile_id)
             return ActionResult.ok("Stopped sound.")
         if existing and behavior == "restart":
-            self.stop_button(button_id)
+            self.stop_button(button_id, source_page_id, source_profile_id)
 
         QUrl, QAudioOutput, QMediaDevices, QMediaPlayer = self._qt
         volume = percent_from_config(config, "volume", 100)
@@ -132,7 +136,8 @@ class AudioEngine:
                 instance = SoundInstance(
                     instance_id=instance_id,
                     button_id=button_id,
-                    page_id=str(config.get("_page_id") or ""),
+                    page_id=source_page_id,
+                    profile_id=source_profile_id,
                     file_path=metadata.file_path,
                     display_name=metadata.display_name,
                     player=player,
@@ -195,27 +200,71 @@ class AudioEngine:
         self._metadata_cache[cache_key] = metadata
         return metadata
 
-    def instances_for_button(self, button_id: str) -> list[SoundInstance]:
-        with self._lock:
-            return [instance for instance in self._instances.values() if instance.button_id == button_id]
+    def _current_profile_id(self) -> str:
+        if self._current_profile_id_provider is None:
+            return ""
+        try:
+            return str(self._current_profile_id_provider() or "")
+        except Exception:
+            return ""
 
-    def is_button_playing(self, button_id: str) -> bool:
-        with self._lock:
-            return any(instance.button_id == button_id for instance in self._instances.values())
+    def _same_profile(self, instance: SoundInstance, profile_id: str | None) -> bool:
+        # Page ids such as "main" repeat across profiles. Without an explicit profile the
+        # lookup is about what is on screen, which is always the current profile.
+        wanted = profile_id if profile_id is not None else self._current_profile_id()
+        return not wanted or not instance.profile_id or instance.profile_id == wanted
 
-    def playing_button_ids(self) -> set[str]:
-        with self._lock:
-            return {instance.button_id for instance in self._instances.values()}
+    # Button ids repeat on every page, so callers pass page_id to keep page1 A1 and page2 A1 apart.
+    # An instance without a page id (or a lookup without one) matches any page.
+    def _matches(
+        self,
+        instance: SoundInstance,
+        button_id: str | None,
+        page_id: str | None,
+        profile_id: str | None = None,
+    ) -> bool:
+        if button_id is not None and instance.button_id != button_id:
+            return False
+        if not page_id:
+            return True
+        if instance.page_id and instance.page_id != page_id:
+            return False
+        return self._same_profile(instance, profile_id)
 
-    def stop_button(self, button_id: str) -> None:
-        for instance in self.instances_for_button(button_id):
+    def instances_for_button(
+        self,
+        button_id: str,
+        page_id: str | None = None,
+        profile_id: str | None = None,
+    ) -> list[SoundInstance]:
+        with self._lock:
+            return [
+                instance
+                for instance in self._instances.values()
+                if self._matches(instance, button_id, page_id, profile_id)
+            ]
+
+    def is_button_playing(self, button_id: str, page_id: str | None = None) -> bool:
+        with self._lock:
+            return any(self._matches(instance, button_id, page_id) for instance in self._instances.values())
+
+    def playing_button_ids(self, page_id: str | None = None) -> set[str]:
+        with self._lock:
+            return {instance.button_id for instance in self._instances.values() if self._matches(instance, None, page_id)}
+
+    def stop_button(self, button_id: str, page_id: str | None = None, profile_id: str | None = None) -> None:
+        for instance in self.instances_for_button(button_id, page_id, profile_id):
             self._stop_instance(instance.instance_id)
 
-    def stop_page(self, page_id: str, only_page_change: bool = False) -> None:
+    def stop_page(self, page_id: str, only_page_change: bool = False, profile_id: str | None = None) -> None:
         with self._lock:
-            instances = list(self._instances.values())
+            instances = [
+                instance
+                for instance in self._instances.values()
+                if instance.page_id == page_id and self._same_profile(instance, profile_id)
+            ]
         for instance in instances:
-            if instance.page_id == page_id and (not only_page_change or instance.stop_on_page_change):
+            if not only_page_change or instance.stop_on_page_change:
                 self._stop_instance(instance.instance_id)
 
     def stop_all(self) -> None:
@@ -274,7 +323,8 @@ class AudioEngine:
         )
 
     def voice_route_microphone_state(self) -> MicBridgeState:
-        return self.mic_bridge.state
+        refresh_state = getattr(self.mic_bridge, "refresh_state", None)
+        return refresh_state() if refresh_state is not None else self.mic_bridge.state
 
     def voice_route_status(self) -> VoiceRouteStatus:
         return current_voice_route_status(self.voice_chat_output_device_id)
