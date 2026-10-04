@@ -6,7 +6,7 @@ Open **Settings > Settings** to change application, MIDI, soundboard, update, an
 
 | Setting | Meaning |
 | --- | --- |
-| Theme | Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, High Contrast, or Follow Windows |
+| Look | Nebula, Studio, or Hardware style; or the classic Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, or High Contrast theme; or Follow Windows |
 | Grid density | Compact, comfortable, or large pad sizing |
 | Open in Deck View | Start with the grid using nearly the entire app window |
 
@@ -106,6 +106,7 @@ Open the folder from the **Config folder** button in Settings:
 | `midi_mappings` | Saved calibration mappings |
 | `imported_assets` | Assets imported by supported workflows; local sound buttons normally keep their original file paths |
 | `updates` | Downloaded update files and metadata |
+| `animations` | Idle animations you made or imported, one `.json` file each |
 
 Program files belong in the install folder. User data never needs to be placed there.
 

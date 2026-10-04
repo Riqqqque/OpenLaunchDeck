@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import native_acceleration
 from .actions.registry import create_default_registry
+from .animations import AnimationLibrary, IdleAnimationPlayer
 from .audio.audio_engine import AudioEngine
 from .devices.launchpad_mini_mk3 import LaunchpadMiniMk3
 from .logging_setup import configure_logging, shutdown_logging
@@ -126,6 +127,8 @@ class AppServices:
     logger: object
     performance_monitor: PerformanceMonitor
     startup_service: StartupService
+    animation_library: AnimationLibrary
+    idle_animation_player: IdleAnimationPlayer
 
 
 def build_services() -> AppServices:
@@ -165,6 +168,14 @@ def build_services() -> AppServices:
         performance_monitor=performance_monitor,
         async_output=True,
     )
+    animation_library = AnimationLibrary(logger=logger)
+    idle_animation_player = IdleAnimationPlayer(
+        lighting_service=lighting_service,
+        device=device,
+        settings_service=settings_service,
+        library=animation_library,
+        logger=logger,
+    )
     registry = create_default_registry()
     action_runner = ActionRunner(
         registry=registry,
@@ -189,6 +200,8 @@ def build_services() -> AppServices:
         logger=logger,
         performance_monitor=performance_monitor,
         startup_service=startup_service,
+        animation_library=animation_library,
+        idle_animation_player=idle_animation_player,
     )
 
 
@@ -266,6 +279,9 @@ def run() -> int:
         with services.performance_monitor.measure("app_startup_main_window"):
             window = MainWindow(services)
         single_instance.set_command_handler(lambda command: handle_single_instance_command(window, command))
+        if not smoke_test:
+            services.idle_animation_player.can_start = window._idle_animation_may_start
+            services.idle_animation_player.start()
         _set_windows_process_priority(logger=services.logger)
         if smoke_test:
             window.hide()
@@ -282,6 +298,7 @@ def run() -> int:
         services.logger.exception("Fatal application error.")
         return 1
     finally:
+        services.idle_animation_player.shutdown()
         services.action_runner.shutdown()
         actions_idle = services.action_runner.wait_for_idle(ACTION_SHUTDOWN_GRACE_SECONDS)
         if not actions_idle:

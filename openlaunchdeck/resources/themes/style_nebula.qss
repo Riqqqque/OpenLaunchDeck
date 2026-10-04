@@ -1,0 +1,40 @@
+/* Nebula: soft, rounded surfaces with pink and mint accents. */
+
+QFrame#AppHeader {
+  background: @BACKGROUND@;
+}
+
+QWidget#SidebarPanel, QWidget#InspectorPanel {
+  background: @SURFACE@;
+}
+
+QLabel#HeaderModeChip {
+  border-radius: 11px;
+  padding: 4px 12px;
+}
+
+QPushButton#HeaderButton, QPushButton#HeaderPrimaryButton {
+  border-radius: 15px;
+  padding: 6px 14px;
+}
+
+QPushButton#PrimaryButton {
+  border-radius: @RADIUS_SM@;
+}
+
+QTabBar::tab {
+  border-radius: @RADIUS_SM@;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+
+QTabBar::tab:selected {
+  background: @CHIP@;
+  border-color: @ACCENT@;
+  color: @TEXT_STRONG@;
+}
+
+QFrame#SettingsSection {
+  background: @SURFACE@;
+  border-color: @BORDER@;
+}

@@ -61,6 +61,20 @@ def test_batch_lighting_sends_midi_messages():
     assert len(outgoing) == 1
 
 
+def test_rgb_colors_use_sysex_rgb_entries_even_for_one_pad():
+    device = LaunchpadMiniMk3()
+    port = FakeOutputPort()
+    device.output_port = port
+    device.connected = True
+
+    assert device.set_many_pad_colors({"A1": "#ff8000"}) == 1
+    assert device.set_many_pad_colors({"A1": "#00ff7f", "A2": "red"}) == 2
+
+    assert [message.type for message in port.messages] == ["sysex", "sysex"]
+    assert list(port.messages[0].data) == [0, 32, 41, 2, 13, 3, 3, 81, 127, 64, 0]
+    assert list(port.messages[1].data) == [0, 32, 41, 2, 13, 3, 3, 81, 0, 127, 63, 0, 82, 5]
+
+
 def test_enter_programmer_mode_sends_documented_sysex_message():
     device = LaunchpadMiniMk3()
     port = FakeOutputPort()

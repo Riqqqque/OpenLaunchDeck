@@ -1,11 +1,12 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QRect, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPalette, QPen
+from PySide6.QtCore import QPointF, QRect, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QFontMetrics, QPainter, QPalette, QPen, QRadialGradient
 from PySide6.QtWidgets import QSizePolicy, QWidget
 
 from ..constants import NAMED_COLORS
 from ..models.button import ButtonConfig
+from .theme import current_theme
 
 CELL_SIZES = {
     "mini": QSize(88, 58),
@@ -161,6 +162,10 @@ class ButtonCell(QWidget):
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        style = current_theme().pad_style.key
+        if style in {"nebula", "studio", "hardware"}:
+            getattr(self, f"_paint_{style}")(painter)
+            return
         height = self._cell_size.height()
         width = self._cell_size.width()
         rect = self.rect().adjusted(1, 1, -1, -2)
@@ -280,6 +285,231 @@ class ButtonCell(QWidget):
         action_color.setAlpha(185 if button.enabled else 150)
         painter.setPen(action_color)
         painter.drawText(action_rect, Qt.AlignmentFlag.AlignCenter, action_text)
+
+    # Styled pads (Nebula, Studio, Hardware)
+
+    def _pad_state(self) -> tuple[ButtonConfig, str, bool, QColor]:
+        button = self._button
+        action_type = button.action.type if button.action else "noop"
+        color_name = button.active_color if self._playing else button.color
+        if self._armed:
+            color_name = "yellow"
+        empty = action_type == "noop" and not button.label
+        accent = QColor(NAMED_COLORS.get(color_name, color_name if color_name.startswith("#") else NAMED_COLORS["dim"]))
+        if color_name in {"dim", "off"}:
+            accent = QColor(NAMED_COLORS["blue"])
+        return button, action_type, empty, accent
+
+    def _title_point_size(self) -> int:
+        height = self._cell_size.height()
+        base = 8 if height < 48 else 9 if height < 60 else 10 if height < 76 else 11 if height < 92 else 12
+        return base + {"mini": 1, "compact": 1, "comfortable": 2, "large": 3}.get(self._density, 1)
+
+    def _small_font(self, painter: QPainter, bold: bool = True) -> QFont:
+        font = QFont(painter.font())
+        height = self._cell_size.height()
+        font.setPointSize(7 if height < 56 else 8 if height < 92 else 9)
+        font.setWeight(QFont.Weight.DemiBold if bold else QFont.Weight.Normal)
+        return font
+
+    def _draw_label(self, painter: QPainter, rect: QRect, text: str, color: QColor) -> None:
+        font = QFont(painter.font())
+        font.setPointSize(self._title_point_size())
+        font.setWeight(QFont.Weight.Bold)
+        painter.setFont(font)
+        painter.setPen(color)
+        self._draw_fitted_center(painter, rect, text, minimum_size=7 if self._density in {"mini", "compact"} else 8)
+
+    def _draw_action_caption(self, painter: QPainter, rect: QRect, action_type: str, color: QColor, align) -> None:
+        label = ACTION_LABELS.get(action_type, action_type.replace("_", " ").title())
+        font, metrics = self._fit_font(self._small_font(painter), label, max(18, rect.width()), minimum_size=6)
+        painter.setFont(font)
+        painter.setPen(color)
+        painter.drawText(rect, align, metrics.elidedText(label, Qt.TextElideMode.ElideRight, max(18, rect.width())))
+
+    @staticmethod
+    def _with_alpha(color: QColor, alpha: int) -> QColor:
+        result = QColor(color)
+        result.setAlpha(alpha)
+        return result
+
+    @staticmethod
+    def _readable_on(fill: QColor) -> QColor:
+        luminance = 0.2126 * fill.redF() + 0.7152 * fill.greenF() + 0.0722 * fill.blueF()
+        return QColor("#0b0b10") if luminance > 0.55 else QColor("#ffffff")
+
+    def _paint_nebula(self, painter: QPainter) -> None:
+        tokens = current_theme().colors
+        button, action_type, empty, accent = self._pad_state()
+        width, height = self._cell_size.width(), self._cell_size.height()
+        rect = QRectF(self.rect()).adjusted(2, 2, -2, -2)
+        radius = min(rect.width(), rect.height()) * 0.2
+        panel = QColor(tokens["PANEL"])
+        if not button.enabled:
+            fill, edge = QColor(tokens["SURFACE"]), QColor(tokens["BORDER"])
+        elif empty:
+            fill = self._blend(QColor(tokens["BACKGROUND"]), panel, 0.85 if not self._hover else 1.0)
+            edge = self._with_alpha(QColor(tokens["BORDER"]), 140 if not self._hover else 255)
+        else:
+            fill = self._blend(panel, accent, 0.3 if not self._hover else 0.4)
+            edge = self._blend(panel, accent, 0.6)
+        if self._pressed:
+            fill = self._blend(fill, accent, 0.25)
+        painter.setPen(QPen(edge, 1))
+        painter.setBrush(fill)
+        painter.drawRoundedRect(rect, radius, radius)
+        if self._selected or self._armed or self._playing:
+            ring = QColor(tokens["ACCENT"]) if self._selected else QColor("#ffd36b") if self._armed else QColor(tokens["SECONDARY"])
+            painter.setPen(QPen(ring, 2.5))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius)
+
+        inner = rect.toRect().adjusted(9 if width >= 84 else 6, 7 if height >= 58 else 5, -8, -6)
+        id_font = self._small_font(painter)
+        painter.setFont(id_font)
+        muted = QColor(tokens["MUTED"])
+        if not empty and button.enabled:
+            dot = 6 if height >= 58 else 5
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(accent)
+            painter.drawEllipse(QRectF(inner.left(), inner.top() + 4, dot, dot))
+            painter.setPen(muted)
+            painter.drawText(inner.adjusted(dot + 5, 0, 0, 0), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
+        else:
+            painter.setPen(self._with_alpha(muted, 150))
+            painter.drawText(inner, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
+
+        badge = self._badge_text(button.enabled)
+        if badge:
+            self._draw_badge(painter, rect.toRect(), badge)
+        if empty:
+            if self._hover and button.enabled:
+                self._draw_plus(painter, rect, muted)
+            return
+        show_action = height >= 52 and width >= 70
+        caption_height = 15 if height < 90 else 17
+        label_rect = inner.adjusted(0, 13 if height >= 58 else 10, 0, -(caption_height if show_action else 0))
+        label_color = QColor(tokens["TEXT_STRONG"]) if button.enabled else QColor(tokens["PLACEHOLDER"])
+        self._draw_label(painter, label_rect, button.label or "Untitled", label_color)
+        if show_action:
+            caption = QRect(inner.left(), inner.bottom() - caption_height, inner.width(), caption_height)
+            self._draw_action_caption(painter, caption, action_type, muted, Qt.AlignmentFlag.AlignCenter)
+
+    def _paint_studio(self, painter: QPainter) -> None:
+        tokens = current_theme().colors
+        button, action_type, empty, accent = self._pad_state()
+        width, height = self._cell_size.width(), self._cell_size.height()
+        rect = QRectF(self.rect()).adjusted(1.5, 1.5, -1.5, -1.5)
+        radius = 3.0
+        muted = QColor(tokens["MUTED"])
+        tile = QColor(tokens["PANEL"]) if not empty else self._blend(QColor(tokens["BACKGROUND"]), QColor(tokens["PANEL"]), 0.55)
+        if self._hover:
+            tile = QColor(tokens["HOVER"])
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(tile)
+        painter.drawRoundedRect(rect, radius, radius)
+        small = self._small_font(painter)
+        if not empty:
+            band_height = max(16.0, rect.height() * 0.42)
+            band = QRectF(rect.left(), rect.top(), rect.width(), band_height)
+            band_color = accent if button.enabled else QColor(tokens["BORDER_STRONG"])
+            if not self._hover:
+                band_color = self._blend(band_color, QColor("#000000"), 0.12)
+            if self._pressed:
+                band_color = self._blend(band_color, QColor("#ffffff"), 0.2)
+            painter.setBrush(band_color)
+            painter.drawRoundedRect(band, radius, radius)
+            painter.drawRect(QRectF(band.left(), band.bottom() - radius, band.width(), radius))
+            label_rect = band.toRect().adjusted(8, 2, -8, -2)
+            font = QFont(painter.font())
+            font.setPointSize(max(8, self._title_point_size() - 2))
+            font.setWeight(QFont.Weight.Bold)
+            font, metrics = self._fit_font(font, button.label or "Untitled", label_rect.width(), minimum_size=7)
+            painter.setFont(font)
+            painter.setPen(self._readable_on(band_color))
+            painter.drawText(
+                label_rect,
+                Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+                metrics.elidedText(button.label or "Untitled", Qt.TextElideMode.ElideRight, label_rect.width()),
+            )
+            if height >= 50:
+                caption = QRect(int(rect.left()) + 8, int(band.bottom()) + 4, int(rect.width()) - 16, 16)
+                self._draw_action_caption(
+                    painter, caption, action_type, QColor(tokens["TEXT"]), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+                )
+        painter.setFont(small)
+        painter.setPen(self._with_alpha(muted, 170))
+        painter.drawText(
+            rect.toRect().adjusted(6, 4, -7, -5), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom, button.id
+        )
+        badge = self._badge_text(button.enabled)
+        if badge and not empty:
+            self._draw_badge(painter, rect.toRect().adjusted(0, int(rect.height() * 0.42) - 4, 0, 0), badge)
+        if self._selected or self._armed or self._playing:
+            ring = QColor(tokens["ACCENT"]) if self._selected else QColor("#f2c14e") if self._armed else QColor(tokens["SECONDARY"])
+            painter.setPen(QPen(ring, 2))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), radius, radius)
+        elif empty and self._hover:
+            self._draw_plus(painter, rect, muted)
+
+    def _paint_hardware(self, painter: QPainter) -> None:
+        tokens = current_theme().colors
+        button, action_type, empty, accent = self._pad_state()
+        width, height = self._cell_size.width(), self._cell_size.height()
+        rect = QRectF(self.rect()).adjusted(2, 2, -2, -2)
+        radius = min(rect.width(), rect.height()) * 0.1
+        lit = not empty and button.enabled
+        if lit:
+            led = accent if not self._pressed else self._blend(accent, QColor("#ffffff"), 0.3)
+            glow = QRadialGradient(rect.center(), max(rect.width(), rect.height()) * 0.75)
+            glow.setColorAt(0.0, self._blend(led, QColor("#ffffff"), 0.32 if self._hover else 0.22))
+            glow.setColorAt(0.55, led)
+            glow.setColorAt(1.0, self._blend(led, QColor("#000000"), 0.28))
+            painter.setPen(QPen(self._blend(led, QColor("#000000"), 0.45), 1))
+            painter.setBrush(glow)
+        else:
+            rubber = QColor("#2b2e36" if not self._hover else "#33363f")
+            painter.setPen(QPen(QColor("#1a1c21"), 1))
+            painter.setBrush(rubber)
+        painter.drawRoundedRect(rect, radius, radius)
+        if not lit:
+            # A faint top highlight so unlit pads read as raised rubber.
+            painter.setPen(QPen(QColor(255, 255, 255, 18), 1))
+            painter.drawLine(QPointF(rect.left() + radius, rect.top() + 1.5), QPointF(rect.right() - radius, rect.top() + 1.5))
+
+        text_color = self._readable_on(accent) if lit else QColor(tokens["MUTED"])
+        inner = rect.toRect().adjusted(8, 6, -7, -6)
+        painter.setFont(self._small_font(painter))
+        painter.setPen(self._with_alpha(text_color, 170 if lit else 120))
+        painter.drawText(inner, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop, button.id)
+        badge = self._badge_text(button.enabled)
+        if badge:
+            self._draw_badge(painter, rect.toRect(), badge)
+        if self._selected or self._armed or self._playing:
+            ring = QColor("#ffffff") if self._selected else QColor("#facc15") if self._armed else QColor(tokens["ACCENT"])
+            painter.setPen(QPen(ring, 2.5))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRoundedRect(rect.adjusted(0.5, 0.5, -0.5, -0.5), radius, radius)
+        if empty:
+            if self._hover and button.enabled:
+                self._draw_plus(painter, rect, QColor(tokens["MUTED"]))
+            return
+        show_action = height >= 56 and width >= 70
+        caption_height = 14 if height < 90 else 16
+        label_rect = inner.adjusted(0, 12, 0, -(caption_height if show_action else 0))
+        self._draw_label(painter, label_rect, button.label or "Untitled", text_color)
+        if show_action:
+            caption = QRect(inner.left(), inner.bottom() - caption_height, inner.width(), caption_height)
+            self._draw_action_caption(painter, caption, action_type, self._with_alpha(text_color, 190), Qt.AlignmentFlag.AlignCenter)
+
+    @staticmethod
+    def _draw_plus(painter: QPainter, rect: QRectF, color: QColor) -> None:
+        size = max(6.0, min(rect.width(), rect.height()) * 0.14)
+        center = rect.center()
+        painter.setPen(QPen(color, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        painter.drawLine(QPointF(center.x() - size, center.y()), QPointF(center.x() + size, center.y()))
+        painter.drawLine(QPointF(center.x(), center.y() - size), QPointF(center.x(), center.y() + size))
 
     def _badge_text(self, enabled: bool) -> str:
         if self._armed:

@@ -39,7 +39,7 @@ The app works without hardware in **Simulation mode**. Clicking a grid pad selec
 - Hotkeys, media keys, typed text, websites, apps, files, folders, and commands
 - OBS replay clips, screenshots, recording, scenes, sources, and mute controls
 - Local-file soundboard playback with per-pad volume, looping, stopping, and optional voice routing
-- Seven complete themes and responsive wide, compact, Deck View, and single-pane layouts
+- Nebula, Studio, and Hardware styles, seven classic color themes, and responsive wide, compact, Deck View, and single-pane layouts
 - Searchable guided action setup and visual Multi-Action sequences
 - Relative page/profile navigation, clipboard text, window controls, pointer controls, and random-folder sounds
 - HTTP requests, key-based SSH commands, delays, and action sequences

@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSplitter,
-    QStyle,
     QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
@@ -168,7 +167,15 @@ class MainWindow(QMainWindow):
 
         self.header_brand = QWidget()
         self.header_brand.setObjectName("HeaderBrand")
-        brand_layout = QVBoxLayout(self.header_brand)
+        brand_row = QHBoxLayout(self.header_brand)
+        brand_row.setContentsMargins(0, 0, 0, 0)
+        brand_row.setSpacing(10)
+        brand_icon = QLabel()
+        brand_icon.setObjectName("HeaderIcon")
+        brand_icon.setPixmap(app_icon().pixmap(QSize(30, 30)))
+        brand_icon.setFixedSize(30, 30)
+        brand_row.addWidget(brand_icon, 0, Qt.AlignmentFlag.AlignVCenter)
+        brand_layout = QVBoxLayout()
         brand_layout.setContentsMargins(0, 0, 0, 0)
         brand_layout.setSpacing(0)
         title = QLabel(APP_NAME)
@@ -177,6 +184,7 @@ class MainWindow(QMainWindow):
         self.header_subtitle.setObjectName("HeaderSubtitle")
         brand_layout.addWidget(title)
         brand_layout.addWidget(self.header_subtitle)
+        brand_row.addLayout(brand_layout, 1)
         header_layout.addWidget(self.header_brand, 1)
 
         header_meta = QWidget()
@@ -223,12 +231,7 @@ class MainWindow(QMainWindow):
             self.header_update_button,
         ):
             button.setObjectName("HeaderButton")
-            button.setIconSize(QSize(15, 15))
             actions_layout.addWidget(button)
-        self.header_reconnect_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
-        self.header_debug_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
-        self.header_soundboard_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaVolume))
-        self.header_update_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
         self.header_reconnect_button.setToolTip("Reconnect the Launchpad MIDI ports.")
         self.header_debug_button.setToolTip("Open MIDI diagnostics and calibration.")
         self.header_soundboard_button.setToolTip("Open soundboard playback and routing controls.")
@@ -271,9 +274,8 @@ class MainWindow(QMainWindow):
         self.deck_title.setObjectName("PanelTitle")
         self.deck_hint = QLabel("Select a pad to edit")
         self.deck_hint.setObjectName("PanelHint")
-        self.deck_previous_page_button = QPushButton()
+        self.deck_previous_page_button = QPushButton("←")
         self.deck_previous_page_button.setObjectName("DeckNavButton")
-        self.deck_previous_page_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowLeft))
         self.deck_previous_page_button.setToolTip("Previous page")
         self.deck_previous_page_button.setAccessibleName("Previous page")
         self.deck_page_combo = QComboBox()
@@ -281,15 +283,12 @@ class MainWindow(QMainWindow):
         self.deck_page_combo.setMinimumContentsLength(8)
         self.deck_page_combo.setMaximumWidth(180)
         self.deck_page_combo.setToolTip("Current Launchpad page")
-        self.deck_next_page_button = QPushButton()
+        self.deck_next_page_button = QPushButton("→")
         self.deck_next_page_button.setObjectName("DeckNavButton")
-        self.deck_next_page_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowRight))
         self.deck_next_page_button.setToolTip("Next page")
         self.deck_next_page_button.setAccessibleName("Next page")
         self.grid_focus_button = QPushButton("Edit Layout" if self._grid_focus_mode else "Deck View")
         self.grid_focus_button.setObjectName("HeaderButton")
-        self.grid_focus_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarMaxButton))
-        self.grid_focus_button.setIconSize(QSize(14, 14))
         self.grid_focus_button.setToolTip(
             "Show the editor and profile library."
             if self._grid_focus_mode
@@ -387,6 +386,9 @@ class MainWindow(QMainWindow):
         debug_action.triggered.connect(self.show_midi_debug)
         device_menu.addActions([connect_action, disconnect_action, reconnect_action])
         device_menu.addSeparator()
+        animations_action = QAction("Idle Animations…", self)
+        animations_action.triggered.connect(self.show_idle_animations)
+        device_menu.addAction(animations_action)
         device_menu.addAction(debug_action)
 
         profiles_menu = menu_bar.addMenu("Profiles")
@@ -541,6 +543,8 @@ class MainWindow(QMainWindow):
     def handle_simulation_press(self, button_id: str) -> None:
         if not button_id:
             return
+        if self.idle_animation_player is not None:
+            self.idle_animation_player.note_activity()
         self.select_button(button_id)
         self.last_pressed_status.setText(f"Last: {button_id}")
         self._force_next_action_ui_update = True
@@ -550,8 +554,31 @@ class MainWindow(QMainWindow):
         window = self.midi_debug_window
         return bool(window is not None and window.isVisible() and window.calibration.active)
 
+    @property
+    def idle_animation_player(self):
+        return getattr(self.services, "idle_animation_player", None)
+
+    def _idle_animation_may_start(self) -> bool:
+        # Called from the player thread, so only read plain Python state here.
+        window = self.midi_debug_window
+        if window is not None and window.calibration.active:
+            return False
+        if self._connect_thread is not None or self._force_quit:
+            return False
+        return not self.services.lighting_service.has_active_effects
+
+    def _note_pad_activity(self) -> bool:
+        """Wake from an idle animation. Returns True when the press should be swallowed."""
+        player = self.idle_animation_player
+        if player is None:
+            return False
+        stopped = player.note_activity()
+        return stopped and not self.services.settings_service.settings.idle_animation_wake_press_runs_action
+
     def handle_hardware_button(self, button_id: str, pressed: bool, raw) -> None:
         if not pressed or self._calibration_active():
+            return
+        if self._note_pad_activity():
             return
         if self._should_update_visible_ui():
             self.select_button(button_id)
@@ -561,6 +588,8 @@ class MainWindow(QMainWindow):
 
     def handle_hardware_control(self, control_id: str, pressed: bool, raw) -> None:
         if not pressed or self._calibration_active():
+            return
+        if self._note_pad_activity():
             return
         label = LAUNCHPAD_AUXILIARY_CONTROL_LABELS.get(control_id, control_id)
         if self._should_update_visible_ui():
@@ -996,11 +1025,32 @@ class MainWindow(QMainWindow):
         self.refresh_all()
         self.refresh_lighting()
 
+    def show_idle_animations(self) -> None:
+        from .animation_library_dialog import AnimationLibraryDialog
+
+        library = getattr(self.services, "animation_library", None)
+        if library is None:
+            return
+        AnimationLibraryDialog(library, self.services.settings_service, self.idle_animation_player, self).exec()
+        if self.idle_animation_player is not None:
+            self.idle_animation_player.settings_changed()
+
     def show_settings(self) -> None:
         self._flush_profile_autosave()
-        dialog = SettingsDialog(self.services.settings_service, self, self.services.startup_service)
-        if dialog.exec():
+        dialog = SettingsDialog(
+            self.services.settings_service,
+            self,
+            self.services.startup_service,
+            animation_library=getattr(self.services, "animation_library", None),
+            idle_player=self.idle_animation_player,
+        )
+        accepted = dialog.exec()
+        if self.idle_animation_player is not None:
+            # Restart the idle countdown with the saved settings and end any preview.
+            self.idle_animation_player.settings_changed()
+        if accepted:
             apply_theme(self.services.settings_service.settings.theme, self)
+            self._schedule_grid_fit()
             self.set_grid_focus_mode(self.services.settings_service.settings.deck_view, persist=False)
             self.services.audio_engine.set_global_volume(self.services.settings_service.settings.soundboard_global_volume)
             self.services.audio_engine.set_default_output_device(self.services.settings_service.settings.soundboard_default_output_device)
@@ -1335,6 +1385,8 @@ class MainWindow(QMainWindow):
         if success:
             self.services.settings_service.update(midi_input_port=input_port, midi_output_port=output_port)
             self.statusBar().showMessage("MIDI device connected.", 3000)
+            if self.idle_animation_player is not None:
+                self.idle_animation_player.note_activity()
             # The pads were reset by the reconnect, so the cached colors no longer match the device.
             self.services.lighting_service.refresh_page(
                 self.services.profile_service.current_page,
@@ -1357,6 +1409,8 @@ class MainWindow(QMainWindow):
         self._finish_deferred_quit()
 
     def on_device_disconnected(self, reason: str) -> None:
+        if self.idle_animation_player is not None:
+            self.idle_animation_player.stop()
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
         self.services.lighting_service.clear()

@@ -203,10 +203,12 @@ class LaunchpadMiniMk3:
             if not entries:
                 return 0
             messages = []
-            if len(entries) > 1:
+            # RGB colors only exist in the sysex lighting message, so any "#rrggbb"
+            # entry forces the batched path even for a single pad.
+            if len(entries) > 1 or any(is_rgb_color(color) for _item_id, _address, color in entries):
                 data = list(LAUNCHPAD_SYSEX_HEADER) + [3]
                 for _item_id, address, color in entries:
-                    data.extend((0, address.number, color_to_palette_value(color)))
+                    data.extend(color_to_lighting_entry(address.number, color))
                 messages.append((mido.Message("sysex", data=data), entries))
             else:
                 item_id, address, color = entries[0]
@@ -327,6 +329,21 @@ class LaunchpadMiniMk3:
             self.logger.warning("%s", reason)
         if self.disconnect_callback:
             self.disconnect_callback(reason)
+
+
+def is_rgb_color(color: str) -> bool:
+    return isinstance(color, str) and len(color) == 7 and color[0] == "#" and all(
+        char in "0123456789abcdefABCDEF" for char in color[1:]
+    )
+
+
+def color_to_lighting_entry(index: int, color: str) -> tuple[int, ...]:
+    # Programmer's Reference LED lighting sysex: type 0 = palette (1 byte),
+    # type 3 = RGB (red, green, blue, each 0-127).
+    if is_rgb_color(color):
+        red, green, blue = (int(color[offset : offset + 2], 16) >> 1 for offset in (1, 3, 5))
+        return (3, index, red, green, blue)
+    return (0, index, color_to_palette_value(color))
 
 
 def color_to_palette_value(color: str) -> int:

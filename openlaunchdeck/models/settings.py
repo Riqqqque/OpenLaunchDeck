@@ -11,6 +11,9 @@ from ..constants import (
 
 
 BOOL_FIELDS = {
+    "idle_animation_enabled",
+    "idle_animation_shuffle",
+    "idle_animation_wake_press_runs_action",
     "auto_connect",
     "start_minimized",
     "minimize_to_tray",
@@ -27,11 +30,20 @@ BOOL_FIELDS = {
     "first_run_complete",
     "deck_view",
 }
+# Whole-number settings kept inside (minimum, maximum).
+RANGED_INT_FIELDS = {
+    "idle_animation_timeout_seconds": (3, 3600),
+    "idle_animation_speed": (25, 300),
+    "idle_animation_brightness": (10, 100),
+}
 PERCENT_FIELDS = {
     "soundboard_voice_route_microphone_volume",
     "soundboard_global_volume",
 }
 THEME_KEYS = {
+    "nebula",
+    "studio",
+    "hardware",
     "midnight",
     "oled_black",
     "galaxy_oled",
@@ -57,6 +69,16 @@ def _coerce_bool(value: Any, default: bool) -> bool:
     return default
 
 
+def _coerce_ranged_int(value: Any, default: int, minimum: int, maximum: int) -> int:
+    if isinstance(value, bool):
+        return default
+    try:
+        number = int(float(value))
+    except (TypeError, ValueError, OverflowError):
+        return default
+    return max(minimum, min(maximum, number))
+
+
 def _coerce_percent(value: Any, default: int) -> int:
     try:
         return max(0, min(100, int(value)))
@@ -66,7 +88,7 @@ def _coerce_percent(value: Any, default: int) -> int:
 
 @dataclass(slots=True)
 class Settings:
-    theme: str = "midnight"
+    theme: str = "nebula"
     grid_density: str = "comfortable"
     deck_view: bool = False
     auto_connect: bool = True
@@ -96,6 +118,13 @@ class Settings:
     enable_performance_logging: bool = False
     use_native_acceleration: bool = False
     first_run_complete: bool = False
+    idle_animation_enabled: bool = False
+    idle_animation_timeout_seconds: int = 15
+    idle_animation_id: str = "rainbow_wave"
+    idle_animation_shuffle: bool = False
+    idle_animation_speed: int = 100
+    idle_animation_brightness: int = 100
+    idle_animation_wake_press_runs_action: bool = True
 
     @classmethod
     def from_dict(cls, data: dict[str, Any] | None) -> "Settings":
@@ -112,6 +141,8 @@ class Settings:
                 values[key] = _coerce_bool(value, default)
             elif key in PERCENT_FIELDS:
                 values[key] = _coerce_percent(value, default)
+            elif key in RANGED_INT_FIELDS:
+                values[key] = _coerce_ranged_int(value, default, *RANGED_INT_FIELDS[key])
             elif key == "launchpad_control_bindings":
                 values[key] = _coerce_launchpad_bindings(value)
             elif isinstance(default, str):
@@ -121,12 +152,13 @@ class Settings:
         settings = cls(**values)
         settings.theme = {"dark": "midnight", "light": "arctic_white"}.get(settings.theme, settings.theme)
         if settings.theme not in THEME_KEYS:
-            settings.theme = "midnight"
+            settings.theme = defaults.theme
         if settings.grid_density not in {"compact", "comfortable", "large"}:
             settings.grid_density = "comfortable"
         if settings.update_channel not in {"stable", "beta"}:
             settings.update_channel = "stable"
         settings.launchpad_control_bindings = _coerce_launchpad_bindings(settings.launchpad_control_bindings)
+        settings.idle_animation_id = settings.idle_animation_id.strip()[:80] or defaults.idle_animation_id
         return settings
 
     def to_dict(self) -> dict[str, Any]:

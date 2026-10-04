@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..animations import AnimationLibrary
 from ..audio.input_devices import list_input_devices
 from ..audio.output_devices import (
     hidden_advanced_output_count,
@@ -34,21 +35,22 @@ from ..constants import (
 )
 from ..devices.midi_manager import MidiManager
 from ..paths import APP_DATA_DIR
+from .animation_preview import AnimationPreview
 from .theme import apply_theme, theme_definition, theme_definitions
 
 
 class PercentControl(QWidget):
-    def __init__(self, value: int, parent=None) -> None:
+    def __init__(self, value: int, parent=None, minimum: int = 0, maximum: int = 100) -> None:
         super().__init__(parent)
         layout = QHBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(10)
         self.slider = QSlider(Qt.Orientation.Horizontal)
-        self.slider.setRange(0, 100)
+        self.slider.setRange(minimum, maximum)
         self.spin = QSpinBox()
-        self.spin.setRange(0, 100)
+        self.spin.setRange(minimum, maximum)
         self.spin.setSuffix("%")
-        self.spin.setFixedWidth(76)
+        self.spin.setFixedWidth(108)
         self.slider.setValue(value)
         self.spin.setValue(value)
         self.slider.valueChanged.connect(self.spin.setValue)
@@ -92,8 +94,17 @@ class AuxiliaryBindingsEditor(QWidget):
 
 
 class SettingsDialog(QDialog):
-    def __init__(self, settings_service, parent=None, startup_service=None) -> None:
+    def __init__(
+        self,
+        settings_service,
+        parent=None,
+        startup_service=None,
+        animation_library: AnimationLibrary | None = None,
+        idle_player=None,
+    ) -> None:
         super().__init__(parent)
+        self.animation_library = animation_library or AnimationLibrary()
+        self.idle_player = idle_player
         self.setWindowTitle("Settings")
         self.setObjectName("SettingsDialog")
         self.resize(800, 680)
@@ -120,6 +131,7 @@ class SettingsDialog(QDialog):
         self._build_appearance_tab(settings)
         self._build_launchpad_tab(settings)
         self._build_soundboard_tab(settings)
+        self._build_idle_animation_tab(settings)
         self._build_app_tab(settings)
         self._build_advanced_tab(settings)
 
@@ -131,7 +143,13 @@ class SettingsDialog(QDialog):
 
     def _build_appearance_tab(self, settings) -> None:
         self.theme = QComboBox()
-        for definition in theme_definitions():
+        definitions = theme_definitions()
+        styled = [definition for definition in definitions if definition.style != "classic"]
+        classic = [definition for definition in definitions if definition.style == "classic"]
+        for definition in styled:
+            self.theme.addItem(f"{definition.name} style", definition.key)
+        self.theme.insertSeparator(self.theme.count())
+        for definition in classic:
             self.theme.addItem(definition.name, definition.key)
         self.theme.addItem("Follow Windows", "system")
         self.theme.setCurrentIndex(max(0, self.theme.findData(settings.theme)))
@@ -162,9 +180,11 @@ class SettingsDialog(QDialog):
         self.tabs.addTab(
             self._tab(
                 self._section(
-                    "Theme",
-                    "Choose a complete color system. The preview applies immediately and reverts if you cancel.",
-                    [("Color theme", self.theme), ("", self.theme_description), ("Palette", self.theme_swatches)],
+                    "Style",
+                    "Nebula, Studio, and Hardware each change the whole look, including the shape of the pads. "
+                    "The classic themes keep the original layout in different colors. "
+                    "The preview applies immediately and reverts if you cancel.",
+                    [("Look", self.theme), ("", self.theme_description), ("Palette", self.theme_swatches)],
                 ),
                 self._section(
                     "Launchpad Grid",
@@ -260,6 +280,154 @@ class SettingsDialog(QDialog):
                 ),
             ),
             "Soundboard",
+        )
+
+    def _build_idle_animation_tab(self, settings) -> None:
+        self.idle_enabled = QCheckBox("Play an animation on the Launchpad when the pads sit unused")
+        self.idle_enabled.setChecked(settings.idle_animation_enabled)
+        self.idle_timeout = QSpinBox()
+        self.idle_timeout.setRange(3, 3600)
+        self.idle_timeout.setSuffix(" seconds")
+        self.idle_timeout.setValue(settings.idle_animation_timeout_seconds)
+        self.idle_timeout.setMaximumWidth(200)
+        self.idle_timeout.setToolTip("How long the pads must go unused before the animation starts.")
+        self.idle_wake_runs_action = QCheckBox("Run the pad's action when a press stops the animation")
+        self.idle_wake_runs_action.setChecked(settings.idle_animation_wake_press_runs_action)
+        self.idle_wake_runs_action.setToolTip(
+            "Turn this off if you want the first press to only wake the pads, like a screensaver."
+        )
+
+        self.idle_animation = QComboBox()
+        self.idle_animation.setObjectName("IdleAnimationPicker")
+        self._fill_idle_animation_choices(settings.idle_animation_id)
+        self.idle_shuffle = QCheckBox("Pick a different animation each time")
+        self.idle_shuffle.setChecked(settings.idle_animation_shuffle)
+        self.idle_speed = PercentControl(settings.idle_animation_speed, minimum=25, maximum=300)
+        self.idle_brightness = PercentControl(settings.idle_animation_brightness, minimum=10, maximum=100)
+        self.idle_description = QLabel()
+        self.idle_description.setObjectName("SettingsDescription")
+        self.idle_description.setWordWrap(True)
+
+        self.idle_preview = AnimationPreview(pad_size=16, gap=4)
+        self.idle_preview_status = QLabel()
+        self.idle_preview_status.setObjectName("SettingsDescription")
+        self.idle_preview_status.setWordWrap(True)
+        preview_on_device = QPushButton("Preview on Launchpad")
+        preview_on_device.setObjectName("SecondaryButton")
+        preview_on_device.setToolTip("Plays the selected animation on the Launchpad for 8 seconds. Press any pad to stop.")
+        preview_on_device.clicked.connect(self._preview_idle_on_device)
+        preview_panel = QWidget()
+        preview_layout = QHBoxLayout(preview_panel)
+        preview_layout.setContentsMargins(0, 4, 0, 0)
+        preview_layout.setSpacing(16)
+        preview_layout.addWidget(self.idle_preview, 0, Qt.AlignmentFlag.AlignTop)
+        preview_side = QVBoxLayout()
+        preview_side.setSpacing(8)
+        preview_side.addWidget(self.idle_description)
+        manage = QPushButton("Browse, make, and share animations…")
+        manage.setObjectName("SecondaryButton")
+        manage.clicked.connect(self._open_animation_library)
+        preview_buttons = QHBoxLayout()
+        preview_buttons.setSpacing(8)
+        preview_buttons.addWidget(preview_on_device)
+        preview_buttons.addWidget(manage)
+        preview_buttons.addStretch(1)
+        preview_side.addLayout(preview_buttons)
+        preview_side.addWidget(self.idle_preview_status)
+        preview_side.addStretch(1)
+        preview_layout.addLayout(preview_side, 1)
+
+        self.idle_animation.currentIndexChanged.connect(self._update_idle_preview)
+        self.idle_shuffle.toggled.connect(self._update_idle_preview)
+        self.idle_speed.spin.valueChanged.connect(self.idle_preview.set_speed)
+        self.idle_brightness.spin.valueChanged.connect(self.idle_preview.set_brightness)
+        self.idle_preview.set_speed(self.idle_speed.value())
+        self.idle_preview.set_brightness(self.idle_brightness.value())
+        self._update_idle_preview()
+
+        self.tabs.addTab(
+            self._tab(
+                self._section(
+                    "Idle Animation",
+                    "After the pads go unused for a while, the Launchpad plays an animation. Any pad or button press brings your deck back instantly.",
+                    [("", self.idle_enabled), ("Start after", self.idle_timeout), ("", self.idle_wake_runs_action)],
+                ),
+                self._section(
+                    "Animation",
+                    "Choose one of the built-in animations or one you made or imported. Speed and brightness apply to every animation.",
+                    [
+                        ("Animation", self.idle_animation),
+                        ("", self.idle_shuffle),
+                        ("Speed", self.idle_speed),
+                        ("Brightness", self.idle_brightness),
+                        ("Preview", preview_panel),
+                    ],
+                ),
+            ),
+            "Idle Animation",
+        )
+
+    def _fill_idle_animation_choices(self, selected_id: str) -> None:
+        self.idle_animation.blockSignals(True)
+        self.idle_animation.clear()
+        user_animations = self.animation_library.user_animations()
+        for animation in self.animation_library.all():
+            if not getattr(animation, "builtin", False):
+                continue
+            self.idle_animation.addItem(animation.name, animation.id)
+        if user_animations:
+            self.idle_animation.insertSeparator(self.idle_animation.count())
+            for animation in user_animations:
+                label = f"{animation.name} by {animation.author}" if animation.author else animation.name
+                self.idle_animation.addItem(label, animation.id)
+        index = self.idle_animation.findData(selected_id)
+        self.idle_animation.setCurrentIndex(index if index >= 0 else 0)
+        self.idle_animation.blockSignals(False)
+
+    def _open_animation_library(self) -> None:
+        from .animation_library_dialog import AnimationLibraryDialog
+
+        # The library saves its own choices; carry unsaved edits from this tab across.
+        self.settings_service.update(
+            idle_animation_enabled=self.idle_enabled.isChecked(),
+            idle_animation_id=str(self.idle_animation.currentData() or "rainbow_wave"),
+            idle_animation_shuffle=self.idle_shuffle.isChecked(),
+        )
+        AnimationLibraryDialog(self.animation_library, self.settings_service, self.idle_player, self).exec()
+        settings = self.settings_service.settings
+        self.idle_enabled.setChecked(settings.idle_animation_enabled)
+        self.idle_shuffle.setChecked(settings.idle_animation_shuffle)
+        self._fill_idle_animation_choices(settings.idle_animation_id)
+        self._update_idle_preview()
+
+    def _update_idle_preview(self) -> None:
+        shuffle = self.idle_shuffle.isChecked()
+        self.idle_animation.setEnabled(not shuffle)
+        animation = self.animation_library.get(str(self.idle_animation.currentData() or ""))
+        self.idle_preview.set_animation(animation)
+        if shuffle:
+            self.idle_description.setText("A random animation plays each time the pads go idle. Preview shows the selected one.")
+        elif animation is not None:
+            self.idle_description.setText(animation.description or "No description.")
+        else:
+            self.idle_description.setText("")
+
+    def _preview_idle_on_device(self) -> None:
+        animation_id = str(self.idle_animation.currentData() or "")
+        player = self.idle_player
+        if player is None:
+            self.idle_preview_status.setText("Previewing on the Launchpad isn't available here.")
+            return
+        started = player.preview(
+            animation_id,
+            seconds=8,
+            speed=self.idle_speed.value(),
+            brightness=self.idle_brightness.value(),
+        )
+        self.idle_preview_status.setText(
+            "Playing on your Launchpad for 8 seconds. Press any pad to stop."
+            if started
+            else "Connect your Launchpad to preview on it."
         )
 
     def _build_app_tab(self, settings) -> None:
@@ -388,9 +556,16 @@ class SettingsDialog(QDialog):
             combo.setCurrentIndex(0)
         return combo
 
+    def _refit_parent_grid(self) -> None:
+        # Styles change pad shape and the Hardware chassis, so the main grid re-measures.
+        refit = getattr(self.parent(), "_schedule_grid_fit", None)
+        if callable(refit):
+            refit()
+
     def _preview_theme(self) -> None:
         self._update_theme_preview()
         apply_theme(str(self.theme.currentData() or "midnight"), self)
+        self._refit_parent_grid()
 
     def _update_theme_preview(self) -> None:
         definition = theme_definition(str(self.theme.currentData() or "midnight"))
@@ -400,6 +575,7 @@ class SettingsDialog(QDialog):
 
     def reject(self) -> None:
         apply_theme(self._original_theme, self)
+        self._refit_parent_grid()
         super().reject()
 
     def accept(self) -> None:
@@ -441,6 +617,13 @@ class SettingsDialog(QDialog):
             update_manifest_url=self.update_url.text().strip(),
             enable_performance_logging=self.performance_logging.isChecked(),
             use_native_acceleration=self.native_acceleration.isChecked(),
+            idle_animation_enabled=self.idle_enabled.isChecked(),
+            idle_animation_timeout_seconds=self.idle_timeout.value(),
+            idle_animation_id=str(self.idle_animation.currentData() or "rainbow_wave"),
+            idle_animation_shuffle=self.idle_shuffle.isChecked(),
+            idle_animation_speed=self.idle_speed.value(),
+            idle_animation_brightness=self.idle_brightness.value(),
+            idle_animation_wake_press_runs_action=self.idle_wake_runs_action.isChecked(),
         )
         super().accept()
 

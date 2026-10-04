@@ -312,6 +312,7 @@ def test_deck_view_uses_distance_readable_pads_at_second_monitor_size():
     services.settings_service.settings.first_run_complete = True
     services.settings_service.settings.auto_connect = False
     services.settings_service.settings.grid_density = "comfortable"
+    services.settings_service.settings.theme = "midnight"
     window = MainWindow(services)
     window.resize(1480, 920)
     window.show()
@@ -896,3 +897,33 @@ def test_deleting_the_current_page_disarms_and_stops_its_sounds():
     window.close()
     services.action_runner.shutdown()
     services.device.close()
+
+
+def test_every_style_fits_the_grid_without_scrollbars():
+    app = QApplication.instance() or QApplication([])
+    from openlaunchdeck.ui.theme import apply_theme
+
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    window.show()
+    try:
+        for theme in ("nebula", "studio", "hardware"):
+            for width, height in ((1480, 920), (760, 520)):
+                apply_theme(theme, window)
+                window.resize(width, height)
+                app.processEvents()
+                window._fit_grid_to_viewport()
+                app.processEvents()
+                viewport = window.grid_scroll.viewport().size()
+                assert window.grid.width() <= viewport.width(), (theme, width, height)
+                assert window.grid.height() <= viewport.height(), (theme, width, height)
+                cell = window.grid.cells["A1"]
+                assert cell.width() >= 48 and cell.height() >= 38
+    finally:
+        apply_theme("midnight", window)
+        window._force_quit = True
+        window.close()
+        services.action_runner.shutdown()
+        services.device.close()

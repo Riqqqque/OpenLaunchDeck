@@ -52,7 +52,9 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 - Configurable top-arrow, Session/User, and Scene-button controls for page and profile navigation
 - Batched RGB lighting with press, success, error, armed, and playing feedback
 - Local-file soundboard playback with per-pad volume, global volume, looping, overlap, stopping, and optional voice routing
-- Seven complete themes: Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, and High Contrast
+- Three complete styles that change the whole look and pad shape: Nebula, Studio, and Hardware (the grid drawn as the real Launchpad)
+- Seven classic color themes: Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, and High Contrast
+- Idle animations for the Launchpad with 15 built-ins, an animation editor, and share codes for trading animations with other people
 - Searchable action picker, visible field guidance, color swatches, and a visual Multi-Action sequence editor
 - Random-folder sounds, clipboard text, active-window commands, pointer clicks/scrolling, and direct profile switching
 - Background action execution so commands and network requests do not block the interface
@@ -86,7 +88,7 @@ Continue with the [beginner Quick Start](https://github.com/Riqqqque/OpenLaunchD
 
 ## Make It Yours
 
-Open **Settings > Settings > Appearance** to choose a theme and pad density. The grid automatically fits readable keycaps to the available width and height; at narrow widths, **Edit A1** opens the selected pad editor as a full-width view and **Back to Grid** returns to the deck. Turn on **Deck View** when the grid should use nearly the entire app window.
+Open **Settings > Settings > Appearance** to choose a style or theme and pad density. The grid automatically fits readable keycaps to the available width and height; at narrow widths, **Edit A1** opens the selected pad editor as a full-width view and **Back to Grid** returns to the deck. Turn on **Deck View** when the grid should use nearly the entire app window.
 
 To add a sound, select a pad, choose **Play Sound**, and use **Browse** beside **Sound File** to select a local WAV, MP3, or OGG file. Open **Soundboard > Open Soundboard Panel** to manage outputs, routing, global volume, currently playing clips, and Stop All Sounds.
 

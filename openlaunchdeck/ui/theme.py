@@ -10,11 +10,49 @@ from ..paths import THEMES_DIR
 
 
 @dataclass(frozen=True, slots=True)
+class PadStyle:
+    """How the 8x8 grid is drawn for a theme."""
+
+    key: str
+    radius_ratio: float
+    aspect_limit: float | None = None
+    chassis: bool = False
+
+
+PAD_STYLES = {
+    "classic": PadStyle("classic", 0.0),
+    # Soft, rounded keycaps tinted by the pad color.
+    "nebula": PadStyle("nebula", 0.2, aspect_limit=1.4),
+    # Flat clip tiles with a solid color header, like a DAW session view.
+    "studio": PadStyle("studio", 0.05, aspect_limit=1.8),
+    # Square LED pads inside a drawing of the Launchpad itself.
+    "hardware": PadStyle("hardware", 0.1, aspect_limit=1.12, chassis=True),
+}
+
+# Corner radius tiers used by base.qss, from controls up to cards.
+SHAPES = {
+    "classic": {"RADIUS_SM": "6px", "RADIUS": "7px", "RADIUS_LG": "12px", "FONT_FAMILY": "Segoe UI"},
+    "nebula": {"RADIUS_SM": "10px", "RADIUS": "14px", "RADIUS_LG": "18px", "FONT_FAMILY": "Segoe UI Variable Text"},
+    "studio": {"RADIUS_SM": "3px", "RADIUS": "4px", "RADIUS_LG": "6px", "FONT_FAMILY": "Segoe UI"},
+    "hardware": {"RADIUS_SM": "6px", "RADIUS": "10px", "RADIUS_LG": "14px", "FONT_FAMILY": "Segoe UI"},
+}
+
+
+@dataclass(frozen=True, slots=True)
 class ThemeDefinition:
     key: str
     name: str
     description: str
     colors: dict[str, str]
+    style: str = "classic"
+
+    @property
+    def pad_style(self) -> PadStyle:
+        return PAD_STYLES.get(self.style, PAD_STYLES["classic"])
+
+    @property
+    def tokens(self) -> dict[str, str]:
+        return {**SHAPES.get(self.style, SHAPES["classic"]), **self.colors}
 
     @property
     def swatches(self) -> tuple[str, str, str, str]:
@@ -57,6 +95,48 @@ def _colors(**overrides: str) -> dict[str, str]:
 
 
 THEMES: dict[str, ThemeDefinition] = {
+    "nebula": ThemeDefinition(
+        "nebula",
+        "Nebula",
+        "Deep violet with pink and mint accents and soft, rounded keycaps. Matches the app icon.",
+        _colors(
+            BACKGROUND="#0d0720", SURFACE="#150c30", PANEL="#1b113d", INPUT="#100828",
+            BORDER="#2b1f58", BORDER_STRONG="#4a3a8a", TEXT="#efeaff", TEXT_STRONG="#ffffff",
+            MUTED="#a99fd8", PLACEHOLDER="#7f74b3", ACCENT="#ff5fa2", ACCENT_HOVER="#ff86b9",
+            ACCENT_DARK="#b8336f", ACCENT_TEXT="#2a0618", SECONDARY="#7af5d8", HOVER="#241650",
+            PRESSED="#0f0826", SUCCESS="#7af5d8", WARNING="#ffd36b", ERROR="#ff6b81",
+            MENU="#170d36", CHIP="#241653", SCROLL="#4a3a8a",
+        ),
+        style="nebula",
+    ),
+    "studio": ThemeDefinition(
+        "studio",
+        "Studio",
+        "Pro-audio charcoal with an orange accent and tight, flat clip tiles.",
+        _colors(
+            BACKGROUND="#121214", SURFACE="#19191c", PANEL="#202024", INPUT="#151517",
+            BORDER="#2c2c31", BORDER_STRONG="#46464e", TEXT="#e7e7ea", TEXT_STRONG="#ffffff",
+            MUTED="#9d9da6", PLACEHOLDER="#74747d", ACCENT="#ff7a1a", ACCENT_HOVER="#ff944a",
+            ACCENT_DARK="#b4500a", ACCENT_TEXT="#1a0b00", SECONDARY="#5fb3a1", HOVER="#26262b",
+            PRESSED="#101012", SUCCESS="#7ccf8a", WARNING="#f2c14e", ERROR="#ef6461",
+            MENU="#1b1b1e", CHIP="#26262b", SCROLL="#46464e",
+        ),
+        style="studio",
+    ),
+    "hardware": ThemeDefinition(
+        "hardware",
+        "Hardware",
+        "The grid drawn as the real Launchpad: square LED pads, round edge buttons, black chassis.",
+        _colors(
+            BACKGROUND="#0a0b0e", SURFACE="#121419", PANEL="#181a20", INPUT="#0e1014",
+            BORDER="#252931", BORDER_STRONG="#3b404b", TEXT="#e7e9ee", TEXT_STRONG="#ffffff",
+            MUTED="#9298a5", PLACEHOLDER="#6c7280", ACCENT="#22d3ee", ACCENT_HOVER="#5ee2f4",
+            ACCENT_DARK="#0e7f91", ACCENT_TEXT="#021216", SECONDARY="#a78bfa", HOVER="#1f222a",
+            PRESSED="#0c0d10", SUCCESS="#4ade80", WARNING="#facc15", ERROR="#f87171",
+            MENU="#121419", CHIP="#1d2027", SCROLL="#3b404b",
+        ),
+        style="hardware",
+    ),
     "midnight": ThemeDefinition(
         "midnight",
         "Midnight",
@@ -166,19 +246,37 @@ def theme_definition(theme: str | None) -> ThemeDefinition:
     return THEMES[_resolved_theme_key(theme)]
 
 
+_current_definition: ThemeDefinition | None = None
+
+
+def current_theme() -> ThemeDefinition:
+    """The theme last applied with apply_theme(); widgets read it while painting."""
+    return _current_definition or THEMES["midnight"]
+
+
+def current_pad_style() -> PadStyle:
+    return current_theme().pad_style
+
+
 def load_theme(theme: str = "midnight") -> str:
     path = THEMES_DIR / "base.qss"
     if not path.exists():
         fallback = THEMES_DIR / "dark.qss"
         return fallback.read_text(encoding="utf-8") if fallback.exists() else ""
+    definition = theme_definition(theme)
     stylesheet = path.read_text(encoding="utf-8")
-    for token, value in theme_definition(theme).colors.items():
+    style_sheet = THEMES_DIR / f"style_{definition.style}.qss"
+    if style_sheet.exists():
+        stylesheet += "\n" + style_sheet.read_text(encoding="utf-8")
+    for token, value in definition.tokens.items():
         stylesheet = stylesheet.replace(f"@{token}@", value)
     return stylesheet
 
 
 def apply_theme(theme: str, target: QWidget | None = None) -> str:
+    global _current_definition
     definition = theme_definition(theme)
+    _current_definition = definition
     colors = definition.colors
     palette = QPalette()
     palette.setColor(QPalette.ColorRole.Window, QColor(colors["BACKGROUND"]))
