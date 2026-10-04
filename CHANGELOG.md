@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.2.5
+
+- Added idle animations: after the pads go unused for a while (15 seconds by default, adjustable), the Launchpad plays an animation until any pad or button is pressed.
+- Added 15 built-in animations, live previews, speed and brightness controls, shuffle, and a Preview on Launchpad button.
+- Added an animation library and editor for painting your own frame-by-frame animations, with undo, onion skin, frame shifting, and custom colors.
+- Animations can be shared as files or as `OLDA1:` share codes and imported from other people, with the author credited.
+- Launchpad lighting now supports full RGB colors for animations.
+- Added three complete styles that change the whole look, including pad shape: Nebula (the default for new installs), Studio, and Hardware, which draws the grid as the real Launchpad with its round edge buttons. The classic color themes are still available.
+- Refreshed the header with the app icon and cleaner buttons, quieted empty pads, and put the action name first in the action picker so long names are no longer cut off.
+
 ## 0.2.4
 
 - The installer now refreshes the Windows icon cache on 64-bit Windows, so taskbar pins and shortcuts pick up a new app icon.
