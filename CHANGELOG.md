@@ -1,5 +1,34 @@
 # Changelog
 
+## 0.2.10
+
+- Updating is now one click. **Update now** downloads and verifies the new version, backs up your profiles, installs it without any setup pages, and reopens OpenLaunchDeck by itself.
+- OpenLaunchDeck now checks for updates when it starts (new installs; you can turn it off under **Settings > App**), and the header's **Updates** button changes to **Update to x.y.z** when a new version is out.
+- Releases now include `OpenLaunchDeckSetup.exe`, so the README's download link always fetches the newest installer in one click.
+- Removed the icon from the top-left of the main window.
+
+## 0.2.9
+
+- Fixed your voice echoing in Discord screen shares. With the microphone route on, OpenLaunchDeck now plays the voice route through exclusive mode and mixes your microphone and voice-routed clips itself, so screen-share audio capture no longer picks them up. Voice chat itself is unchanged.
+- Added **Settings > Soundboard > Keep my voice out of screen-share audio** (on by default). If Windows won't allow exclusive control of the voice route device, OpenLaunchDeck falls back to the standard route automatically.
+
+## 0.2.8
+
+- Fixed the main window showing up empty (black or white) when another program, such as a window-arranging tool, showed it while it was hidden in the tray. It now restores and draws normally.
+
+## 0.2.7
+
+- Open URL in a private window now reports when the browser rejects the launch instead of always reporting success.
+- Private-window launches no longer pass another Chromium-based app's crash-handler setting to the browser.
+
+## 0.2.6
+
+- Cut the installed size by leaving out Qt modules the app never loads: the software OpenGL renderer, Qt Quick and QML (pulled in only by the virtual keyboard plugin), Qt PDF, multimedia widgets, and Qt's translation catalogs.
+- The animation library now uses about a quarter of the CPU it did: card previews run at 10 fps, pause when scrolled out of view, and skip repaints when a frame hasn't changed.
+- The idle animation thread sleeps for 30 seconds at a time while idle animations are off instead of checking every second.
+- Automatic profile backups made before updates now keep the newest 20; manual backups are never removed.
+- The uninstaller's log no longer grows with every upgrade (it had reached 13 MB on a machine with many upgrades).
+
 ## 0.2.5
 
 - Added idle animations: after the pads go unused for a while (15 seconds by default, adjustable), the Launchpad plays an animation until any pad or button is pressed.

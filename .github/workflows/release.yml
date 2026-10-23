@@ -67,6 +67,10 @@ jobs:
         shell: pwsh
         run: powershell -ExecutionPolicy Bypass -File build.ps1 -RequireInstaller -UseCurrentPython -SkipPipUpgrade -SkipDependencyInstall -SkipTests -FastPackage
 
+      - name: Add a fixed-name installer for direct download links
+        shell: pwsh
+        run: Copy-Item "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe" "dist\installer\OpenLaunchDeckSetup.exe"
+
       - name: Verify release assets
         shell: pwsh
         run: |
@@ -74,7 +78,8 @@ jobs:
             "dist\OpenLaunchDeck-$env:APP_VERSION-Windows.zip",
             "dist\OpenLaunchDeck-$env:APP_VERSION-Windows.zip.sha256",
             "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe",
-            "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe.sha256"
+            "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe.sha256",
+            "dist\installer\OpenLaunchDeckSetup.exe"
           )
           foreach ($asset in $assets) {
             if (!(Test-Path $asset)) {
@@ -91,14 +96,17 @@ jobs:
             "dist\OpenLaunchDeck-$env:APP_VERSION-Windows.zip",
             "dist\OpenLaunchDeck-$env:APP_VERSION-Windows.zip.sha256",
             "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe",
-            "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe.sha256"
+            "dist\installer\OpenLaunchDeckSetup-$env:APP_VERSION.exe.sha256",
+            "dist\installer\OpenLaunchDeckSetup.exe"
           )
           $notes = @"
           OpenLaunchDeck $env:APP_VERSION is a ready-to-install Windows release for the Novation Launchpad Mini MK3.
 
           ## Install
 
-          Download **OpenLaunchDeckSetup-$env:APP_VERSION.exe** for a normal Windows installation. Existing profiles and settings under `%APPDATA%\OpenLaunchDeck` are preserved during upgrades.
+          Download **OpenLaunchDeckSetup.exe** and run it. Existing profiles and settings under `%APPDATA%\OpenLaunchDeck` are preserved during upgrades.
+
+          Already installed? Open **Help > Check for Updates** in the app and click **Update now**. It downloads, verifies, installs, and reopens OpenLaunchDeck by itself.
 
           The portable ZIP is intended for testing or troubleshooting. SHA256 files are included for both packages.
 

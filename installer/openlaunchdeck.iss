@@ -2,7 +2,7 @@
 #define MyAppName "OpenLaunchDeck"
 #endif
 #ifndef MyAppVersion
-#define MyAppVersion "0.2.5"
+#define MyAppVersion "0.2.10"
 #endif
 #define MyAppPublisher "Rique"
 #define MyAppExeName "OpenLaunchDeck.exe"
@@ -38,6 +38,9 @@ UninstallDisplayIcon={app}\OpenLaunchDeck.ico
 VersionInfoDescription=Launchpad Mini MK3 macro deck for Windows
 SetupIconFile=..\openlaunchdeck\resources\icons\openlaunchdeck.ico
 SetupLogging=yes
+; Upgrades wipe {app}\_internal first, so the uninstall log only needs this version's
+; files. Appending (the default) grows unins000.dat with every upgrade.
+UninstallLogMode=overwrite
 
 [Tasks]
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"; Flags: unchecked
@@ -58,6 +61,14 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; WorkingDi
 Filename: "{sysnative}\ie4uinit.exe"; Parameters: "-show"; Flags: runhidden waituntilterminated skipifdoesntexist; Check: IsWin64
 Filename: "{sys}\ie4uinit.exe"; Parameters: "-show"; Flags: runhidden waituntilterminated skipifdoesntexist; Check: not IsWin64
 Filename: "{app}\{#MyAppExeName}"; Description: "Launch {#MyAppName}"; Flags: nowait postinstall skipifsilent
+; In-app one-click updates run silently with /RELAUNCH=1, so reopen the app (as the signed-in user, not elevated).
+Filename: "{app}\{#MyAppExeName}"; Flags: nowait runasoriginaluser; Check: RelaunchAfterSilentUpdate
 
 [Messages]
 BeveledLabel=Profiles and settings are stored in AppData and are preserved during updates.
+
+[Code]
+function RelaunchAfterSilentUpdate: Boolean;
+begin
+  Result := WizardSilent and (ExpandConstant('{param:RELAUNCH|0}') = '1');
+end;

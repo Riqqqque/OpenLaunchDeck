@@ -72,7 +72,7 @@ See [Soundboard and Voice Chat](Soundboard-and-Discord-Routing.md) before changi
 
 | Setting | Meaning |
 | --- | --- |
-| Check updates on startup | Run a quiet background check after launch |
+| Check updates on startup | On by default. Checks GitHub after launch and changes the header's **Updates** button to **Update to x.y.z** when a new version is out |
 | Update channel | Stable or beta manifest channel |
 | Update manifest URL | Optional custom manifest; leave empty for normal GitHub releases |
 

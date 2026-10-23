@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Riqqqque/OpenLaunchDeck/releases/latest"><strong>Download</strong></a>
+  <a href="https://github.com/Riqqqque/OpenLaunchDeck/releases/latest/download/OpenLaunchDeckSetup.exe"><strong>Download for Windows</strong></a>
   &nbsp;|&nbsp;
   <a href="https://github.com/Riqqqque/OpenLaunchDeck/wiki/Quick-Start">Quick Start</a>
   &nbsp;|&nbsp;
@@ -75,7 +75,7 @@ The Launchpad is optional for editing and testing. Tests and Simulation mode do 
 
 ## Get Started
 
-1. Download `OpenLaunchDeckSetup-<version>.exe` from the [latest release](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest).
+1. [Download the installer](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest/download/OpenLaunchDeckSetup.exe) (always the latest version).
 2. Install and open OpenLaunchDeck.
 3. Pick a starter profile or start with a blank deck.
 4. Click a grid pad to select it, then configure the button in the editor.
@@ -114,7 +114,9 @@ The installer places program files under Program Files. Profiles, settings, logs
 %APPDATA%\OpenLaunchDeck
 ```
 
-Installer upgrades do not remove this folder. Open **Help > Check for Updates** for a manual update check. Update downloads are stored outside the install folder and must pass SHA256 verification before the installer can run. OpenLaunchDeck does not silently install updates.
+Installer upgrades do not remove this folder.
+
+Updating is one click. OpenLaunchDeck checks for a new version when it starts, and the **Updates** button in the header changes to **Update to x.y.z** when one is out. Click it (or **Help > Check for Updates**), then **Update now**: the app downloads the installer, checks it against the published SHA256 checksum, backs up your profiles, installs, and reopens by itself. Windows asks once for permission because the app lives in Program Files. Nothing installs until you click **Update now**.
 
 See [Release and Update Flow](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Release-and-Update-Flow) for the user and maintainer workflows.
 

@@ -71,6 +71,9 @@ class MidiConnectionWorker(QObject):
         self.finished.emit(True, "Connected.", self.input_port, self.output_port)
 
 
+WM_SHOWWINDOW = 0x0018
+
+
 class MainWindow(QMainWindow):
     action_finished = Signal(str, object)
     hardware_button = Signal(str, bool, object)
@@ -147,7 +150,9 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(150, self.show_first_run)
         if self.services.settings_service.settings.auto_connect:
             QTimer.singleShot(250, self.connect_device)
-        if self.services.settings_service.settings.check_updates_on_startup:
+        if self.services.settings_service.settings.check_updates_on_startup and not os.environ.get(
+            "OPENLAUNCHDECK_DISABLE_UPDATE_CHECK"
+        ):
             QTimer.singleShot(1500, self.check_updates_on_startup)
 
     def _build_main_layout(self) -> None:
@@ -170,11 +175,6 @@ class MainWindow(QMainWindow):
         brand_row = QHBoxLayout(self.header_brand)
         brand_row.setContentsMargins(0, 0, 0, 0)
         brand_row.setSpacing(10)
-        brand_icon = QLabel()
-        brand_icon.setObjectName("HeaderIcon")
-        brand_icon.setPixmap(app_icon().pixmap(QSize(30, 30)))
-        brand_icon.setFixedSize(30, 30)
-        brand_row.addWidget(brand_icon, 0, Qt.AlignmentFlag.AlignVCenter)
         brand_layout = QVBoxLayout()
         brand_layout.setContentsMargins(0, 0, 0, 0)
         brand_layout.setSpacing(0)
@@ -1061,6 +1061,9 @@ class MainWindow(QMainWindow):
             self.services.audio_engine.set_voice_route_microphone_volume(
                 self.services.settings_service.settings.soundboard_voice_route_microphone_volume
             )
+            self.services.audio_engine.set_voice_route_exclusive(
+                self.services.settings_service.settings.soundboard_voice_route_exclusive
+            )
             self.services.audio_engine.set_voice_route_microphone_enabled(
                 self.services.settings_service.settings.soundboard_voice_route_microphone_enabled
             )
@@ -1227,6 +1230,11 @@ class MainWindow(QMainWindow):
 
     def on_startup_update_result(self, result) -> None:
         if result.available or result.unsupported:
+            # Keep the update visible until it's installed; one click opens the update.
+            self.header_update_button.setText(f"Update to {result.latest_version}")
+            self.header_update_button.setToolTip(
+                f"{APP_NAME} {result.latest_version} is available. Click to update; the app reopens by itself."
+            )
             self.statusBar().showMessage(result.message, 8000)
         elif self.services.logger:
             self.services.logger.info("Startup update check found no update.")
@@ -1478,6 +1486,26 @@ class MainWindow(QMainWindow):
     def showEvent(self, event) -> None:
         super().showEvent(event)
         self._refresh_if_pending()
+
+    def nativeEvent(self, event_type, message):
+        # Window-arranging tools can call ShowWindow on the hidden tray window. Windows
+        # then shows it, but Qt still treats it as hidden and never paints, leaving an
+        # empty black or white window. Treat that as a request to restore instead.
+        if sys.platform == "win32" and event_type == b"windows_generic_MSG" and not self.isVisible():
+            try:
+                from ctypes import wintypes
+
+                msg = wintypes.MSG.from_address(int(message))
+            except (TypeError, ValueError, OverflowError):
+                msg = None
+            if msg is not None and msg.message == WM_SHOWWINDOW and msg.wParam:
+                QTimer.singleShot(0, self._restore_after_external_show)
+        return super().nativeEvent(event_type, message)
+
+    def _restore_after_external_show(self) -> None:
+        if self._force_quit or self.isVisible():
+            return
+        self.restore_from_tray()
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)

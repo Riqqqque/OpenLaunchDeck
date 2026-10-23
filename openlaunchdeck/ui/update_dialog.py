@@ -3,7 +3,7 @@ from __future__ import annotations
 import webbrowser
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, QThread, QTimer, Qt, Signal, Slot
 from PySide6.QtWidgets import (
     QApplication,
     QDialog,
@@ -12,7 +12,6 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressBar,
     QPushButton,
-    QTextEdit,
     QVBoxLayout,
 )
 
@@ -69,6 +68,8 @@ class UpdateDownloadWorker(QObject):
 
 
 class UpdateDialog(QDialog):
+    """One-click updates: check, then a single Update now button does the rest."""
+
     idle = Signal()
 
     def __init__(self, settings_service, logger=None, parent=None, auto_check: bool = False) -> None:
@@ -82,43 +83,58 @@ class UpdateDialog(QDialog):
         self._result: UpdateCheckResult | None = None
         self._installer_path: Path | None = None
 
-        self.setWindowTitle("Check for Updates")
-        self.resize(560, 380)
+        self.setObjectName("UpdateDialog")
+        self.setWindowTitle("Updates")
+        self.resize(500, 230)
+        self.setMinimumWidth(440)
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(22, 20, 22, 18)
+        layout.setSpacing(10)
         self.label = QLabel("Ready to check for updates.")
-        self.output = QTextEdit()
-        self.output.setReadOnly(True)
+        self.label.setObjectName("SettingsTitle")
+        self.label.setWordWrap(True)
+        self.detail = QLabel(f"You're on {APP_NAME} {__version__}.")
+        self.detail.setObjectName("SettingsDescription")
+        self.detail.setWordWrap(True)
+        self.detail.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setValue(0)
+        self.progress.setTextVisible(False)
         self.progress.setVisible(False)
+        layout.addWidget(self.label)
+        layout.addWidget(self.detail)
+        layout.addStretch(1)
+        layout.addWidget(self.progress)
 
         button_row = QHBoxLayout()
-        self.check_button = QPushButton("Check Now")
-        self.download_button = QPushButton("Download Update")
-        self.notes_button = QPushButton("View Release Notes")
-        self.install_button = QPushButton("Install and Close")
+        button_row.setSpacing(8)
+        self.notes_button = QPushButton("What's new")
+        self.notes_button.setObjectName("SecondaryButton")
+        self.check_button = QPushButton("Check again")
+        self.check_button.setObjectName("SecondaryButton")
         self.close_button = QPushButton("Close")
-        button_row.addWidget(self.check_button)
-        button_row.addWidget(self.download_button)
+        self.close_button.setObjectName("SecondaryButton")
+        self.update_button = QPushButton("Update now")
+        self.update_button.setObjectName("PrimaryButton")
+        self.update_button.setDefault(True)
         button_row.addWidget(self.notes_button)
-        button_row.addWidget(self.install_button)
+        button_row.addStretch(1)
+        button_row.addWidget(self.check_button)
         button_row.addWidget(self.close_button)
-
-        layout.addWidget(self.label)
-        layout.addWidget(self.output, 1)
-        layout.addWidget(self.progress)
+        button_row.addWidget(self.update_button)
         layout.addLayout(button_row)
 
         self.check_button.clicked.connect(self.check)
-        self.download_button.clicked.connect(self.download_update)
         self.notes_button.clicked.connect(self.open_release_notes)
-        self.install_button.clicked.connect(self.install_update)
+        self.update_button.clicked.connect(self.update_now)
         self.close_button.clicked.connect(self.reject)
         self._update_buttons()
         if auto_check:
             QTimer.singleShot(0, self.check)
+
+    # Checking
 
     def check(self) -> None:
         if self._check_thread is not None or self._download_thread is not None:
@@ -127,11 +143,10 @@ class UpdateDialog(QDialog):
         service = UpdateService(__version__, self.logger)
         self._result = None
         self._installer_path = None
-        self.check_button.setEnabled(False)
-        self.close_button.setEnabled(False)
-        self.label.setText("Checking for updates...")
-        self.output.setPlainText("")
-        self.progress.setVisible(False)
+        self.label.setText("Checking for updates…")
+        self.detail.setText(f"You're on {APP_NAME} {__version__}.")
+        self.progress.setVisible(True)
+        self.progress.setRange(0, 0)
         self._check_thread = QThread(self)
         self._check_worker = UpdateCheckWorker(service, manifest_url, self.settings_service.settings.update_channel)
         self._check_worker.moveToThread(self._check_thread)
@@ -143,18 +158,50 @@ class UpdateDialog(QDialog):
         self._check_thread.finished.connect(self._check_worker.deleteLater)
         self._check_thread.finished.connect(self._check_thread.deleteLater)
         self._check_thread.finished.connect(self._clear_check_worker)
+        self._update_buttons()
         self._check_thread.start()
 
-    def download_update(self) -> None:
+    def _on_check_result(self, result: UpdateCheckResult) -> None:
+        self._result = result
+        self._installer_path = None
+        self.progress.setVisible(False)
+        if result.available or result.unsupported:
+            self.label.setText(f"{APP_NAME} {result.latest_version} is available")
+            notes = [f"You're on {result.current_version}."]
+            if result.unsupported or result.required:
+                notes.append("This update is required to keep using OpenLaunchDeck.")
+            notes.append("Your profiles and settings stay as they are, and the app reopens by itself when it's done.")
+            if UpdateInstaller.install_mode() != "installed":
+                notes.append("You're running from source, so Update now opens the installer instead of updating in place.")
+            self.detail.setText(" ".join(notes))
+        else:
+            self.label.setText("You're up to date")
+            self.detail.setText(f"{APP_NAME} {result.current_version} is the latest version.")
+        self._update_buttons()
+
+    def _on_check_error(self, message: str) -> None:
+        if self.logger:
+            self.logger.warning("Update check failed: %s", message)
+        self._result = None
+        self.progress.setVisible(False)
+        self.label.setText("Couldn't check for updates")
+        self.detail.setText(f"{message}\nCheck your internet connection and try again.")
+        self._update_buttons()
+
+    # Updating
+
+    def update_now(self) -> None:
         if self._download_thread is not None or not self._result or not self._result.manifest:
             return
+        if self._installer_path is not None:
+            self._install(self._installer_path)
+            return
         service = UpdateService(__version__, self.logger)
-        self.download_button.setEnabled(False)
-        self.install_button.setEnabled(False)
-        self.close_button.setEnabled(False)
+        self.label.setText(f"Downloading {APP_NAME} {self._result.latest_version}…")
+        self.detail.setText("The download is checked against its published checksum before anything installs.")
         self.progress.setVisible(True)
+        self.progress.setRange(0, 100)
         self.progress.setValue(0)
-        self.label.setText("Downloading update...")
         self._download_thread = QThread(self)
         self._download_worker = UpdateDownloadWorker(service, self._result)
         self._download_worker.moveToThread(self._download_thread)
@@ -167,75 +214,8 @@ class UpdateDialog(QDialog):
         self._download_thread.finished.connect(self._download_worker.deleteLater)
         self._download_thread.finished.connect(self._download_thread.deleteLater)
         self._download_thread.finished.connect(self._clear_download_worker)
+        self._update_buttons()
         self._download_thread.start()
-
-    def open_release_notes(self) -> None:
-        if self._result and self._result.release_notes_url:
-            webbrowser.open(self._result.release_notes_url)
-
-    def install_update(self) -> None:
-        if not self._installer_path:
-            return
-        answer = QMessageBox.question(
-            self,
-            "Install Update",
-            f"Launch the verified installer now? {APP_NAME} will close after the installer starts.",
-        )
-        if answer != QMessageBox.StandardButton.Yes:
-            return
-
-        if self.settings_service.settings.backup_profiles_automatically:
-            try:
-                backup_path = BackupService().backup_profiles()
-                self._append_output(f"Profiles backed up to: {backup_path}")
-            except Exception as exc:
-                if self.logger:
-                    self.logger.exception("Profile backup before update failed.")
-                QMessageBox.warning(self, APP_NAME, f"Profile backup failed:\n{exc}")
-                return
-
-        installer = UpdateInstaller(self.logger)
-        try:
-            launched = installer.launch(self._installer_path)
-        except Exception as exc:
-            if self.logger:
-                self.logger.exception("Update installer launch failed.")
-            QMessageBox.warning(self, APP_NAME, f"Could not launch installer:\n{exc}")
-            return
-
-        if not launched:
-            QMessageBox.information(
-                self,
-                APP_NAME,
-                "Automatic installer launch is not available for this run mode. Use the downloaded installer manually.",
-            )
-            return
-
-        parent = self.parent()
-        if hasattr(parent, "quit_app"):
-            parent.quit_app()
-        else:
-            app = QApplication.instance()
-            if app:
-                app.quit()
-
-    def _on_check_result(self, result: UpdateCheckResult) -> None:
-        self._result = result
-        self._installer_path = None
-        self.label.setText(result.message)
-        self.output.setPlainText(self._format_result(result))
-        self.check_button.setEnabled(True)
-        self._update_buttons()
-
-    def _on_check_error(self, message: str) -> None:
-        if self.logger:
-            self.logger.warning("Update check failed: %s", message)
-        self._result = None
-        self._installer_path = None
-        self.label.setText("Update check failed.")
-        self.output.setPlainText(message)
-        self.check_button.setEnabled(True)
-        self._update_buttons()
 
     def _on_download_progress(self, downloaded: int, total: int) -> None:
         if total > 0:
@@ -248,76 +228,103 @@ class UpdateDialog(QDialog):
         self._installer_path = Path(path)
         self.progress.setRange(0, 100)
         self.progress.setValue(100)
-        self.label.setText("Update downloaded and verified.")
-        self._append_output(f"Installer: {self._installer_path}")
-        self._update_buttons()
+        # Install as soon as the worker thread has wound down.
+        QTimer.singleShot(0, lambda: self._install(self._installer_path))
 
     def _on_download_error(self, message: str) -> None:
         if self.logger:
             self.logger.warning("Update download failed: %s", message)
         self._installer_path = None
         self.progress.setVisible(False)
-        self.label.setText("Update download failed.")
-        self._append_output(message)
+        self.label.setText("The update couldn't be downloaded")
+        self.detail.setText(f"{message}\nNothing was changed. Try again in a moment.")
         self._update_buttons()
 
-    def _format_result(self, result: UpdateCheckResult) -> str:
-        if not result.manifest:
-            return result.message
-        manifest = result.manifest
-        install_mode = UpdateInstaller.install_mode()
-        lines = [
-            f"Current version: {result.current_version}",
-            f"Latest version: {manifest.latest_version}",
-            f"Minimum supported version: {manifest.minimum_supported_version}",
-            f"Required: {result.required}",
-            f"Unsupported current version: {result.unsupported}",
-            f"Install mode: {install_mode}",
-            f"Download: {manifest.download_url}",
-            f"SHA256: {manifest.sha256}",
-            f"Release notes: {manifest.release_notes_url}",
-            f"Published: {manifest.published_at}",
-        ]
-        if install_mode != "installed":
-            lines.append("Portable/source runs may need to run the verified installer manually.")
-        return "\n".join(lines)
+    def _install(self, installer_path: Path | None) -> None:
+        if installer_path is None:
+            return
+        if self._download_thread is not None:
+            QTimer.singleShot(50, lambda: self._install(installer_path))
+            return
+        self.label.setText("Installing the update…")
+        self.detail.setText(f"{APP_NAME} closes now and reopens by itself in a few seconds.")
+        self.progress.setRange(0, 0)
+        self._update_buttons(installing=True)
+        QApplication.processEvents()
+        if self.settings_service.settings.backup_profiles_automatically:
+            try:
+                BackupService().backup_profiles()
+            except Exception as exc:
+                if self.logger:
+                    self.logger.exception("Profile backup before update failed.")
+                self._installation_failed(f"Your profiles couldn't be backed up first, so nothing was installed.\n{exc}")
+                return
+        installer = UpdateInstaller(self.logger)
+        silent = UpdateInstaller.install_mode() == "installed"
+        try:
+            launched = installer.launch(installer_path, silent=silent)
+        except Exception as exc:
+            if self.logger:
+                self.logger.exception("Update installer launch failed.")
+            self._installation_failed(f"The installer couldn't start.\n{exc}")
+            return
+        if not launched:
+            self._installation_failed(f"Run the downloaded installer yourself:\n{installer_path}")
+            return
+        parent = self.parent()
+        if hasattr(parent, "quit_app"):
+            parent.quit_app()
+        else:
+            app = QApplication.instance()
+            if app:
+                app.quit()
 
-    def _append_output(self, text: str) -> None:
-        current = self.output.toPlainText()
-        self.output.setPlainText(f"{current}\n{text}".strip())
+    def _installation_failed(self, message: str) -> None:
+        self.progress.setVisible(False)
+        self.label.setText("The update didn't install")
+        self.detail.setText(message)
+        self._update_buttons()
 
-    def _update_buttons(self) -> None:
+    def open_release_notes(self) -> None:
+        if self._result and self._result.release_notes_url:
+            webbrowser.open(self._result.release_notes_url)
+
+    # State
+
+    def _update_buttons(self, installing: bool = False) -> None:
+        busy = installing or self._has_active_worker()
         has_result = self._result is not None and self._result.manifest is not None
-        can_download = has_result and bool(self._result.available or self._result.unsupported)
-        self.download_button.setEnabled(can_download and self._download_thread is None)
-        self.notes_button.setEnabled(has_result and bool(self._result.release_notes_url))
-        self.install_button.setEnabled(self._installer_path is not None)
+        can_update = has_result and bool(self._result.available or self._result.unsupported)
+        self.update_button.setVisible(can_update)
+        self.update_button.setEnabled(can_update and not busy)
+        self.notes_button.setVisible(has_result and bool(self._result.release_notes_url))
+        self.check_button.setVisible(not can_update and not busy)
+        self.close_button.setEnabled(not busy)
+        self.close_button.setText("Later" if can_update else "Close")
 
     def _clear_check_worker(self) -> None:
         self._check_thread = None
         self._check_worker = None
-        self.check_button.setEnabled(True)
-        self.close_button.setEnabled(True)
+        self._update_buttons()
         if not self._has_active_worker():
             self.idle.emit()
 
     def _clear_download_worker(self) -> None:
         self._download_thread = None
         self._download_worker = None
-        self.close_button.setEnabled(True)
         self._update_buttons()
         if not self._has_active_worker():
             self.idle.emit()
 
     def reject(self) -> None:
         if self._has_active_worker():
-            self.label.setText("Please wait for the current update operation to finish.")
+            self.label.setText("Please wait for the current update step to finish.")
             return
         super().reject()
 
     def closeEvent(self, event) -> None:
         if self._has_active_worker():
-            self.label.setText("Please wait for the current update operation to finish.")
+            self.label.setText("Please wait for the current update step to finish.")
             event.ignore()
             return
         super().closeEvent(event)
