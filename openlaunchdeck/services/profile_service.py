@@ -84,7 +84,7 @@ class ProfileService:
         profile.id = self._safe_profile_id(profile.id, fallback=profile.name)
         path = self._profile_paths.pop(original_id, None) or self._profile_paths.get(profile.id)
         if path is None or not self._is_profiles_path(path):
-            path = PROFILES_DIR / f"{profile.id}.json"
+            path = self._new_profile_path(profile.id)
         self._profile_paths[profile.id] = path
         write_json(path, profile.to_dict())
 
@@ -94,7 +94,7 @@ class ProfileService:
             profile_id = f"{profile_id}_{uuid.uuid4().hex[:4]}"
         profile = Profile.blank(name=name, profile_id=profile_id)
         self.profiles[profile.id] = profile
-        self._profile_paths[profile.id] = PROFILES_DIR / f"{profile.id}.json"
+        self._profile_paths[profile.id] = self._new_profile_path(profile.id)
         self.save_profile(profile)
         return profile
 
@@ -104,7 +104,7 @@ class ProfileService:
         profile.name = f"{source.name} Copy"
         profile.id = self._unique_profile_id(self._slug(profile.name), fallback="profile")
         self.profiles[profile.id] = profile
-        self._profile_paths[profile.id] = PROFILES_DIR / f"{profile.id}.json"
+        self._profile_paths[profile.id] = self._new_profile_path(profile.id)
         self.save_profile(profile)
         return profile
 
@@ -167,7 +167,7 @@ class ProfileService:
         profile = Profile.from_dict(data)
         profile.id = self._unique_profile_id(profile.id, fallback=profile.name)
         self.profiles[profile.id] = profile
-        self._profile_paths[profile.id] = PROFILES_DIR / f"{profile.id}.json"
+        self._profile_paths[profile.id] = self._new_profile_path(profile.id)
         self.save_profile(profile)
         return profile
 
@@ -202,6 +202,17 @@ class ProfileService:
         except (OSError, ValueError):
             return False
         return True
+
+    def _new_profile_path(self, profile_id: str) -> Path:
+        # Never reuse a file another profile owns or one that failed to load.
+        claimed = {path.resolve() for path in self._profile_paths.values()}
+        base = PROFILES_DIR / f"{profile_id}.json"
+        candidate = base
+        index = 2
+        while candidate.exists() or candidate.resolve() in claimed:
+            candidate = base.with_name(f"{base.stem}_{index}{base.suffix}")
+            index += 1
+        return candidate
 
     @staticmethod
     def _unique_path(path: Path) -> Path:

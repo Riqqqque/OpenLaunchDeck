@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Riqqqque/OpenLaunchDeck/releases/latest"><strong>Download</strong></a>
+  <a href="https://github.com/Riqqqque/OpenLaunchDeck/releases/latest/download/OpenLaunchDeckSetup.exe"><strong>Download for Windows</strong></a>
   &nbsp;|&nbsp;
   <a href="https://github.com/Riqqqque/OpenLaunchDeck/wiki/Quick-Start">Quick Start</a>
   &nbsp;|&nbsp;
@@ -52,7 +52,9 @@ No Launchpad yet? The full editor works in Simulation mode, so profiles can be b
 - Configurable top-arrow, Session/User, and Scene-button controls for page and profile navigation
 - Batched RGB lighting with press, success, error, armed, and playing feedback
 - Local-file soundboard playback with per-pad volume, global volume, looping, overlap, stopping, and optional voice routing
-- Seven complete themes: Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, and High Contrast
+- Three complete styles that change the whole look and pad shape: Nebula, Studio, and Hardware (the grid drawn as the real Launchpad)
+- Seven classic color themes: Midnight, OLED Black, Galaxy OLED, Arctic White, Graphite, Broadcast, and High Contrast
+- Idle animations for the Launchpad with 15 built-ins, an animation editor, and share codes for trading animations with other people
 - Searchable action picker, visible field guidance, color swatches, and a visual Multi-Action sequence editor
 - Random-folder sounds, clipboard text, active-window commands, pointer clicks/scrolling, and direct profile switching
 - Background action execution so commands and network requests do not block the interface
@@ -73,7 +75,7 @@ The Launchpad is optional for editing and testing. Tests and Simulation mode do 
 
 ## Get Started
 
-1. Download `OpenLaunchDeckSetup-<version>.exe` from the [latest release](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest).
+1. [Download the installer](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest/download/OpenLaunchDeckSetup.exe) (always the latest version).
 2. Install and open OpenLaunchDeck.
 3. Pick a starter profile or start with a blank deck.
 4. Click a grid pad to select it, then configure the button in the editor.
@@ -86,7 +88,7 @@ Continue with the [beginner Quick Start](https://github.com/Riqqqque/OpenLaunchD
 
 ## Make It Yours
 
-Open **Settings > Settings > Appearance** to choose a theme and pad density. The grid automatically fits readable keycaps to the available width and height; at narrow widths, **Edit A1** opens the selected pad editor as a full-width view and **Back to Grid** returns to the deck. Turn on **Deck View** when the grid should use nearly the entire app window.
+Open **Settings > Settings > Appearance** to choose a style or theme and pad density. The grid automatically fits readable keycaps to the available width and height; at narrow widths, **Edit A1** opens the selected pad editor as a full-width view and **Back to Grid** returns to the deck. Turn on **Deck View** when the grid should use nearly the entire app window.
 
 To add a sound, select a pad, choose **Play Sound**, and use **Browse** beside **Sound File** to select a local WAV, MP3, or OGG file. Open **Soundboard > Open Soundboard Panel** to manage outputs, routing, global volume, currently playing clips, and Stop All Sounds.
 
@@ -112,7 +114,9 @@ The installer places program files under Program Files. Profiles, settings, logs
 %APPDATA%\OpenLaunchDeck
 ```
 
-Installer upgrades do not remove this folder. Open **Help > Check for Updates** for a manual update check. Update downloads are stored outside the install folder and must pass SHA256 verification before the installer can run. OpenLaunchDeck does not silently install updates.
+Installer upgrades do not remove this folder.
+
+Updating is one click. OpenLaunchDeck checks for a new version when it starts, and the **Updates** button in the header changes to **Update to x.y.z** when one is out. Click it (or **Help > Check for Updates**), then **Update now**: the app downloads the installer, checks it against the published SHA256 checksum, backs up your profiles, installs, and reopens by itself. Windows asks once for permission because the app lives in Program Files. Nothing installs until you click **Update now**.
 
 See [Release and Update Flow](https://github.com/Riqqqque/OpenLaunchDeck/wiki/Release-and-Update-Flow) for the user and maintainer workflows.
 

@@ -12,6 +12,7 @@
 - [Actions Reference](Actions-Reference.md)
 - [Button Recipes](Button-Recipes.md)
 - [Launchpad Mini MK3 Setup](Launchpad-Mini-MK3-Setup.md)
+- [Idle Animations](Idle-Animations.md)
 
 **Streaming And Audio**
 

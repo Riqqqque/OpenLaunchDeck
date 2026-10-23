@@ -14,6 +14,7 @@ class _DispatchRequest:
     completed: threading.Event = field(default_factory=threading.Event)
     result: Any = None
     error: BaseException | None = None
+    cancelled: bool = False
 
 
 class MainThreadDispatcher(QObject):
@@ -30,6 +31,8 @@ class MainThreadDispatcher(QObject):
         request = _DispatchRequest(callback)
         self.requested.emit(request)
         if not request.completed.wait(timeout=max(0.1, timeout)):
+            # The caller has already reported a failure, so the queued callback must not run late.
+            request.cancelled = True
             raise TimeoutError("The main window did not process an action in time.")
         if request.error is not None:
             raise request.error
@@ -37,6 +40,9 @@ class MainThreadDispatcher(QObject):
 
     @Slot(object)
     def _execute(self, request: _DispatchRequest) -> None:
+        if request.cancelled:
+            request.completed.set()
+            return
         try:
             request.result = request.callback()
         except BaseException as exc:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import threading
 from dataclasses import dataclass
 from typing import Any, Callable
 
@@ -24,3 +25,4 @@ class ActionContext:
     action_registry: Any = None
     action_executor: Callable[[str, "ActionContext", dict[str, Any]], Any] | None = None
     app: Any = None
+    stop_event: threading.Event | None = None

@@ -95,3 +95,52 @@ def test_runner_marshals_nonblocking_multi_action_steps_to_qt_thread():
         assert results[0].should_update_lighting is True
     finally:
         runner.shutdown()
+
+
+class RaisingAction(BaseAction):
+    type_name = "raising_test"
+
+    def execute(self, context, config):
+        raise RuntimeError("boom")
+
+
+def test_multi_action_continue_on_error_survives_a_raising_step():
+    registry = create_default_registry()
+    registry.register(RaisingAction())
+    profile = Profile.blank()
+    context = ActionContext(
+        logger=logging.getLogger("test"),
+        current_profile=profile,
+        current_page=profile.get_page("main"),
+        button_id="A1",
+        button_config=ButtonConfig.blank("A1"),
+        action_registry=registry,
+    )
+    config = {"continue_on_error": True, "steps": [{"type": "raising_test"}, {"type": "noop"}]}
+
+    result = registry.get("multi_action").execute(context, config)
+
+    assert result.success is True
+    assert result.details["results"][0] == "1: Step failed: boom"
+    assert not registry.get("multi_action").execute(context, dict(config, continue_on_error=False)).success
+
+
+def test_multi_action_stops_between_steps_when_cancelled():
+    registry = create_default_registry()
+    profile = Profile.blank()
+    stop_event = threading.Event()
+    stop_event.set()
+    context = ActionContext(
+        logger=logging.getLogger("test"),
+        current_profile=profile,
+        current_page=profile.get_page("main"),
+        button_id="A1",
+        button_config=ButtonConfig.blank("A1"),
+        action_registry=registry,
+        stop_event=stop_event,
+    )
+
+    result = registry.get("multi_action").execute(context, {"steps": [{"type": "noop"}]})
+
+    assert result.success is False
+    assert "cancelled" in result.message

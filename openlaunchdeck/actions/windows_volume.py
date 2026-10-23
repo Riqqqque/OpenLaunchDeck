@@ -98,6 +98,14 @@ class _EndpointVolumeHandle:
         self.volume = ctypes.c_void_p()
 
     def __enter__(self) -> ctypes.c_void_p:
+        # Python skips __exit__ when __enter__ raises, so release partial setup here.
+        try:
+            return self._open()
+        except BaseException:
+            self.__exit__(None, None, None)
+            raise
+
+    def _open(self) -> ctypes.c_void_p:
         ole32 = ctypes.windll.ole32
         init_result = ole32.CoInitialize(None)
         self.initialized_com = init_result >= 0

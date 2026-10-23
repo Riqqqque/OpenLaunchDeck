@@ -6,7 +6,7 @@ OpenLaunchDeck publishes versioned Windows installers and portable ZIPs through 
 
 ### Install
 
-Download `OpenLaunchDeckSetup-<version>.exe` from the [latest release](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest).
+[Download the installer](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest/download/OpenLaunchDeckSetup.exe) and run it. The link always points to the latest version. Versioned installers and checksums are on the [releases page](https://github.com/Riqqqque/OpenLaunchDeck/releases/latest).
 
 The installer updates program files while user data remains under:
 
@@ -14,20 +14,17 @@ The installer updates program files while user data remains under:
 %APPDATA%\OpenLaunchDeck
 ```
 
-### Check For Updates
+### One-Click Updates
 
-Use **Help > Check for Updates**.
+OpenLaunchDeck checks GitHub for a new version a moment after it starts. When one is out, the **Updates** button in the header changes to **Update to x.y.z**.
 
-The app can:
+1. Click **Update to x.y.z** (or **Help > Check for Updates**).
+2. Click **Update now**.
+3. Approve the Windows permission prompt.
 
-1. Read the latest GitHub release or a configured manifest.
-2. Compare semantic versions.
-3. Show whether the update is normal, required, or unsupported by the current version.
-4. Download the installer outside the program folder.
-5. Verify SHA256.
-6. Ask before launching the installer.
+The app then downloads the installer, verifies it against the release's SHA256 checksum, backs up your profiles, closes, installs without any setup pages, and reopens by itself. Nothing is downloaded or installed until you click **Update now**. If the download or check fails, nothing changes.
 
-It does not silently download and install updates by default.
+Turn the startup check off under **Settings > App > Check for updates after startup** if you prefer to check yourself.
 
 ### Manual Update
 

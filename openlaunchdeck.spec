@@ -80,6 +80,7 @@ a = Analysis(
     runtime_hooks=[],
     excludes=[
         "PIL",
+        "PySide6.QtMultimediaWidgets",
         "Xlib",
         "_tkinter",
         "mouseinfo",
@@ -92,6 +93,27 @@ a = Analysis(
     cipher=block_cipher,
     noarchive=False,
 )
+# Qt pieces the widgets app never loads. The virtual keyboard input plugin is the
+# only thing that pulls in Qt Quick, QML, and Qt OpenGL; the PDF image plugin is
+# the only user of Qt PDF; opengl32sw.dll is a software OpenGL fallback.
+UNUSED_QT_BINARIES = {
+    "opengl32sw.dll",
+    "qdirect2d.dll",
+    "qpdf.dll",
+    "qt6opengl.dll",
+    "qt6pdf.dll",
+    "qt6qml.dll",
+    "qt6qmlmeta.dll",
+    "qt6qmlmodels.dll",
+    "qt6qmlworkerscript.dll",
+    "qt6quick.dll",
+    "qt6virtualkeyboard.dll",
+    "qtvirtualkeyboardplugin.dll",
+}
+a.binaries = [entry for entry in a.binaries if Path(entry[0]).name.lower() not in UNUSED_QT_BINARIES]
+# The interface is English only, so Qt's own translation catalogs are not needed.
+a.datas = [entry for entry in a.datas if not entry[0].replace("\\", "/").startswith("PySide6/translations/")]
+
 pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 exe = EXE(
     pyz,

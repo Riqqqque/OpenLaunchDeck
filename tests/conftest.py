@@ -7,6 +7,8 @@ import tempfile
 TEST_ROOT = tempfile.mkdtemp(prefix="openlaunchdeck-tests-")
 TEST_DATA_DIR = os.path.join(TEST_ROOT, "OpenLaunchDeck")
 os.environ["OPENLAUNCHDECK_DATA_DIR"] = TEST_DATA_DIR
+# Tests never reach out to GitHub for updates.
+os.environ["OPENLAUNCHDECK_DISABLE_UPDATE_CHECK"] = "1"
 
 
 def pytest_sessionfinish(session, exitstatus):

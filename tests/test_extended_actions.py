@@ -64,7 +64,7 @@ class FakeAudio:
     def __init__(self) -> None:
         self.stopped = []
 
-    def stop_page(self, page_id: str, only_page_change: bool = False) -> None:
+    def stop_page(self, page_id: str, only_page_change: bool = False, profile_id: str | None = None) -> None:
         self.stopped.append((page_id, only_page_change))
 
 

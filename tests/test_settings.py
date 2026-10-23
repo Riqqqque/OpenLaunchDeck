@@ -36,7 +36,7 @@ def test_settings_recover_from_wrong_types():
         }
     )
 
-    assert settings.theme == "midnight"
+    assert settings.theme == "nebula"
     assert settings.auto_connect is False
     assert settings.minimize_to_tray is True
     assert settings.soundboard_global_volume == 100

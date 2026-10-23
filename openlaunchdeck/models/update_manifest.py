@@ -3,8 +3,20 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+from urllib.parse import urlparse
 
 from packaging.version import InvalidVersion, Version
+
+LOOPBACK_HOSTS = {"localhost", "127.0.0.1", "::1"}
+
+
+def is_trusted_update_url(url: str) -> bool:
+    # The SHA256 check is only meaningful if the manifest and installer arrive over
+    # HTTPS. Plain HTTP is allowed for loopback so updates can be tested locally.
+    parsed = urlparse(url)
+    if parsed.scheme == "https":
+        return bool(parsed.hostname)
+    return parsed.scheme == "http" and (parsed.hostname or "").lower() in LOOPBACK_HOSTS
 
 
 @dataclass(frozen=True, slots=True)
@@ -58,8 +70,8 @@ class UpdateManifest:
                 raise ValueError(f"Update manifest contains an invalid {field_name}.") from exc
         if len(self.sha256) != 64 or any(char not in "0123456789abcdef" for char in self.sha256):
             raise ValueError("Update manifest contains an invalid SHA256 checksum.")
-        if not self.download_url.startswith(("https://", "http://")):
-            raise ValueError("Update manifest download URL must be HTTP or HTTPS.")
+        if not is_trusted_update_url(self.download_url):
+            raise ValueError("Update manifest download URL must use HTTPS.")
         if self.release_notes_url and not self.release_notes_url.startswith(("https://", "http://")):
             raise ValueError("Update manifest release notes URL must be HTTP or HTTPS.")
         try:

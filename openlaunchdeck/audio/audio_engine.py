@@ -8,6 +8,7 @@ from typing import Callable
 
 from ..actions.base import ActionResult
 from ..services.performance_monitor import PerformanceMonitor
+from .exclusive_route import ExclusiveVoiceRoute, start_clip_decoder
 from .mic_bridge import MicBridge, MicBridgeState
 from .output_devices import device_id_from_qt
 from .sound_instance import SoundInstance, SoundMetadata
@@ -49,7 +50,11 @@ class AudioEngine:
         voice_route_microphone_volume: int = 100,
         performance_logging_enabled: bool = False,
         performance_monitor: PerformanceMonitor | None = None,
+        current_profile_id: Callable[[], str] | None = None,
+        voice_route_exclusive: bool = True,
+        exclusive_route: ExclusiveVoiceRoute | None = None,
     ) -> None:
+        self._current_profile_id_provider = current_profile_id
         self.logger = logger
         self.global_volume = clamp_percent(global_volume)
         self.default_output_device_id = default_output_device_id
@@ -61,6 +66,10 @@ class AudioEngine:
         self.performance_logging_enabled = performance_logging_enabled
         self.performance_monitor = performance_monitor or PerformanceMonitor(logger, performance_logging_enabled)
         self.mic_bridge = MicBridge(logger)
+        # Exclusive mode keeps the voice route out of screen-share audio; MicBridge is the fallback.
+        self.voice_route_exclusive = bool(voice_route_exclusive)
+        self.exclusive_route = exclusive_route if exclusive_route is not None else ExclusiveVoiceRoute(logger)
+        self._exclusive_fallback_reason = ""
         self.state_changed_callback: Callable[[], None] | None = None
         self._instances: dict[str, SoundInstance] = {}
         self._metadata_cache: dict[str, SoundMetadata] = {}
@@ -86,14 +95,16 @@ class AudioEngine:
         if not self.qt_available or self._qt is None:
             return ActionResult.fail("QtMultimedia is unavailable.")
         behavior = str(config.get("behavior_when_already_playing") or "restart")
-        existing = self.instances_for_button(button_id)
+        source_page_id = str(config.get("_page_id") or "")
+        source_profile_id = str(config.get("_profile_id") or self._current_profile_id())
+        existing = self.instances_for_button(button_id, source_page_id, source_profile_id)
         if existing and behavior == "ignore":
             return ActionResult.ok("Sound is already playing.")
         if existing and behavior == "toggle_stop":
-            self.stop_button(button_id)
+            self.stop_button(button_id, source_page_id, source_profile_id)
             return ActionResult.ok("Stopped sound.")
         if existing and behavior == "restart":
-            self.stop_button(button_id)
+            self.stop_button(button_id, source_page_id, source_profile_id)
 
         QUrl, QAudioOutput, QMediaDevices, QMediaPlayer = self._qt
         volume = percent_from_config(config, "volume", 100)
@@ -106,19 +117,30 @@ class AudioEngine:
         started_instance_ids: list[str] = []
         try:
             for route_name, requested_device_id, routed_to_voice_chat in output_routes:
-                audio_output = self._create_audio_output(
-                    QAudioOutput,
-                    QMediaDevices,
-                    requested_device_id,
-                    route_name=route_name,
-                    allow_default=not routed_to_voice_chat,
-                )
+                if routed_to_voice_chat and self._exclusive_route_serves(requested_device_id):
+                    audio_output = True  # The exclusive route plays it; no Qt output needed.
+                else:
+                    audio_output = self._create_audio_output(
+                        QAudioOutput,
+                        QMediaDevices,
+                        requested_device_id,
+                        route_name=route_name,
+                        allow_default=not routed_to_voice_chat,
+                    )
                 if audio_output is None:
                     for instance_id in started_instance_ids:
                         self._stop_instance(instance_id)
                     if route_name == "voice_chat":
                         return ActionResult.fail("Voice route output device is not available.")
                     return ActionResult.fail("Selected soundboard output device is not available.")
+                instance_id = f"{button_id}-{next(self._counter)}"
+                if routed_to_voice_chat and self._exclusive_route_serves(requested_device_id):
+                    self._start_mixer_instance(
+                        instance_id, button_id, source_page_id, source_profile_id, metadata, config,
+                        volume, effective_volume, loop,
+                    )
+                    started_instance_ids.append(instance_id)
+                    continue
                 audio_output.setVolume(effective_volume)
                 player = QMediaPlayer()
                 player.setAudioOutput(audio_output)
@@ -128,11 +150,11 @@ class AudioEngine:
                         player.setLoops(QMediaPlayer.Loops.Infinite)
                     except Exception:
                         player.setLoops(-1)
-                instance_id = f"{button_id}-{next(self._counter)}"
                 instance = SoundInstance(
                     instance_id=instance_id,
                     button_id=button_id,
-                    page_id=str(config.get("_page_id") or ""),
+                    page_id=source_page_id,
+                    profile_id=source_profile_id,
                     file_path=metadata.file_path,
                     display_name=metadata.display_name,
                     player=player,
@@ -195,27 +217,71 @@ class AudioEngine:
         self._metadata_cache[cache_key] = metadata
         return metadata
 
-    def instances_for_button(self, button_id: str) -> list[SoundInstance]:
-        with self._lock:
-            return [instance for instance in self._instances.values() if instance.button_id == button_id]
+    def _current_profile_id(self) -> str:
+        if self._current_profile_id_provider is None:
+            return ""
+        try:
+            return str(self._current_profile_id_provider() or "")
+        except Exception:
+            return ""
 
-    def is_button_playing(self, button_id: str) -> bool:
-        with self._lock:
-            return any(instance.button_id == button_id for instance in self._instances.values())
+    def _same_profile(self, instance: SoundInstance, profile_id: str | None) -> bool:
+        # Page ids such as "main" repeat across profiles. Without an explicit profile the
+        # lookup is about what is on screen, which is always the current profile.
+        wanted = profile_id if profile_id is not None else self._current_profile_id()
+        return not wanted or not instance.profile_id or instance.profile_id == wanted
 
-    def playing_button_ids(self) -> set[str]:
-        with self._lock:
-            return {instance.button_id for instance in self._instances.values()}
+    # Button ids repeat on every page, so callers pass page_id to keep page1 A1 and page2 A1 apart.
+    # An instance without a page id (or a lookup without one) matches any page.
+    def _matches(
+        self,
+        instance: SoundInstance,
+        button_id: str | None,
+        page_id: str | None,
+        profile_id: str | None = None,
+    ) -> bool:
+        if button_id is not None and instance.button_id != button_id:
+            return False
+        if not page_id:
+            return True
+        if instance.page_id and instance.page_id != page_id:
+            return False
+        return self._same_profile(instance, profile_id)
 
-    def stop_button(self, button_id: str) -> None:
-        for instance in self.instances_for_button(button_id):
+    def instances_for_button(
+        self,
+        button_id: str,
+        page_id: str | None = None,
+        profile_id: str | None = None,
+    ) -> list[SoundInstance]:
+        with self._lock:
+            return [
+                instance
+                for instance in self._instances.values()
+                if self._matches(instance, button_id, page_id, profile_id)
+            ]
+
+    def is_button_playing(self, button_id: str, page_id: str | None = None) -> bool:
+        with self._lock:
+            return any(self._matches(instance, button_id, page_id) for instance in self._instances.values())
+
+    def playing_button_ids(self, page_id: str | None = None) -> set[str]:
+        with self._lock:
+            return {instance.button_id for instance in self._instances.values() if self._matches(instance, None, page_id)}
+
+    def stop_button(self, button_id: str, page_id: str | None = None, profile_id: str | None = None) -> None:
+        for instance in self.instances_for_button(button_id, page_id, profile_id):
             self._stop_instance(instance.instance_id)
 
-    def stop_page(self, page_id: str, only_page_change: bool = False) -> None:
+    def stop_page(self, page_id: str, only_page_change: bool = False, profile_id: str | None = None) -> None:
         with self._lock:
-            instances = list(self._instances.values())
+            instances = [
+                instance
+                for instance in self._instances.values()
+                if instance.page_id == page_id and self._same_profile(instance, profile_id)
+            ]
         for instance in instances:
-            if instance.page_id == page_id and (not only_page_change or instance.stop_on_page_change):
+            if not only_page_change or instance.stop_on_page_change:
                 self._stop_instance(instance.instance_id)
 
     def stop_all(self) -> None:
@@ -227,6 +293,42 @@ class AudioEngine:
     def shutdown(self) -> None:
         self.stop_all()
         self.mic_bridge.stop()
+        if self.exclusive_route is not None:
+            self.exclusive_route.stop()
+
+    def _exclusive_route_serves(self, device_id: str) -> bool:
+        route = self.exclusive_route
+        return bool(route is not None and route.running and device_id and route.output_id == device_id)
+
+    def _start_mixer_instance(
+        self, instance_id, button_id, page_id, profile_id, metadata, config, volume, gain, loop
+    ) -> None:
+        route = self.exclusive_route
+
+        def finished(captured_instance_id=instance_id) -> None:
+            self._remove_instance(captured_instance_id)
+
+        clip = route.add_clip(gain, loop, finished)
+        instance = SoundInstance(
+            instance_id=instance_id,
+            button_id=button_id,
+            page_id=page_id,
+            profile_id=profile_id,
+            file_path=metadata.file_path,
+            display_name=metadata.display_name,
+            player=clip,
+            audio_output=clip.output,
+            loop=loop,
+            volume=volume,
+            routed_to_voice_chat=True,
+            stop_on_page_change=bool(config.get("stop_on_page_change", False)),
+        )
+        with self._lock:
+            self._instances[instance_id] = instance
+        start_clip_decoder(
+            clip, metadata.file_path, route.sample_rate, route.channels,
+            lambda captured_instance_id=instance_id: self._on_player_error(captured_instance_id),
+        )
 
     def set_global_volume(self, volume: int) -> None:
         self.global_volume = clamp_percent(volume)
@@ -255,26 +357,88 @@ class AudioEngine:
     def set_voice_route_microphone_enabled(self, enabled: bool) -> ActionResult:
         self.voice_route_microphone_enabled = bool(enabled)
         if not self.voice_route_microphone_enabled:
-            self.mic_bridge.stop()
+            self._stop_voice_routes()
             return ActionResult.ok("Microphone route is off.")
         return self.refresh_voice_route_microphone()
 
     def set_voice_route_microphone_volume(self, volume: int) -> None:
         self.voice_route_microphone_volume = clamp_percent(volume)
         self.mic_bridge.set_volume(self.voice_route_microphone_volume)
+        if self.exclusive_route is not None:
+            self.exclusive_route.set_volume(self.voice_route_microphone_volume)
+
+    def set_voice_route_exclusive(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if enabled == self.voice_route_exclusive:
+            return
+        self.voice_route_exclusive = enabled
+        if self.voice_route_microphone_enabled:
+            self.refresh_voice_route_microphone()
 
     def refresh_voice_route_microphone(self) -> ActionResult:
         if not self.voice_route_microphone_enabled:
-            self.mic_bridge.stop()
+            self._stop_voice_routes()
             return ActionResult.ok("Microphone route is off.")
+        # Release the shared stream first; exclusive mode can't open while it holds the device.
+        self._stop_voice_routes()
+        if self.voice_route_exclusive and self.exclusive_route is not None:
+            input_name, output_name = self._device_names(
+                self.voice_route_microphone_device_id, self.voice_chat_output_device_id
+            )
+            result = self.exclusive_route.start(
+                self.voice_route_microphone_device_id,
+                self.voice_chat_output_device_id,
+                self.voice_route_microphone_volume,
+                input_name=input_name,
+                output_name=output_name,
+            )
+            if result.success:
+                self._exclusive_fallback_reason = ""
+                return result
+            if self.logger and result.message != self._exclusive_fallback_reason:
+                self.logger.warning("%s Using the standard voice route instead.", result.message)
+            self._exclusive_fallback_reason = result.message
         return self.mic_bridge.start(
             self.voice_route_microphone_device_id,
             self.voice_chat_output_device_id,
             self.voice_route_microphone_volume,
         )
 
+    def _stop_voice_routes(self) -> None:
+        self.mic_bridge.stop()
+        if self.exclusive_route is not None:
+            self.exclusive_route.stop()
+
+    @property
+    def voice_route_hidden_from_screen_share(self) -> bool:
+        return bool(self.exclusive_route is not None and self.exclusive_route.running)
+
+    def _device_names(self, input_id: str, output_id: str) -> tuple[str, str]:
+        input_name, output_name = "Microphone", "Voice route"
+        if not self.qt_available or self._qt is None:
+            return input_name, output_name
+        QMediaDevices = self._qt[2]
+        try:
+            inputs = list(QMediaDevices.audioInputs())
+            for device in inputs:
+                if device_id_from_qt(device) == input_id:
+                    input_name = str(device.description() or input_name)
+            if not input_id:
+                default_input = QMediaDevices.defaultAudioInput()
+                if default_input is not None and not default_input.isNull():
+                    input_name = str(default_input.description() or input_name)
+            for device in QMediaDevices.audioOutputs():
+                if device_id_from_qt(device) == output_id:
+                    output_name = str(device.description() or output_name)
+        except Exception:
+            pass
+        return input_name, output_name
+
     def voice_route_microphone_state(self) -> MicBridgeState:
-        return self.mic_bridge.state
+        if self.exclusive_route is not None and self.exclusive_route.state.running:
+            return self.exclusive_route.refresh_state()
+        refresh_state = getattr(self.mic_bridge, "refresh_state", None)
+        return refresh_state() if refresh_state is not None else self.mic_bridge.state
 
     def voice_route_status(self) -> VoiceRouteStatus:
         return current_voice_route_status(self.voice_chat_output_device_id)

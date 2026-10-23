@@ -90,10 +90,14 @@ class ActionEditor(QWidget):
             self.action_type_combo.lineEdit().setPlaceholderText("Search actions")
             self.action_type_combo.lineEdit().textEdited.connect(self._mark_action_search_dirty)
             self.action_type_combo.lineEdit().editingFinished.connect(self._commit_action_search)
+            # Show the start of the name (the action itself) when it is wider than the box.
+            self.action_type_combo.currentIndexChanged.connect(
+                lambda _index: self.action_type_combo.lineEdit().setCursorPosition(0)
+            )
         actions = [action for action in registry.all() if allow_multi_action or action.type_name != "multi_action"]
         for action in sorted(actions, key=lambda item: (ACTION_CATEGORIES.get(item.type_name, "Other"), item.display_name)):
             category = ACTION_CATEGORIES.get(action.type_name, "Other")
-            self.action_type_combo.addItem(f"{category}  |  {action.display_name}", action.type_name)
+            self.action_type_combo.addItem(f"{action.display_name}  ·  {category}", action.type_name)
 
         self.form = QFormLayout(self)
         self.form.setContentsMargins(0, 0, 0, 0)
@@ -123,6 +127,8 @@ class ActionEditor(QWidget):
         self.action_type_combo.blockSignals(True)
         self.action_type_combo.setCurrentIndex(max(0, self.action_type_combo.findData(target_type)))
         self.action_type_combo.blockSignals(False)
+        if self.action_type_combo.lineEdit() is not None:
+            self.action_type_combo.lineEdit().setCursorPosition(0)
         self._rebuild_fields()
         self._loading = False
 

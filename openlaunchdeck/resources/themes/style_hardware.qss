@@ -1,0 +1,15 @@
+/* Hardware: black device chassis around the grid, cyan status details. */
+
+QFrame#DeckPanel {
+  background: @BACKGROUND@;
+}
+
+QLabel#HeaderModeChip {
+  border-radius: 10px;
+  padding: 4px 11px;
+}
+
+QPushButton#HeaderPrimaryButton {
+  border-radius: 15px;
+  padding: 6px 14px;
+}

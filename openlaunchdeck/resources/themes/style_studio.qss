@@ -1,0 +1,33 @@
+/* Studio: flat, tight, pro-audio chrome with underlined tabs. */
+
+QLabel#HeaderTitle {
+  font-size: 13pt;
+}
+
+QLabel#HeaderModeChip {
+  border-radius: 2px;
+  padding: 3px 8px;
+}
+
+QLabel#SectionTitle {
+  color: @MUTED@;
+  font-size: 8pt;
+}
+
+QTabBar::tab, QTabBar::tab:first, QTabBar::tab:last {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 8px 14px;
+}
+
+QTabBar::tab:selected {
+  background: transparent;
+  border-bottom: 2px solid @ACCENT@;
+  color: @TEXT_STRONG@;
+}
+
+QTabBar::tab:hover {
+  color: @TEXT_STRONG@;
+}

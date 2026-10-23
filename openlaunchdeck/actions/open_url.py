@@ -9,6 +9,13 @@ from urllib.parse import urlparse
 
 from .base import ActionResult, BaseAction
 
+# A browser launcher hands the URL to the running browser and exits within a moment.
+# If the browser wasn't running, the launcher becomes the browser and keeps running.
+LAUNCHER_WAIT_SECONDS = 1.5
+# Set by Chromium-based apps (Electron, editors, chat apps) for their own crash handler.
+# A browser started with it may try to use that app's handler instead of its own.
+_FOREIGN_BROWSER_VARIABLES = ("CHROME_CRASHPAD_PIPE_NAME",)
+
 
 class OpenUrlAction(BaseAction):
     type_name = "open_url"
@@ -83,11 +90,31 @@ def _open_private_window(url: str) -> ActionResult:
         browser_name = Path(executable).stem or "current browser"
         return ActionResult.fail(f"Private-window opening is not supported for the default browser ({browser_name}).")
 
+    browser_name = Path(executable).stem or "The browser"
     try:
-        subprocess.Popen(command, close_fds=True)
+        process = subprocess.Popen(command, close_fds=True, env=_browser_environment())
     except OSError as exc:
         return ActionResult.fail(f"Could not open a private browser window: {exc}")
+    exit_code = _launcher_exit_code(process)
+    if exit_code not in (None, 0):
+        return ActionResult.fail(
+            f"{browser_name} didn't open the private window (exit code {exit_code}). Try again, or restart {browser_name}."
+        )
     return ActionResult.ok(f"Opened {url} in a private window.")
+
+
+def _browser_environment() -> dict[str, str]:
+    environment = dict(os.environ)
+    for name in _FOREIGN_BROWSER_VARIABLES:
+        environment.pop(name, None)
+    return environment
+
+
+def _launcher_exit_code(process) -> int | None:
+    try:
+        return process.wait(timeout=LAUNCHER_WAIT_SECONDS)
+    except subprocess.TimeoutExpired:
+        return None
 
 
 def _default_browser_registration(scheme: str) -> tuple[str, str]:

@@ -151,16 +151,20 @@ def find_matching_voice_input(
 ) -> tuple[dict[str, str | int] | None, str]:
     output_key = _route_key(output_name)
     normalized_output = normalize_device_description(output_name)
-    for input_device in input_devices:
-        input_name = _device_name(input_device)
-        if _is_vb_cable_pair(normalized_output, normalize_device_description(input_name)):
-            return input_device, "paired_bridge"
-        if _route_key(input_name) == output_key and output_key:
-            return input_device, "paired_bridge"
-        if _is_legacy_pair(normalized_output, normalize_device_description(input_name)):
-            return input_device, "legacy_mixer"
-        if "stereo mix" in normalize_device_description(input_name):
-            return input_device, "system_mix"
+    # Prefer the true pair over legacy or Stereo Mix inputs, whatever order Windows lists them in.
+    matchers = (
+        (
+            "paired_bridge",
+            lambda name: _is_vb_cable_pair(normalized_output, normalize_device_description(name))
+            or (bool(output_key) and _route_key(name) == output_key),
+        ),
+        ("legacy_mixer", lambda name: _is_legacy_pair(normalized_output, normalize_device_description(name))),
+        ("system_mix", lambda name: "stereo mix" in normalize_device_description(name)),
+    )
+    for route_kind, matches in matchers:
+        for input_device in input_devices:
+            if matches(_device_name(input_device)):
+                return input_device, route_kind
     return None, "missing_input"
 
 

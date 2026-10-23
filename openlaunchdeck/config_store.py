@@ -19,4 +19,6 @@ def write_json(path: Path, data: Any) -> None:
     with tmp_path.open("w", encoding="utf-8") as file:
         json.dump(data, file, indent=2, sort_keys=False)
         file.write("\n")
+        file.flush()
+        os.fsync(file.fileno())
     os.replace(tmp_path, path)

@@ -10,7 +10,7 @@ import time
 from concurrent.futures import Future, ThreadPoolExecutor
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QSize, Qt, QThread, QTimer, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, QSize, Qt, QThread, QTimer, Signal, Slot
 from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
@@ -26,7 +26,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSplitter,
-    QStyle,
     QSystemTrayIcon,
     QVBoxLayout,
     QWidget,
@@ -72,6 +71,9 @@ class MidiConnectionWorker(QObject):
         self.finished.emit(True, "Connected.", self.input_port, self.output_port)
 
 
+WM_SHOWWINDOW = 0x0018
+
+
 class MainWindow(QMainWindow):
     action_finished = Signal(str, object)
     hardware_button = Signal(str, bool, object)
@@ -99,6 +101,7 @@ class MainWindow(QMainWindow):
         self._compact_workspace_view = "grid"
         self._midi_debug_callbacks_active = False
         self._force_next_action_ui_update = False
+        self._ui_refresh_pending = False
         self._last_voice_route_guard_message = ""
         self._last_voice_route_guard_log_time = 0.0
         self._manual_disconnect = False
@@ -147,7 +150,9 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(150, self.show_first_run)
         if self.services.settings_service.settings.auto_connect:
             QTimer.singleShot(250, self.connect_device)
-        if self.services.settings_service.settings.check_updates_on_startup:
+        if self.services.settings_service.settings.check_updates_on_startup and not os.environ.get(
+            "OPENLAUNCHDECK_DISABLE_UPDATE_CHECK"
+        ):
             QTimer.singleShot(1500, self.check_updates_on_startup)
 
     def _build_main_layout(self) -> None:
@@ -167,7 +172,10 @@ class MainWindow(QMainWindow):
 
         self.header_brand = QWidget()
         self.header_brand.setObjectName("HeaderBrand")
-        brand_layout = QVBoxLayout(self.header_brand)
+        brand_row = QHBoxLayout(self.header_brand)
+        brand_row.setContentsMargins(0, 0, 0, 0)
+        brand_row.setSpacing(10)
+        brand_layout = QVBoxLayout()
         brand_layout.setContentsMargins(0, 0, 0, 0)
         brand_layout.setSpacing(0)
         title = QLabel(APP_NAME)
@@ -176,6 +184,7 @@ class MainWindow(QMainWindow):
         self.header_subtitle.setObjectName("HeaderSubtitle")
         brand_layout.addWidget(title)
         brand_layout.addWidget(self.header_subtitle)
+        brand_row.addLayout(brand_layout, 1)
         header_layout.addWidget(self.header_brand, 1)
 
         header_meta = QWidget()
@@ -222,12 +231,7 @@ class MainWindow(QMainWindow):
             self.header_update_button,
         ):
             button.setObjectName("HeaderButton")
-            button.setIconSize(QSize(15, 15))
             actions_layout.addWidget(button)
-        self.header_reconnect_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_BrowserReload))
-        self.header_debug_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ComputerIcon))
-        self.header_soundboard_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_MediaVolume))
-        self.header_update_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowDown))
         self.header_reconnect_button.setToolTip("Reconnect the Launchpad MIDI ports.")
         self.header_debug_button.setToolTip("Open MIDI diagnostics and calibration.")
         self.header_soundboard_button.setToolTip("Open soundboard playback and routing controls.")
@@ -270,9 +274,8 @@ class MainWindow(QMainWindow):
         self.deck_title.setObjectName("PanelTitle")
         self.deck_hint = QLabel("Select a pad to edit")
         self.deck_hint.setObjectName("PanelHint")
-        self.deck_previous_page_button = QPushButton()
+        self.deck_previous_page_button = QPushButton("←")
         self.deck_previous_page_button.setObjectName("DeckNavButton")
-        self.deck_previous_page_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowLeft))
         self.deck_previous_page_button.setToolTip("Previous page")
         self.deck_previous_page_button.setAccessibleName("Previous page")
         self.deck_page_combo = QComboBox()
@@ -280,15 +283,12 @@ class MainWindow(QMainWindow):
         self.deck_page_combo.setMinimumContentsLength(8)
         self.deck_page_combo.setMaximumWidth(180)
         self.deck_page_combo.setToolTip("Current Launchpad page")
-        self.deck_next_page_button = QPushButton()
+        self.deck_next_page_button = QPushButton("→")
         self.deck_next_page_button.setObjectName("DeckNavButton")
-        self.deck_next_page_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_ArrowRight))
         self.deck_next_page_button.setToolTip("Next page")
         self.deck_next_page_button.setAccessibleName("Next page")
         self.grid_focus_button = QPushButton("Edit Layout" if self._grid_focus_mode else "Deck View")
         self.grid_focus_button.setObjectName("HeaderButton")
-        self.grid_focus_button.setIcon(self.style().standardIcon(QStyle.StandardPixmap.SP_TitleBarMaxButton))
-        self.grid_focus_button.setIconSize(QSize(14, 14))
         self.grid_focus_button.setToolTip(
             "Show the editor and profile library."
             if self._grid_focus_mode
@@ -386,6 +386,9 @@ class MainWindow(QMainWindow):
         debug_action.triggered.connect(self.show_midi_debug)
         device_menu.addActions([connect_action, disconnect_action, reconnect_action])
         device_menu.addSeparator()
+        animations_action = QAction("Idle Animations…", self)
+        animations_action.triggered.connect(self.show_idle_animations)
+        device_menu.addAction(animations_action)
         device_menu.addAction(debug_action)
 
         profiles_menu = menu_bar.addMenu("Profiles")
@@ -540,13 +543,42 @@ class MainWindow(QMainWindow):
     def handle_simulation_press(self, button_id: str) -> None:
         if not button_id:
             return
+        if self.idle_animation_player is not None:
+            self.idle_animation_player.note_activity()
         self.select_button(button_id)
         self.last_pressed_status.setText(f"Last: {button_id}")
         self._force_next_action_ui_update = True
         self.services.action_runner.handle_button_press(button_id, "simulation")
 
+    def _calibration_active(self) -> bool:
+        window = self.midi_debug_window
+        return bool(window is not None and window.isVisible() and window.calibration.active)
+
+    @property
+    def idle_animation_player(self):
+        return getattr(self.services, "idle_animation_player", None)
+
+    def _idle_animation_may_start(self) -> bool:
+        # Called from the player thread, so only read plain Python state here.
+        window = self.midi_debug_window
+        if window is not None and window.calibration.active:
+            return False
+        if self._connect_thread is not None or self._force_quit:
+            return False
+        return not self.services.lighting_service.has_active_effects
+
+    def _note_pad_activity(self) -> bool:
+        """Wake from an idle animation. Returns True when the press should be swallowed."""
+        player = self.idle_animation_player
+        if player is None:
+            return False
+        stopped = player.note_activity()
+        return stopped and not self.services.settings_service.settings.idle_animation_wake_press_runs_action
+
     def handle_hardware_button(self, button_id: str, pressed: bool, raw) -> None:
-        if not pressed:
+        if not pressed or self._calibration_active():
+            return
+        if self._note_pad_activity():
             return
         if self._should_update_visible_ui():
             self.select_button(button_id)
@@ -555,7 +587,9 @@ class MainWindow(QMainWindow):
         self.services.action_runner.handle_button_press(button_id, "midi")
 
     def handle_hardware_control(self, control_id: str, pressed: bool, raw) -> None:
-        if not pressed:
+        if not pressed or self._calibration_active():
+            return
+        if self._note_pad_activity():
             return
         label = LAUNCHPAD_AUXILIARY_CONTROL_LABELS.get(control_id, control_id)
         if self._should_update_visible_ui():
@@ -682,6 +716,33 @@ class MainWindow(QMainWindow):
         self._profile_autosave_timer.stop()
         self._save_current_profile()
 
+    def _flush_editor_before_external_page_change(self) -> None:
+        # The page or profile was switched by an action, so the editor still holds a
+        # button from the previous page. Save its edits to the profile that owns it.
+        button = self.editor.button
+        self.editor.flush_pending_changes()
+        if not self._profile_autosave_timer.isActive():
+            return
+        self._profile_autosave_timer.stop()
+        profile_service = self.services.profile_service
+        owner = next(
+            (
+                profile
+                for profile in profile_service.profiles.values()
+                if any(candidate is button for page in profile.pages for candidate in page.buttons.values())
+            ),
+            None,
+        )
+        if owner is None or owner is profile_service.current_profile:
+            self._save_current_profile()
+            return
+        try:
+            profile_service.save_profile(owner)
+        except Exception as exc:
+            if self.services.logger:
+                self.services.logger.exception("Profile could not be saved.")
+            self.statusBar().showMessage(f"Profile could not be saved: {exc}", 8000)
+
     def _save_current_profile(self) -> bool:
         try:
             self.services.profile_service.save_current()
@@ -733,7 +794,7 @@ class MainWindow(QMainWindow):
                 old_profile_id != self.services.profile_service.current_profile_id
                 or old_page_id != self.services.profile_service.current_page_id
             ):
-                self.services.audio_engine.stop_page(old_page_id, only_page_change=True)
+                self.services.audio_engine.stop_page(old_page_id, only_page_change=True, profile_id=old_profile_id)
             self.refresh_all()
             self.refresh_lighting()
             return True
@@ -751,11 +812,12 @@ class MainWindow(QMainWindow):
 
     def show_profile_manager(self) -> None:
         self._flush_profile_autosave()
+        old_profile_id = self.services.profile_service.current_profile_id
+        old_page_id = self.services.profile_service.current_page_id
         dialog = ProfileManagerDialog(self.services.profile_service, self)
         dialog.exec()
         self.services.settings_service.update(default_profile=self.services.profile_service.current_profile_id)
-        self.refresh_all()
-        self.refresh_lighting()
+        self._finish_external_switch(old_profile_id, old_page_id)
 
     def change_page(self, page_id: str) -> bool:
         self._flush_profile_autosave()
@@ -784,22 +846,36 @@ class MainWindow(QMainWindow):
     def add_page(self) -> None:
         name, ok = QInputDialog.getText(self, "Add Page", "Page name:")
         if ok and name.strip():
+            self._flush_profile_autosave()
             page = self.services.profile_service.add_page(name.strip())
-            self.services.profile_service.set_current_page(page.id)
-            self.refresh_all()
-            self.refresh_lighting()
+            self.change_page(page.id)
 
     def duplicate_page(self) -> None:
+        self._flush_profile_autosave()
         page = self.services.profile_service.duplicate_page(self.services.profile_service.current_page.id)
-        self.services.profile_service.set_current_page(page.id)
-        self.refresh_all()
-        self.refresh_lighting()
+        self.change_page(page.id)
 
     def delete_page(self) -> None:
         if QMessageBox.question(self, APP_NAME, "Delete the current page?") != QMessageBox.StandardButton.Yes:
             return
-        if not self.services.profile_service.delete_page(self.services.profile_service.current_page.id):
+        self._flush_profile_autosave()
+        profile_service = self.services.profile_service
+        old_profile_id = profile_service.current_profile_id
+        old_page_id = profile_service.current_page_id
+        if not profile_service.delete_page(old_page_id):
             QMessageBox.information(self, APP_NAME, "A profile must keep at least one page.")
+            return
+        # The page is gone, so nothing can stop its sounds later.
+        self.services.audio_engine.stop_page(old_page_id, profile_id=old_profile_id)
+        self._finish_external_switch(old_profile_id, old_page_id)
+
+    def _finish_external_switch(self, old_profile_id: str, old_page_id: str) -> None:
+        # For switches made outside change_profile/change_page (dialogs, page deletion).
+        profile_service = self.services.profile_service
+        if old_profile_id != profile_service.current_profile_id or old_page_id != profile_service.current_page_id:
+            self.services.action_runner.disarm_all()
+            self.services.lighting_service.stop_all_blinks()
+            self.services.audio_engine.stop_page(old_page_id, only_page_change=True, profile_id=old_profile_id)
         self.refresh_all()
         self.refresh_lighting()
 
@@ -810,11 +886,11 @@ class MainWindow(QMainWindow):
             return
         try:
             profile = self.services.profile_service.import_profile(Path(path))
-            self.services.profile_service.set_current_profile(profile.id)
         except Exception as exc:
             QMessageBox.warning(self, APP_NAME, f"Profile could not be imported:\n{exc}")
             return
-        self.refresh_all()
+        # Go through change_profile so the Launchpad is relit and armed pads are cleared.
+        self.change_profile(profile.id)
 
     def export_profile(self) -> None:
         path, _ = QFileDialog.getSaveFileName(
@@ -876,7 +952,7 @@ class MainWindow(QMainWindow):
 
     def show_midi_debug(self) -> None:
         if self.midi_debug_window is None:
-            self.midi_debug_window = MidiDebugWindow(self.services.device)
+            self.midi_debug_window = MidiDebugWindow(self.services.device, self)
             self.midi_debug_window.closed.connect(self.disable_midi_debug_callbacks)
         self.midi_debug_window.refresh_ports()
         self.enable_midi_debug_callbacks()
@@ -909,9 +985,13 @@ class MainWindow(QMainWindow):
         if update_visible_ui:
             self.last_result_status.setText(f"Result: {result.message[:60]}")
         if result.details.get("page_changed"):
-            self.services.lighting_service.stop_blink(button_id)
+            self._flush_editor_before_external_page_change()
+            self.services.action_runner.disarm_all()
+            self.services.lighting_service.stop_all_blinks()
             if update_visible_ui:
                 self.refresh_all()
+            else:
+                self._ui_refresh_pending = True
             self.refresh_lighting()
             return
         if "Press again" in result.message:
@@ -934,6 +1014,7 @@ class MainWindow(QMainWindow):
     def show_soundboard_panel(self) -> None:
         if self.soundboard_panel is None:
             self.soundboard_panel = SoundboardPanel(self.services.audio_engine, self.services.settings_service, self)
+            self.soundboard_panel.mic_route_check.stateChanged.connect(lambda _state: self.update_voice_route_guard())
         self.soundboard_panel.refresh()
         self.soundboard_panel.show()
         self.soundboard_panel.raise_()
@@ -944,11 +1025,32 @@ class MainWindow(QMainWindow):
         self.refresh_all()
         self.refresh_lighting()
 
+    def show_idle_animations(self) -> None:
+        from .animation_library_dialog import AnimationLibraryDialog
+
+        library = getattr(self.services, "animation_library", None)
+        if library is None:
+            return
+        AnimationLibraryDialog(library, self.services.settings_service, self.idle_animation_player, self).exec()
+        if self.idle_animation_player is not None:
+            self.idle_animation_player.settings_changed()
+
     def show_settings(self) -> None:
         self._flush_profile_autosave()
-        dialog = SettingsDialog(self.services.settings_service, self, self.services.startup_service)
-        if dialog.exec():
+        dialog = SettingsDialog(
+            self.services.settings_service,
+            self,
+            self.services.startup_service,
+            animation_library=getattr(self.services, "animation_library", None),
+            idle_player=self.idle_animation_player,
+        )
+        accepted = dialog.exec()
+        if self.idle_animation_player is not None:
+            # Restart the idle countdown with the saved settings and end any preview.
+            self.idle_animation_player.settings_changed()
+        if accepted:
             apply_theme(self.services.settings_service.settings.theme, self)
+            self._schedule_grid_fit()
             self.set_grid_focus_mode(self.services.settings_service.settings.deck_view, persist=False)
             self.services.audio_engine.set_global_volume(self.services.settings_service.settings.soundboard_global_volume)
             self.services.audio_engine.set_default_output_device(self.services.settings_service.settings.soundboard_default_output_device)
@@ -958,6 +1060,9 @@ class MainWindow(QMainWindow):
             )
             self.services.audio_engine.set_voice_route_microphone_volume(
                 self.services.settings_service.settings.soundboard_voice_route_microphone_volume
+            )
+            self.services.audio_engine.set_voice_route_exclusive(
+                self.services.settings_service.settings.soundboard_voice_route_exclusive
             )
             self.services.audio_engine.set_voice_route_microphone_enabled(
                 self.services.settings_service.settings.soundboard_voice_route_microphone_enabled
@@ -1092,9 +1197,11 @@ class MainWindow(QMainWindow):
         self._schedule_grid_fit()
 
     def show_first_run(self) -> None:
+        old_profile_id = self.services.profile_service.current_profile_id
+        old_page_id = self.services.profile_service.current_page_id
         dialog = SetupWizard(self.services.profile_service, self.services.settings_service, self)
         dialog.exec()
-        self.refresh_all()
+        self._finish_external_switch(old_profile_id, old_page_id)
 
     def check_updates(self) -> None:
         UpdateDialog(self.services.settings_service, self.services.logger, self, auto_check=True).exec()
@@ -1123,6 +1230,11 @@ class MainWindow(QMainWindow):
 
     def on_startup_update_result(self, result) -> None:
         if result.available or result.unsupported:
+            # Keep the update visible until it's installed; one click opens the update.
+            self.header_update_button.setText(f"Update to {result.latest_version}")
+            self.header_update_button.setToolTip(
+                f"{APP_NAME} {result.latest_version} is available. Click to update; the app reopens by itself."
+            )
             self.statusBar().showMessage(result.message, 8000)
         elif self.services.logger:
             self.services.logger.info("Startup update check found no update.")
@@ -1273,10 +1385,24 @@ class MainWindow(QMainWindow):
     def on_connect_finished(self, success: bool, message: str, input_port: str, output_port: str) -> None:
         automatic = self._automatic_connect_attempt
         self._automatic_connect_attempt = False
+        if success and self._manual_disconnect:
+            # Disconnect was clicked while the ports were still opening.
+            self.services.device.close()
+            self.refresh_all()
+            return
         if success:
             self.services.settings_service.update(midi_input_port=input_port, midi_output_port=output_port)
             self.statusBar().showMessage("MIDI device connected.", 3000)
-            self.refresh_lighting()
+            if self.idle_animation_player is not None:
+                self.idle_animation_player.note_activity()
+            # The pads were reset by the reconnect, so the cached colors no longer match the device.
+            self.services.lighting_service.refresh_page(
+                self.services.profile_service.current_page,
+                self.services.audio_engine,
+                self.services.action_runner.dangerous_service,
+                force=True,
+            )
+            self.refresh_auxiliary_lighting(force=True)
         else:
             if automatic:
                 self.statusBar().showMessage(f"Launchpad reconnect failed: {message}", 4000)
@@ -1291,6 +1417,8 @@ class MainWindow(QMainWindow):
         self._finish_deferred_quit()
 
     def on_device_disconnected(self, reason: str) -> None:
+        if self.idle_animation_player is not None:
+            self.idle_animation_player.stop()
         self.services.action_runner.disarm_all()
         self.services.lighting_service.stop_all_blinks()
         self.services.lighting_service.clear()
@@ -1336,13 +1464,58 @@ class MainWindow(QMainWindow):
                 )
             event.ignore()
             return
+        if self._connect_thread is not None or self._startup_update_thread is not None:
+            # Destroying a running QThread aborts the process, so finish through the deferred quit.
+            if not saving_session:
+                event.ignore()
+                self.quit_app()
+                return
+            for thread in (self._connect_thread, self._startup_update_thread):
+                if thread is not None:
+                    thread.wait(5000)
         self.services.audio_engine.stop_all()
         if self.soundboard_panel is not None:
             self.soundboard_panel.close()
+        if self.midi_debug_window is not None:
+            self.midi_debug_window.close()
         self.device_reconnect_timer.stop()
         self._midi_health_executor.shutdown(wait=False, cancel_futures=True)
         self.services.device.close()
         super().closeEvent(event)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._refresh_if_pending()
+
+    def nativeEvent(self, event_type, message):
+        # Window-arranging tools can call ShowWindow on the hidden tray window. Windows
+        # then shows it, but Qt still treats it as hidden and never paints, leaving an
+        # empty black or white window. Treat that as a request to restore instead.
+        if sys.platform == "win32" and event_type == b"windows_generic_MSG" and not self.isVisible():
+            try:
+                from ctypes import wintypes
+
+                msg = wintypes.MSG.from_address(int(message))
+            except (TypeError, ValueError, OverflowError):
+                msg = None
+            if msg is not None and msg.message == WM_SHOWWINDOW and msg.wParam:
+                QTimer.singleShot(0, self._restore_after_external_show)
+        return super().nativeEvent(event_type, message)
+
+    def _restore_after_external_show(self) -> None:
+        if self._force_quit or self.isVisible():
+            return
+        self.restore_from_tray()
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() == QEvent.Type.WindowStateChange:
+            self._refresh_if_pending()
+
+    def _refresh_if_pending(self) -> None:
+        if self._ui_refresh_pending and self._should_update_visible_ui():
+            self._ui_refresh_pending = False
+            QTimer.singleShot(0, self.refresh_all)
 
     def should_keep_running_in_background(self) -> bool:
         if not self.tray.tray.isVisible():

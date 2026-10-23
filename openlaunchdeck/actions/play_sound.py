@@ -64,4 +64,9 @@ class PlaySoundAction(BaseAction):
             else context.current_page.id
         )
         config.setdefault("_page_id", current_page_id)
+        current_profile_id = getattr(context.profile_service, "current_profile_id", None) or getattr(
+            getattr(context, "current_profile", None), "id", ""
+        )
+        if current_profile_id:
+            config.setdefault("_profile_id", current_profile_id)
         return context.audio_engine.play_button_sound(context.button_id, config)

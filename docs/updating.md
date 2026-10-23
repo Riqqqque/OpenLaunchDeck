@@ -1,6 +1,6 @@
 # Updating
 
-OpenLaunchDeck checks the latest GitHub release by default. It requires both the versioned installer and its `.sha256` asset before offering a download. Advanced deployments can set a custom manifest URL in Settings instead. The app never installs silently. A user starts a manual check from `Help > Check for Updates`, or enables a quiet startup check in Settings. Startup checks run in the background and only show a status message when an update is available.
+OpenLaunchDeck checks the latest GitHub release by default. It requires both the versioned installer and its `.sha256` asset before offering a download. Advanced deployments can set a custom manifest URL in Settings instead. Nothing installs until the user clicks **Update now**. The app checks on startup by default (Settings > App) and shows **Update to x.y.z** in the header when an update is available. **Update now** downloads and verifies the installer, backs up profiles, and runs it with `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /CLOSEAPPLICATIONS /RELAUNCH=1`; the installer's `[Code]` section reopens the app as the signed-in user when `/RELAUNCH=1` is passed. Every release also carries a fixed-name `OpenLaunchDeckSetup.exe` so `releases/latest/download/OpenLaunchDeckSetup.exe` always serves the newest installer.
 
 ## Version Source
 
@@ -64,7 +64,7 @@ Rules:
 
 - `latest_version` and `minimum_supported_version` must be valid semantic versions.
 - `required` must be a JSON boolean.
-- `download_url` must be HTTP or HTTPS.
+- The manifest URL and `download_url` must use HTTPS. Plain HTTP is accepted only for `localhost`, `127.0.0.1`, or `::1` when testing locally.
 - `sha256` must be the SHA256 checksum of the installer.
 - `release_notes_url` may be empty, otherwise it must be HTTP or HTTPS.
 - `published_at` must be ISO 8601.

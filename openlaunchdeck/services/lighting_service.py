@@ -39,6 +39,10 @@ class LightingService:
         self._pending_colors: dict[str, str] = {}
         self._pending_auxiliary_colors: dict[str, str] = {}
         self._output_scheduled = False
+        # While an overlay (idle animation) owns the pads, page lighting keeps
+        # tracking colors in _last_colors but nothing else reaches the device.
+        self._overlay_active = False
+        self._overlay_colors: dict[str, str] = {}
         self._executor = (
             ThreadPoolExecutor(max_workers=1, thread_name_prefix="openlaunchdeck-lighting")
             if async_output
@@ -73,7 +77,7 @@ class LightingService:
         colors: dict[str, str] = {}
         playing_buttons = None
         if audio_engine is not None and hasattr(audio_engine, "playing_button_ids"):
-            playing_buttons = audio_engine.playing_button_ids()
+            playing_buttons = audio_engine.playing_button_ids(page.id)
         for button_id in BUTTON_IDS:
             button = page.get_button(button_id)
             if not button.enabled:
@@ -222,11 +226,54 @@ class LightingService:
                     state.next_change = now + state.period
                     colors[button_id] = state.color_a if state.showing_a else state.color_b
 
-            if colors and self.device and getattr(self.device, "connected", False):
-                self._send_many(colors)
+                # Queue while still holding the lock so a stop_blink() or refresh that runs
+                # right after cannot have its restore color overwritten by this blink step.
+                if colors and self.device and getattr(self.device, "connected", False):
+                    self._send_many(colors)
 
-    def _send_many(self, colors: dict[str, str]) -> None:
+    @property
+    def overlay_active(self) -> bool:
+        return self._overlay_active
+
+    @property
+    def has_active_effects(self) -> bool:
+        with self._lock:
+            return bool(self._blinks or self._flash_restores)
+
+    def begin_overlay(self) -> bool:
+        with self._lock:
+            if self._overlay_active:
+                return False
+            self._overlay_active = True
+            self._overlay_colors = {}
+            return True
+
+    def send_overlay_frame(self, colors: dict[str, str]) -> int:
+        with self._lock:
+            if not self._overlay_active:
+                return 0
+            changed = {
+                button_id: color for button_id, color in colors.items() if self._overlay_colors.get(button_id) != color
+            }
+            if not changed:
+                return 0
+            self._overlay_colors.update(changed)
+            self._send_many(changed, overlay=True)
+            return len(changed)
+
+    def end_overlay(self) -> None:
+        with self._lock:
+            if not self._overlay_active:
+                return
+            self._overlay_active = False
+            self._overlay_colors = {}
+            restore = {button_id: self._last_colors.get(button_id, "off") for button_id in BUTTON_IDS}
+            self._send_many(restore)
+
+    def _send_many(self, colors: dict[str, str], overlay: bool = False) -> None:
         if not self.device or not getattr(self.device, "connected", False):
+            return
+        if self._overlay_active and not overlay:
             return
         if self._executor is None:
             self._send_many_now(dict(colors))

@@ -166,3 +166,28 @@ def test_page_refresh_updates_pending_flash_restore_color():
 
     assert service._flash_restores["A1"][1] == "red"
     service.shutdown()
+
+
+def test_overlay_owns_pads_until_it_ends_then_restores_page_colors():
+    device = FakeDevice()
+    lighting = LightingService(device=device)
+    page = Page.blank()
+    page.buttons["A1"].color = "green"
+    lighting.refresh_page(page, force=True)
+    device.batches.clear()
+
+    assert lighting.begin_overlay() is True
+    assert lighting.send_overlay_frame({"A1": "#ff0000", "A2": "#00ff00"}) == 2
+    assert lighting.send_overlay_frame({"A1": "#ff0000", "A2": "#0000ff"}) == 1
+    page.buttons["A1"].color = "red"
+    lighting.refresh_page(page)
+    lighting.flash("A3", "white")
+
+    assert device.batches == [{"A1": "#ff0000", "A2": "#00ff00"}, {"A2": "#0000ff"}]
+
+    lighting.end_overlay()
+
+    assert device.batches[-1]["A1"] == "red"
+    assert len(device.batches[-1]) == 64
+    assert lighting.send_overlay_frame({"A1": "#ffffff"}) == 0
+    lighting.shutdown()

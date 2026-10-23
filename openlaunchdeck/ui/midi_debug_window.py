@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (
     QComboBox,
     QFileDialog,
@@ -35,6 +35,8 @@ class MidiDebugWindow(QWidget):
 
     def __init__(self, device, parent=None) -> None:
         super().__init__(parent)
+        # Owned by the main window but still shown as its own top-level window.
+        self.setWindowFlag(Qt.WindowType.Window, True)
         self.device = device
         self.calibration = CalibrationSession()
         self.setWindowTitle("MIDI Debug")

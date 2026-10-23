@@ -12,6 +12,7 @@ from PySide6.QtWidgets import QApplication, QMessageBox
 
 from . import native_acceleration
 from .actions.registry import create_default_registry
+from .animations import AnimationLibrary, IdleAnimationPlayer
 from .audio.audio_engine import AudioEngine
 from .devices.launchpad_mini_mk3 import LaunchpadMiniMk3
 from .logging_setup import configure_logging, shutdown_logging
@@ -47,6 +48,7 @@ PRIORITY_CLASSES_TO_NORMALIZE = {
 PRIORITY_STARTUP_RECHECK_DELAYS_MS = (100, 500, 1_000, 2_000, 5_000)
 PRIORITY_GUARD_INTERVAL_MS = 60_000
 SMOKE_TEST_ENV = "OPENLAUNCHDECK_SMOKE_TEST"
+ACTION_SHUTDOWN_GRACE_SECONDS = 2.0
 
 
 def _kernel32_priority_api() -> object:
@@ -125,6 +127,8 @@ class AppServices:
     logger: object
     performance_monitor: PerformanceMonitor
     startup_service: StartupService
+    animation_library: AnimationLibrary
+    idle_animation_player: IdleAnimationPlayer
 
 
 def build_services() -> AppServices:
@@ -151,8 +155,10 @@ def build_services() -> AppServices:
         voice_route_microphone_enabled=settings_service.settings.soundboard_voice_route_microphone_enabled,
         voice_route_microphone_device_id=settings_service.settings.soundboard_voice_route_microphone_device,
         voice_route_microphone_volume=settings_service.settings.soundboard_voice_route_microphone_volume,
+        voice_route_exclusive=settings_service.settings.soundboard_voice_route_exclusive,
         performance_logging_enabled=settings_service.settings.enable_performance_logging,
         performance_monitor=performance_monitor,
+        current_profile_id=lambda: profile_service.current_profile_id,
     )
     if settings_service.settings.soundboard_voice_route_microphone_enabled:
         audio_engine.refresh_voice_route_microphone()
@@ -162,6 +168,14 @@ def build_services() -> AppServices:
         logger=logger,
         performance_monitor=performance_monitor,
         async_output=True,
+    )
+    animation_library = AnimationLibrary(logger=logger)
+    idle_animation_player = IdleAnimationPlayer(
+        lighting_service=lighting_service,
+        device=device,
+        settings_service=settings_service,
+        library=animation_library,
+        logger=logger,
     )
     registry = create_default_registry()
     action_runner = ActionRunner(
@@ -187,6 +201,8 @@ def build_services() -> AppServices:
         logger=logger,
         performance_monitor=performance_monitor,
         startup_service=startup_service,
+        animation_library=animation_library,
+        idle_animation_player=idle_animation_player,
     )
 
 
@@ -259,10 +275,14 @@ def run() -> int:
     if not single_instance_listening:
         services.logger.warning("Single-instance startup handling is unavailable.")
     priority_guard = None if smoke_test else start_windows_priority_guard(app, services.logger)
+    result = 1
     try:
         with services.performance_monitor.measure("app_startup_main_window"):
             window = MainWindow(services)
         single_instance.set_command_handler(lambda command: handle_single_instance_command(window, command))
+        if not smoke_test:
+            services.idle_animation_player.can_start = window._idle_animation_may_start
+            services.idle_animation_player.start()
         _set_windows_process_priority(logger=services.logger)
         if smoke_test:
             window.hide()
@@ -279,7 +299,11 @@ def run() -> int:
         services.logger.exception("Fatal application error.")
         return 1
     finally:
+        services.idle_animation_player.shutdown()
         services.action_runner.shutdown()
+        actions_idle = services.action_runner.wait_for_idle(ACTION_SHUTDOWN_GRACE_SECONDS)
+        if not actions_idle:
+            services.logger.warning("Exiting while an action is still running.")
         services.lighting_service.shutdown()
         services.audio_engine.shutdown()
         services.device.close()
@@ -287,4 +311,8 @@ def run() -> int:
             priority_guard.stop()
         single_instance.close()
         shutdown_logging(services.logger)
+        if not actions_idle:
+            # Worker threads stuck in a command, SSH, or HTTP wait would otherwise keep the
+            # process alive with no window or tray icon until they finish.
+            os._exit(result)
     return result

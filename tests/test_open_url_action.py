@@ -26,13 +26,32 @@ def test_plain_domain_is_normalized_to_https(monkeypatch):
     assert opened == ["https://example.com/path"]
 
 
+class _FinishedLauncher:
+    def __init__(self, exit_code=0):
+        self.exit_code = exit_code
+
+    def wait(self, timeout=None):
+        return self.exit_code
+
+
+def _fake_popen(launched, exit_code=0):
+    def popen(command, **kwargs):
+        launched.append((command, kwargs.get("close_fds")))
+        launched_env.append(kwargs.get("env"))
+        return _FinishedLauncher(exit_code)
+
+    launched_env = []
+    popen.environments = launched_env
+    return popen
+
+
 def test_private_url_launches_default_brave_in_incognito(monkeypatch, tmp_path):
     browser = tmp_path / "brave.exe"
     browser.write_bytes(b"")
     launched = []
     monkeypatch.setattr(open_url.os, "name", "nt")
     monkeypatch.setattr(open_url, "_default_browser_registration", lambda _scheme: (str(browser), "BraveHTML"))
-    monkeypatch.setattr(open_url.subprocess, "Popen", lambda command, **kwargs: launched.append((command, kwargs)))
+    monkeypatch.setattr(open_url.subprocess, "Popen", _fake_popen(launched))
 
     result = OpenUrlAction().execute(
         None,
@@ -40,7 +59,7 @@ def test_private_url_launches_default_brave_in_incognito(monkeypatch, tmp_path):
     )
 
     assert result.success is True
-    assert launched == [([str(browser), "--incognito", "https://example.com/private"], {"close_fds": True})]
+    assert launched == [([str(browser), "--incognito", "https://example.com/private"], True)]
 
 
 def test_private_plain_domain_is_normalized_before_launch(monkeypatch, tmp_path):
@@ -49,12 +68,12 @@ def test_private_plain_domain_is_normalized_before_launch(monkeypatch, tmp_path)
     launched = []
     monkeypatch.setattr(open_url.os, "name", "nt")
     monkeypatch.setattr(open_url, "_default_browser_registration", lambda _scheme: (str(browser), "BraveHTML"))
-    monkeypatch.setattr(open_url.subprocess, "Popen", lambda command, **kwargs: launched.append((command, kwargs)))
+    monkeypatch.setattr(open_url.subprocess, "Popen", _fake_popen(launched))
 
     result = OpenUrlAction().execute(None, {"url": "example.com", "private_window": True})
 
     assert result.success is True
-    assert launched == [([str(browser), "--incognito", "https://example.com"], {"close_fds": True})]
+    assert launched == [([str(browser), "--incognito", "https://example.com"], True)]
 
 
 def test_private_url_does_not_fall_back_to_normal_window(monkeypatch, tmp_path):
@@ -120,3 +139,39 @@ def test_private_window_is_exposed_as_boolean_editor_field():
     field = next(item for item in OpenUrlAction.config_fields if item["name"] == "private_window")
 
     assert field == {"name": "private_window", "label": "Open In Private Window", "type": "bool"}
+
+
+def test_private_window_reports_a_failed_browser_launch(monkeypatch, tmp_path):
+    browser = tmp_path / "brave.exe"
+    browser.write_bytes(b"")
+    launched = []
+    monkeypatch.setattr(open_url.os, "name", "nt")
+    monkeypatch.setattr(open_url, "_default_browser_registration", lambda _scheme: (str(browser), "BraveHTML"))
+    monkeypatch.setattr(open_url.subprocess, "Popen", _fake_popen(launched, exit_code=21))
+
+    result = OpenUrlAction().execute(None, {"url": "https://example.com", "private_window": True})
+
+    assert result.success is False
+    assert "exit code 21" in result.message
+
+
+def test_private_window_does_not_pass_another_apps_crash_handler(monkeypatch, tmp_path):
+    browser = tmp_path / "brave.exe"
+    browser.write_bytes(b"")
+    launched = []
+    popen = _fake_popen(launched)
+    monkeypatch.setattr(open_url.os, "name", "nt")
+    monkeypatch.setattr(open_url, "_default_browser_registration", lambda _scheme: (str(browser), "BraveHTML"))
+    monkeypatch.setattr(open_url.subprocess, "Popen", popen)
+    monkeypatch.setenv("CHROME_CRASHPAD_PIPE_NAME", r"\.\pipe\crashpad_other_app")
+
+    assert OpenUrlAction().execute(None, {"url": "https://example.com", "private_window": True}).success
+    assert "CHROME_CRASHPAD_PIPE_NAME" not in popen.environments[0]
+
+
+def test_private_window_treats_a_still_running_launcher_as_opened(monkeypatch):
+    class StillRunning:
+        def wait(self, timeout=None):
+            raise open_url.subprocess.TimeoutExpired("brave.exe", timeout)
+
+    assert open_url._launcher_exit_code(StillRunning()) is None

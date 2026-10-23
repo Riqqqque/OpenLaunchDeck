@@ -8,7 +8,7 @@ class FakeAudioEngine:
     def __init__(self):
         self.calls = []
 
-    def stop_button(self, button_id):
+    def stop_button(self, button_id, page_id=None):
         self.calls.append(("button", button_id))
 
     def stop_page(self, page_id):

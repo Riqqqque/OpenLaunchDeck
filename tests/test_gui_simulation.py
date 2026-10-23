@@ -312,6 +312,7 @@ def test_deck_view_uses_distance_readable_pads_at_second_monitor_size():
     services.settings_service.settings.first_run_complete = True
     services.settings_service.settings.auto_connect = False
     services.settings_service.settings.grid_density = "comfortable"
+    services.settings_service.settings.theme = "midnight"
     window = MainWindow(services)
     window.resize(1480, 920)
     window.show()
@@ -782,3 +783,147 @@ def test_connected_device_guard_stays_active_for_health_checks():
     window.close()
     services.action_runner.shutdown()
     services.device.close()
+
+
+def test_unfinished_label_and_notes_survive_launchpad_selection_and_page_change():
+    app = QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    profile = services.profile_service.current_profile
+    first_page = services.profile_service.current_page
+    if "label_test" not in profile.page_ids():
+        profile.pages.append(Page.blank("Label Test", "label_test"))
+    window.select_button("A1")
+
+    window.editor.label_edit.setText("Mute Mic")
+    window.editor.label_edit.setModified(True)
+    window.select_button("B2")
+    assert first_page.get_button("A1").label == "Mute Mic"
+
+    QTest.keyClicks(window.editor.notes_edit, "pending note")
+    services.profile_service.set_current_page("label_test")
+    window.on_action_finished("C3", ActionResult.ok("Switched page.", page_changed=True))
+    app.processEvents()
+
+    assert first_page.get_button("B2").notes == "pending note"
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_successful_connect_forces_full_pad_relight():
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    forced = []
+    original_refresh_page = services.lighting_service.refresh_page
+
+    def record_refresh(page, audio_engine=None, dangerous_service=None, force=False):
+        forced.append(force)
+        return original_refresh_page(page, audio_engine, dangerous_service, force=force)
+
+    services.lighting_service.refresh_page = record_refresh
+    window.on_connect_finished(True, "", "in", "out")
+
+    assert True in forced
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_launchpad_presses_do_not_run_actions_during_calibration():
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    pressed = []
+    services.action_runner.handle_button_press = lambda button_id, source="simulation": pressed.append(button_id)
+
+    window.show_midi_debug()
+    assert window.midi_debug_window.parent() is window
+    assert window.midi_debug_window.isWindow()
+    window.midi_debug_window.start_calibration()
+    window.handle_hardware_button("A1", True, None)
+    assert pressed == []
+
+    window.midi_debug_window.calibration.active = False
+    window.handle_hardware_button("A1", True, None)
+    assert pressed == ["A1"]
+
+    window._force_quit = True
+    window.close()
+    assert not window.midi_debug_window.isVisible()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_deleting_the_current_page_disarms_and_stops_its_sounds():
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    profile_service = services.profile_service
+    if "delete_me" not in profile_service.current_profile.page_ids():
+        profile_service.current_profile.pages.append(Page.blank("Delete Me", "delete_me"))
+    window.change_page("delete_me")
+    stopped = []
+    services.audio_engine.stop_page = lambda page_id, only_page_change=False, profile_id=None: stopped.append(page_id)
+    services.action_runner.dangerous_service.arm_or_confirm("A1")
+
+    from PySide6.QtWidgets import QMessageBox
+
+    original_question = QMessageBox.question
+    QMessageBox.question = staticmethod(lambda *_args, **_kwargs: QMessageBox.StandardButton.Yes)
+    try:
+        window.delete_page()
+    finally:
+        QMessageBox.question = original_question
+
+    assert profile_service.current_page_id != "delete_me"
+    assert "delete_me" in stopped
+    assert not services.action_runner.dangerous_service.is_armed("A1")
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_every_style_fits_the_grid_without_scrollbars():
+    app = QApplication.instance() or QApplication([])
+    from openlaunchdeck.ui.theme import apply_theme
+
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    window.show()
+    try:
+        for theme in ("nebula", "studio", "hardware"):
+            for width, height in ((1480, 920), (760, 520)):
+                apply_theme(theme, window)
+                window.resize(width, height)
+                app.processEvents()
+                window._fit_grid_to_viewport()
+                app.processEvents()
+                viewport = window.grid_scroll.viewport().size()
+                assert window.grid.width() <= viewport.width(), (theme, width, height)
+                assert window.grid.height() <= viewport.height(), (theme, width, height)
+                cell = window.grid.cells["A1"]
+                assert cell.width() >= 48 and cell.height() >= 38
+    finally:
+        apply_theme("midnight", window)
+        window._force_quit = True
+        window.close()
+        services.action_runner.shutdown()
+        services.device.close()

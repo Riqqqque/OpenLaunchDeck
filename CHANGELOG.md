@@ -1,5 +1,67 @@
 # Changelog
 
+## 0.2.10
+
+- Updating is now one click. **Update now** downloads and verifies the new version, backs up your profiles, installs it without any setup pages, and reopens OpenLaunchDeck by itself.
+- OpenLaunchDeck now checks for updates when it starts (new installs; you can turn it off under **Settings > App**), and the header's **Updates** button changes to **Update to x.y.z** when a new version is out.
+- Releases now include `OpenLaunchDeckSetup.exe`, so the README's download link always fetches the newest installer in one click.
+- Removed the icon from the top-left of the main window.
+
+## 0.2.9
+
+- Fixed your voice echoing in Discord screen shares. With the microphone route on, OpenLaunchDeck now plays the voice route through exclusive mode and mixes your microphone and voice-routed clips itself, so screen-share audio capture no longer picks them up. Voice chat itself is unchanged.
+- Added **Settings > Soundboard > Keep my voice out of screen-share audio** (on by default). If Windows won't allow exclusive control of the voice route device, OpenLaunchDeck falls back to the standard route automatically.
+
+## 0.2.8
+
+- Fixed the main window showing up empty (black or white) when another program, such as a window-arranging tool, showed it while it was hidden in the tray. It now restores and draws normally.
+
+## 0.2.7
+
+- Open URL in a private window now reports when the browser rejects the launch instead of always reporting success.
+- Private-window launches no longer pass another Chromium-based app's crash-handler setting to the browser.
+
+## 0.2.6
+
+- Cut the installed size by leaving out Qt modules the app never loads: the software OpenGL renderer, Qt Quick and QML (pulled in only by the virtual keyboard plugin), Qt PDF, multimedia widgets, and Qt's translation catalogs.
+- The animation library now uses about a quarter of the CPU it did: card previews run at 10 fps, pause when scrolled out of view, and skip repaints when a frame hasn't changed.
+- The idle animation thread sleeps for 30 seconds at a time while idle animations are off instead of checking every second.
+- Automatic profile backups made before updates now keep the newest 20; manual backups are never removed.
+- The uninstaller's log no longer grows with every upgrade (it had reached 13 MB on a machine with many upgrades).
+
+## 0.2.5
+
+- Added idle animations: after the pads go unused for a while (15 seconds by default, adjustable), the Launchpad plays an animation until any pad or button is pressed.
+- Added 15 built-in animations, live previews, speed and brightness controls, shuffle, and a Preview on Launchpad button.
+- Added an animation library and editor for painting your own frame-by-frame animations, with undo, onion skin, frame shifting, and custom colors.
+- Animations can be shared as files or as `OLDA1:` share codes and imported from other people, with the author credited.
+- Launchpad lighting now supports full RGB colors for animations.
+- Added three complete styles that change the whole look, including pad shape: Nebula (the default for new installs), Studio, and Hardware, which draws the grid as the real Launchpad with its round edge buttons. The classic color themes are still available.
+- Refreshed the header with the app icon and cleaner buttons, quieted empty pads, and put the action name first in the action picker so long names are no longer cut off.
+
+## 0.2.4
+
+- The installer now refreshes the Windows icon cache on 64-bit Windows, so taskbar pins and shortcuts pick up a new app icon.
+- The Windows `.ico` no longer contains an oversized 512 px frame that the ICO format cannot describe.
+
+## 0.2.3
+
+- Replaced the application icon and wordmark with an 8x8 pad-grid rocket.
+- Fixed new, duplicated, and imported profiles overwriting a profile file that failed to load or had been renamed.
+- Fixed a pad on one page stopping or lighting from a sound started by the same pad position on another page.
+- Fixed unfinished label and note edits being lost when the Launchpad changed the selection or page.
+- Multi-Action buttons now require confirmation when a step starts streaming or closes a window, keep going after a step raises an error when Continue After A Failed Step is on, and stop between steps on Quit.
+- Quit no longer leaves a hidden process running while a Delay, Run Command, SSH, or HTTP action finishes.
+- Fixed pads staying dark after Connect or Reconnect Device, armed pads surviving a page change from a pad, and a possible crash when closing during a MIDI connect or update check.
+- The microphone voice route now restarts after its device disappears, and voice-route status prefers the cable pair over Stereo Mix.
+- Importing a profile now switches to it the same way as the profile list, including Launchpad lighting.
+- Custom update manifests and installer downloads must use HTTPS (plain HTTP is still accepted for localhost).
+- Sounds are now tracked per profile as well as per page, so profiles that share a page name no longer light or stop each other's clips.
+- Launchpad presses no longer run actions while MIDI Debug calibration is capturing pads.
+- The MIDI Debug window now closes with the main window instead of keeping the app open.
+- Adding, duplicating, or deleting a page and switching profiles from Profile Manager or first-run setup now disarm pads, stop page-change sounds, and relight the Launchpad.
+- Fixed a blinking pad occasionally keeping its blink color after the blink stopped.
+
 ## 0.2.2
 
 - Fixed tray Quit so it removes the tray icon, closes all application windows, and terminates the background process.

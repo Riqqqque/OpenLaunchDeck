@@ -117,6 +117,7 @@ def main() -> int:
         settle(app)
         capture(window, args.output / "main-midnight-editor-actions-minimum.png", app, (760, 520))
         window.show_compact_grid()
+        apply_theme("nebula", window)
         window.resize(1600, 900)
         window._apply_responsive_layout(force=True)
         settle(app)

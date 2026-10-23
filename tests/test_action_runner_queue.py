@@ -228,3 +228,38 @@ def test_action_runner_validates_before_confirmation_or_execution():
         assert not dangerous.is_armed("A1")
     finally:
         runner.shutdown()
+
+
+def test_multi_action_with_dangerous_step_requires_confirmation():
+    button = ButtonConfig(
+        id="A1",
+        dangerous=False,
+        action=ActionConfig(
+            "multi_action",
+            {"steps": [{"type": "noop", "config": {}}, {"type": "obs_websocket", "config": {"operation": "start_streaming"}}]},
+        ),
+    )
+
+    assert ActionRunner._requires_confirmation(button) is True
+    button.action.config["steps"][1]["config"]["operation"] = "save_replay_buffer"
+    assert ActionRunner._requires_confirmation(button) is False
+
+
+def test_shutdown_cancels_running_delay_and_reports_idle():
+    from openlaunchdeck.actions.delay import DelayAction
+
+    button = ButtonConfig(id="A1", action=ActionConfig("delay", {"milliseconds": 60000}))
+    registry = ActionRegistry()
+    registry.register(NoopAction())
+    registry.register(DelayAction())
+    runner = ActionRunner(
+        registry=registry,
+        profile_service=FakeProfileService(button),
+        dangerous_service=DangerousConfirmService(),
+    )
+
+    assert runner.handle_button_press("A1").message == "Action started."
+    assert runner.wait_for_idle(0.05) is False
+    runner.shutdown()
+
+    assert runner.wait_for_idle(2.0) is True

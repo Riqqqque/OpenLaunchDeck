@@ -159,9 +159,12 @@ class ButtonEditor(QWidget):
             self._action_timer.start()
 
     def flush_pending_changes(self) -> None:
-        if self._notes_timer.isActive() or self._action_timer.isActive():
+        # A label is normally saved on editingFinished, which never fires if the
+        # selection changes from the Launchpad while the field still has focus.
+        if self._notes_timer.isActive() or self._action_timer.isActive() or self.label_edit.isModified():
             self._notes_timer.stop()
             self._action_timer.stop()
+            self.label_edit.setModified(False)
             self.apply_changes()
 
     def apply_changes(self) -> None:
