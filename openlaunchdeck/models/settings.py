@@ -11,6 +11,7 @@ from ..constants import (
 
 
 BOOL_FIELDS = {
+    "soundboard_voice_route_exclusive",
     "idle_animation_enabled",
     "idle_animation_shuffle",
     "idle_animation_wake_press_runs_action",
@@ -110,9 +111,10 @@ class Settings:
     soundboard_voice_route_microphone_enabled: bool = False
     soundboard_voice_route_microphone_device: str = ""
     soundboard_voice_route_microphone_volume: int = 100
+    soundboard_voice_route_exclusive: bool = True
     soundboard_global_volume: int = 100
     soundboard_stop_sounds_on_exit: bool = True
-    check_updates_on_startup: bool = False
+    check_updates_on_startup: bool = True
     update_channel: str = "stable"
     update_manifest_url: str = ""
     enable_performance_logging: bool = False

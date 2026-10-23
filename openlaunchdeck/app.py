@@ -155,6 +155,7 @@ def build_services() -> AppServices:
         voice_route_microphone_enabled=settings_service.settings.soundboard_voice_route_microphone_enabled,
         voice_route_microphone_device_id=settings_service.settings.soundboard_voice_route_microphone_device,
         voice_route_microphone_volume=settings_service.settings.soundboard_voice_route_microphone_volume,
+        voice_route_exclusive=settings_service.settings.soundboard_voice_route_exclusive,
         performance_logging_enabled=settings_service.settings.enable_performance_logging,
         performance_monitor=performance_monitor,
         current_profile_id=lambda: profile_service.current_profile_id,

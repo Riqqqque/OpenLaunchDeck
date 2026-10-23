@@ -246,6 +246,13 @@ class SettingsDialog(QDialog):
         self.voice_mic_enabled = QCheckBox("Mix my microphone into the voice-chat route")
         self.voice_mic_enabled.setChecked(settings.soundboard_voice_route_microphone_enabled)
         self.voice_mic_volume = PercentControl(settings.soundboard_voice_route_microphone_volume)
+        self.voice_route_exclusive = QCheckBox("Keep my voice out of screen-share audio")
+        self.voice_route_exclusive.setChecked(settings.soundboard_voice_route_exclusive)
+        self.voice_route_exclusive.setToolTip(
+            "Discord's screen share would otherwise pick up the microphone route and play your voice twice. "
+            "OpenLaunchDeck takes exclusive control of the voice route device to prevent that, "
+            "and falls back automatically if Windows doesn't allow it."
+        )
         self.monitor_voice_routes = QCheckBox("Let me hear sounds that are routed to voice chat")
         self.monitor_voice_routes.setChecked(settings.soundboard_monitor_voice_chat)
 
@@ -274,6 +281,7 @@ class SettingsDialog(QDialog):
                         ("Route output", self.voice_output_device),
                         ("Microphone", self.voice_mic_device),
                         ("", self.voice_mic_enabled),
+                        ("", self.voice_route_exclusive),
                         ("Microphone level", self.voice_mic_volume),
                         ("", self.monitor_voice_routes),
                     ],
@@ -608,6 +616,7 @@ class SettingsDialog(QDialog):
             soundboard_voice_chat_output_device=str(self.voice_output_device.currentData() or ""),
             soundboard_voice_route_microphone_device=str(self.voice_mic_device.currentData() or ""),
             soundboard_voice_route_microphone_enabled=self.voice_mic_enabled.isChecked(),
+            soundboard_voice_route_exclusive=self.voice_route_exclusive.isChecked(),
             soundboard_voice_route_microphone_volume=self.voice_mic_volume.value(),
             soundboard_monitor_voice_chat=self.monitor_voice_routes.isChecked(),
             soundboard_global_volume=self.global_volume.value(),

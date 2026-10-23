@@ -150,9 +150,20 @@ Voice-processing features can damage music and effects. For a soundboard route, 
 - Keep only the intended voice-route playback/recording pair selected.
 - Use OpenLaunchDeck monitoring instead of creating a second Windows monitoring loop.
 
+### My voice echoes in a screen share
+
+When you share your whole screen with sound, Discord captures the audio of every other app on your PC. That used to include OpenLaunchDeck passing your microphone into the voice route, so viewers heard your voice once through voice chat and again, slightly late, in the stream.
+
+OpenLaunchDeck now keeps the voice route out of screen-share audio. It takes exclusive control of the voice route playback device (for example **Speakers (VB-Audio Virtual Cable)**) and mixes your microphone and voice-routed clips itself, so screen-share capture can't see them. Your voice chat input is unchanged.
+
+- The setting is **Settings > Soundboard > Keep my voice out of screen-share audio**. It is on by default.
+- The Soundboard panel shows **(hidden from screen-share audio)** next to the microphone route when it is active.
+- While the microphone route is on, other apps can't play into the voice route playback device. Only OpenLaunchDeck should be using it anyway.
+- If Windows doesn't allow exclusive control (the device's **Advanced** properties have **Allow applications to take exclusive control of this device** turned off, or another app already holds it), OpenLaunchDeck falls back to the standard route automatically and notes it in the log. Screen shares may echo again until that's fixed.
+
 ### A screen-share viewer hears each clip twice
 
-A routed clip can reach a viewer through two independent paths: once through the voice input and once through the system audio captured by a full-screen share. OpenLaunchDeck cannot tell Discord which individual application audio session to exclude.
+With the microphone route on, the voice-route copy of a clip is hidden from screen shares too (see above), so only your local monitor copy can be captured. Without the microphone route, a routed clip can reach a viewer through two paths: once through the voice input and once through the system audio captured by a full-screen share.
 
 Use one of these layouts:
 
