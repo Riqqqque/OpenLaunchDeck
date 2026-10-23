@@ -220,7 +220,7 @@ def test_player_respects_switches_device_and_blockers(tmp_path):
 
     player.settings_service.settings.idle_animation_enabled = False
     clock.now += 60
-    _step(player)
+    assert _step(player) == 30.0, "a disabled player sleeps long between checks"
     assert not player.playing
 
     player.settings_service.settings.idle_animation_enabled = True

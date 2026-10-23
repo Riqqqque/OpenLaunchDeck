@@ -12,6 +12,9 @@ from .model import FRAME_SIZE, MAX_FPS, scale_color
 # Never animate faster than the Launchpad comfortably takes full-grid updates.
 MAX_PLAYBACK_FPS = MAX_FPS
 IDLE_POLL_SECONDS = 1.0
+# While idle animations are off there is nothing to count down; settings changes,
+# previews, and shutdown all wake the thread directly.
+DISABLED_POLL_SECONDS = 30.0
 
 
 class IdleAnimationPlayer:
@@ -182,6 +185,8 @@ class IdleAnimationPlayer:
         now = self._clock()
         if self._frames is None:
             settings = self._settings()
+            if not settings.idle_animation_enabled:
+                return DISABLED_POLL_SECONDS
             remaining = settings.idle_animation_timeout_seconds - (now - self._last_activity)
             if remaining > 0:
                 return min(IDLE_POLL_SECONDS, remaining)

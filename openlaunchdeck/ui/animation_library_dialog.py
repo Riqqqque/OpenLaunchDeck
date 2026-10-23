@@ -44,7 +44,7 @@ class AnimationCard(QFrame):
         layout = QVBoxLayout(self)
         layout.setContentsMargins(12, 12, 12, 12)
         layout.setSpacing(8)
-        self.preview = AnimationPreview(pad_size=12, gap=3)
+        self.preview = AnimationPreview(pad_size=12, gap=3, max_fps=10)
         self.preview.set_animation(animation)
         layout.addWidget(self.preview, 0, Qt.AlignmentFlag.AlignHCenter)
         name = QLabel(animation.name)

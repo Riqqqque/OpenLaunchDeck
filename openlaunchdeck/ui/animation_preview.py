@@ -11,16 +11,30 @@ from ..animations.model import FRAME_SIZE, GRID_SIZE, OFF, scale_color
 
 UNLIT_PAD = "#1d1f27"
 PREVIEW_SEED = 7
+_UNLIT_EDGE = QColor(255, 255, 255, 18)
+_colors: dict[str, QColor] = {}
+
+
+def _qcolor(hex_color: str) -> QColor:
+    # Frames repeat a small set of colors; parsing them once keeps painting cheap.
+    color = _colors.get(hex_color)
+    if color is None:
+        if len(_colors) > 4096:
+            _colors.clear()
+        color = _colors[hex_color] = QColor(hex_color)
+    return color
 
 
 class AnimationPreview(QWidget):
     """Plays an animation on an on-screen 8x8 pad grid."""
 
-    def __init__(self, parent=None, pad_size: int = 18, gap: int = 4) -> None:
+    def __init__(self, parent=None, pad_size: int = 18, gap: int = 4, max_fps: float = 30.0) -> None:
         super().__init__(parent)
         self.setObjectName("AnimationPreview")
         self._pad_size = pad_size
         self._gap = gap
+        # Small thumbnails don't need full speed; capping them keeps a gallery cheap.
+        self._max_fps = max(1.0, max_fps)
         self._animation = None
         self._frames: Iterator[list[str]] | None = None
         self._frame: list[str] = [OFF] * FRAME_SIZE
@@ -71,7 +85,7 @@ class AnimationPreview(QWidget):
 
     def _interval_ms(self) -> int:
         fps = getattr(self._animation, "fps", 10) * self._speed
-        return max(33, round(1000 / max(1.0, min(30.0, fps))))
+        return max(33, round(1000 / max(1.0, min(30.0, self._max_fps, fps))))
 
     def _sync_timer(self) -> None:
         if self._frames is not None and not self._paused and self.isVisible():
@@ -81,10 +95,15 @@ class AnimationPreview(QWidget):
 
     def _advance(self) -> None:
         if self._frames is None:
-            self._frame = [OFF] * FRAME_SIZE
+            frame = [OFF] * FRAME_SIZE
+        elif self._timer.isActive() and self.visibleRegion().isEmpty():
+            # Scrolled out of view: pause instead of drawing frames nobody sees.
+            return
         else:
-            self._frame = next(self._frames)
-        self.update()
+            frame = next(self._frames)
+        if frame != self._frame:
+            self._frame = frame
+            self.update()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
@@ -102,11 +121,16 @@ class AnimationPreview(QWidget):
         radius = max(2.0, pad * 0.22)
         origin_x = (self.width() - side) / 2
         origin_y = (self.height() - side) / 2
+        unlit_pen = QPen(_UNLIT_EDGE, 1)
         for index, color in enumerate(itertools.islice(self._frame, FRAME_SIZE)):
             row, col = divmod(index, GRID_SIZE)
             rect = QRectF(origin_x + col * (pad + self._gap), origin_y + row * (pad + self._gap), pad, pad)
             lit = scale_color(color, self._brightness)
-            painter.setPen(QPen(QColor(255, 255, 255, 18), 1))
-            painter.setBrush(QColor(UNLIT_PAD if lit == OFF else lit))
+            if lit == OFF:
+                painter.setPen(unlit_pen)
+                painter.setBrush(_qcolor(UNLIT_PAD))
+            else:
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(_qcolor(lit))
             painter.drawRoundedRect(rect, radius, radius)
         painter.end()
