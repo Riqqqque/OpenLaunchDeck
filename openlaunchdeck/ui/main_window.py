@@ -72,6 +72,7 @@ class MidiConnectionWorker(QObject):
 
 
 WM_SHOWWINDOW = 0x0018
+LIGHTING_RESYNC_MS = 60_000
 
 
 class MainWindow(QMainWindow):
@@ -141,6 +142,7 @@ class MainWindow(QMainWindow):
         self._apply_responsive_layout()
         self._connect_signals()
         self._build_device_reconnect_guard()
+        self._build_lighting_resync()
         self._build_voice_route_guard()
         self.refresh_all()
         self.tray = TrayController(self, services)
@@ -1254,6 +1256,28 @@ class MainWindow(QMainWindow):
         self.voice_route_guard_timer.setInterval(60_000)
         self.voice_route_guard_timer.timeout.connect(self.ensure_voice_route_running)
         self.update_voice_route_guard()
+
+    def _build_lighting_resync(self) -> None:
+        # The Launchpad can lose its lights (power blip, another app resetting it) without
+        # the app noticing, and lighting only sends changed pads. Re-sending the full page
+        # now and then heals that; identical colors cause no visible flicker.
+        self.lighting_resync_timer = QTimer(self)
+        self.lighting_resync_timer.setTimerType(Qt.TimerType.VeryCoarseTimer)
+        self.lighting_resync_timer.setInterval(LIGHTING_RESYNC_MS)
+        self.lighting_resync_timer.timeout.connect(self.resync_lighting)
+        self.lighting_resync_timer.start()
+
+    def resync_lighting(self) -> None:
+        lighting = self.services.lighting_service
+        if not self.services.device.connected or lighting.overlay_active or lighting.has_active_effects:
+            return
+        lighting.refresh_page(
+            self.services.profile_service.current_page,
+            self.services.audio_engine,
+            self.services.action_runner.dangerous_service,
+            force=True,
+        )
+        self.refresh_auxiliary_lighting(force=True)
 
     def _build_device_reconnect_guard(self) -> None:
         self.device_reconnect_timer = QTimer(self)

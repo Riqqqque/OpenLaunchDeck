@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.11
+
+- The Launchpad's lights now heal themselves. If the device loses its lights without the app noticing (a power blip or another program resetting it), OpenLaunchDeck re-sends the whole page about once a minute, so pads never stay dark.
+
 ## 0.2.10
 
 - Updating is now one click. **Update now** downloads and verifies the new version, backs up your profiles, installs it without any setup pages, and reopens OpenLaunchDeck by itself.

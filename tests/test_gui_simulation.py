@@ -927,3 +927,36 @@ def test_every_style_fits_the_grid_without_scrollbars():
         window.close()
         services.action_runner.shutdown()
         services.device.close()
+
+
+def test_lighting_resync_resends_the_whole_page_and_skips_during_effects():
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    calls = []
+    original = services.lighting_service.refresh_page
+    services.lighting_service.refresh_page = lambda page, audio=None, danger=None, force=False: calls.append(force)
+
+    assert window.lighting_resync_timer.isActive()
+    assert window.lighting_resync_timer.interval() == 60_000
+    services.device.connected = False
+    window.resync_lighting()
+    assert calls == [], "nothing to resync without a Launchpad"
+
+    services.device.connected = True
+    window.resync_lighting()
+    assert calls == [True]
+
+    services.lighting_service.begin_overlay()
+    window.resync_lighting()
+    assert calls == [True], "an idle animation owns the pads"
+    services.lighting_service.end_overlay()
+
+    services.device.connected = False
+    services.lighting_service.refresh_page = original
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
