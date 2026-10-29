@@ -295,9 +295,8 @@ class ButtonCell(QWidget):
         if self._armed:
             color_name = "yellow"
         empty = action_type == "noop" and not button.label
+        # Show the pad's real color, Dim included, so the grid matches the Launchpad.
         accent = QColor(NAMED_COLORS.get(color_name, color_name if color_name.startswith("#") else NAMED_COLORS["dim"]))
-        if color_name in {"dim", "off"}:
-            accent = QColor(NAMED_COLORS["blue"])
         return button, action_type, empty, accent
 
     def _title_point_size(self) -> int:

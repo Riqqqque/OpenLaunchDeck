@@ -145,6 +145,12 @@ def build_services() -> AppServices:
     native_acceleration.configure(settings_service.settings.use_native_acceleration, logger)
     performance_monitor = PerformanceMonitor(logger, settings_service.settings.enable_performance_logging)
     profile_service = ProfileService(logger=logger)
+    if not settings_service.settings.dim_action_pads_upgraded:
+        # Older styles drew Dim pads in blue while the Launchpad showed them near-black.
+        upgraded = profile_service.upgrade_dim_action_pads()
+        settings_service.update(dim_action_pads_upgraded=True)
+        if upgraded:
+            logger.info("Gave %s pads with actions a visible color instead of Dim.", upgraded)
     profile_service.set_current_profile(settings_service.settings.default_profile)
     audio_engine = AudioEngine(
         logger=logger,

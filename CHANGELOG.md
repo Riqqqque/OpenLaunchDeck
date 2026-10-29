@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.12
+
+- Fixed pads that looked blue in the app but stayed dark on the Launchpad. The Nebula, Studio, and Hardware styles drew the near-black **Dim** color as blue; they now show Dim as it really looks.
+- New pads get a visible color: giving a blank pad an action or label switches it from Dim to blue. You can still pick Dim on purpose.
+- On first start, pads that have an action but still use Dim are switched to blue once, matching how the app was already showing them.
+
 ## 0.2.11
 
 - The Launchpad's lights now heal themselves. If the device loses its lights without the app noticing (a power blip or another program resetting it), OpenLaunchDeck re-sends the whole page about once a minute, so pads never stay dark.

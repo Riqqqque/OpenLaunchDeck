@@ -11,6 +11,7 @@ from ..constants import (
 
 
 BOOL_FIELDS = {
+    "dim_action_pads_upgraded",
     "soundboard_voice_route_exclusive",
     "idle_animation_enabled",
     "idle_animation_shuffle",
@@ -112,6 +113,7 @@ class Settings:
     soundboard_voice_route_microphone_device: str = ""
     soundboard_voice_route_microphone_volume: int = 100
     soundboard_voice_route_exclusive: bool = True
+    dim_action_pads_upgraded: bool = False
     soundboard_global_volume: int = 100
     soundboard_stop_sounds_on_exit: bool = True
     check_updates_on_startup: bool = True

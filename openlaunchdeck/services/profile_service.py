@@ -76,6 +76,25 @@ class ProfileService:
         self.current_page_id = page_id
         return True
 
+    def upgrade_dim_action_pads(self, color: str = "blue") -> int:
+        """Give pads that have an action but still use the Dim default a visible color.
+
+        Dim is near-black on the Launchpad. Returns how many pads changed.
+        """
+        changed = 0
+        for profile in self.profiles.values():
+            profile_changed = False
+            for page in profile.pages:
+                for button in page.buttons.values():
+                    has_action = button.action is not None and button.action.type != "noop"
+                    if has_action and button.color == "dim":
+                        button.color = color
+                        changed += 1
+                        profile_changed = True
+            if profile_changed:
+                self.save_profile(profile)
+        return changed
+
     def save_current(self) -> None:
         self.save_profile(self.current_profile)
 

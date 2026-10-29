@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..constants import NAMED_COLORS
+from ..constants import DEFAULT_BUTTON_COLOR, NAMED_COLORS
 from ..models.action_config import ActionConfig
 from ..models.button import ButtonConfig
 from .action_editor import ActionEditor
@@ -170,12 +170,19 @@ class ButtonEditor(QWidget):
     def apply_changes(self) -> None:
         if self._loading or self.button is None:
             return
+        was_blank = not self.button.label and (self.button.action is None or self.button.action.type == "noop")
         self.button.label = self.label_edit.text()
         self.button.color = str(self.color_combo.currentData() or "dim")
+        action_type, config = self.action_editor.current_action()
+        if was_blank and self.button.color == "dim" and (self.button.label or action_type != "noop"):
+            # A new pad would otherwise stay on the near-black Dim default and look unlit.
+            self.button.color = DEFAULT_BUTTON_COLOR
+            self.color_combo.blockSignals(True)
+            self.color_combo.setCurrentIndex(max(0, self.color_combo.findData(DEFAULT_BUTTON_COLOR)))
+            self.color_combo.blockSignals(False)
         self.button.enabled = self.enabled_check.isChecked()
         self.button.dangerous = self.dangerous_check.isChecked()
         self.button.notes = self.notes_edit.toPlainText()
-        action_type, config = self.action_editor.current_action()
         self.button.action = ActionConfig(action_type, config)
         self.changed.emit()
 

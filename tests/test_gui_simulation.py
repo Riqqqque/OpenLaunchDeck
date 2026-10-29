@@ -960,3 +960,43 @@ def test_lighting_resync_resends_the_whole_page_and_skips_during_effects():
     window.close()
     services.action_runner.shutdown()
     services.device.close()
+
+
+def test_new_pads_get_a_visible_color_but_dim_can_still_be_chosen():
+    QApplication.instance() or QApplication([])
+    services = build_services()
+    services.settings_service.settings.first_run_complete = True
+    services.settings_service.settings.auto_connect = False
+    window = MainWindow(services)
+    page = services.profile_service.current_page
+    page.buttons["H8"] = ButtonConfig.blank("H8")
+    window.select_button("H8")
+
+    window.editor.label_edit.setText("New pad")
+    window.editor.apply_changes()
+    assert page.get_button("H8").color == "blue"
+    assert window.editor.color_combo.currentData() == "blue"
+
+    window.editor.color_combo.setCurrentIndex(window.editor.color_combo.findData("dim"))
+    assert page.get_button("H8").color == "dim", "an explicit Dim choice is kept"
+
+    window._force_quit = True
+    window.close()
+    services.action_runner.shutdown()
+    services.device.close()
+
+
+def test_styled_pads_paint_dim_as_dim():
+    from openlaunchdeck.constants import NAMED_COLORS
+    from openlaunchdeck.ui.button_cell import ButtonCell
+    from openlaunchdeck.ui.theme import apply_theme
+
+    QApplication.instance() or QApplication([])
+    apply_theme("studio")
+    cell = ButtonCell("B6")
+    cell.set_state(ButtonConfig(id="B6", label="expresso", color="dim", action=ActionConfig("play_sound", {})))
+
+    _button, _action, _empty, accent = cell._pad_state()
+
+    assert accent.name() == NAMED_COLORS["dim"]
+    apply_theme("midnight")

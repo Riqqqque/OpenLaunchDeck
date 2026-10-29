@@ -212,3 +212,29 @@ def test_new_profiles_never_overwrite_unloaded_or_renamed_files(tmp_path, monkey
     assert corrupt_path.read_text(encoding="utf-8") == "{not json"
     assert '"Gaming"' in renamed_path.read_text(encoding="utf-8")
     assert set(profile_service.ProfileService().profiles) == {"gaming", "work", "stream"}
+
+
+def test_upgrade_gives_action_pads_on_dim_a_visible_color(tmp_path, monkeypatch):
+    from openlaunchdeck.models.action_config import ActionConfig
+
+    profiles_dir = tmp_path / "profiles"
+    starters_dir = tmp_path / "starters"
+    profiles_dir.mkdir()
+    starters_dir.mkdir()
+    monkeypatch.setattr(profile_service, "PROFILES_DIR", profiles_dir)
+    monkeypatch.setattr(profile_service, "BACKUPS_DIR", tmp_path / "backups")
+    monkeypatch.setattr(profile_service, "STARTER_PROFILES_DIR", starters_dir)
+    service = profile_service.ProfileService()
+    page = service.current_page
+    page.buttons["B6"] = ButtonConfig(id="B6", label="expresso", color="dim", action=ActionConfig("play_sound", {"file_path": "x.mp3"}))
+    page.buttons["B7"] = ButtonConfig(id="B7", color="dim", action=ActionConfig("hotkey", {}))
+    page.buttons["C1"] = ButtonConfig(id="C1", color="red", action=ActionConfig("hotkey", {}))
+    page.buttons["C2"] = ButtonConfig.blank("C2")
+
+    assert service.upgrade_dim_action_pads() == 2
+
+    reloaded = profile_service.ProfileService().current_page
+    assert reloaded.get_button("B6").color == "blue"
+    assert reloaded.get_button("B7").color == "blue"
+    assert reloaded.get_button("C1").color == "red"
+    assert reloaded.get_button("C2").color == "dim", "empty pads stay unlit"
